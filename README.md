@@ -117,7 +117,39 @@ Definidas en `claude/CLAUDE.md`:
 | **2 — Swarm** | Feature que toca ≥2 capas del stack | claude-flow `swarm_init` + `task_orchestrate` |
 | **3 — Agent Teams** | Colaboración activa frontend+backend+tests | Agent Teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) |
 
-**Ollama:** no es config técnica. Es una regla de comportamiento en `CLAUDE.md`. En máquina nueva: `ollama pull <modelo>`.
+**Ollama:** es una **regla de comportamiento** en `CLAUDE.md`, no un hook automático. Cuando Helix recibe logs o texto largo, ejecuta `ollama run helix-scout "..."` vía Bash tool antes de procesarlo él mismo. La invocación es consciente (Helix decide), no automática.
+
+---
+
+## Modelos Ollama (Capa 0)
+
+Los Modelfiles están en `ollama/`. Recrear en máquina nueva:
+
+```bash
+# Instalar ollama (si no está): https://ollama.com/download
+
+# 1. Descargar modelos base
+ollama pull qwen2.5-coder:7b   # ~4.7 GB
+ollama pull llama3.2:3b        # ~2.0 GB
+
+# 2. Crear modelos Helix con system prompt personalizado
+ollama create helix-coder -f ~/helix_asisten/ollama/helix-coder.Modelfile
+ollama create helix-scout -f ~/helix_asisten/ollama/helix-scout.Modelfile
+```
+
+| Modelo | Base | Tamaño | Temp | Uso |
+|--------|------|--------|------|-----|
+| `helix-coder` | Qwen2.5-Coder 7B | 4.7 GB | 0.15 | Bugs, refactors, código FastAPI+React |
+| `helix-scout` | Llama 3.2 3B | 2.0 GB | 0.1 | Logs, transformaciones rápidas Python↔TS, CRUDs |
+
+**Cómo Helix los invoca (Capa 0):**
+```bash
+# Para logs / salida Docker
+ollama run helix-scout "Analiza este log y resume los errores:\n$(cat app.log)"
+
+# Para bug de código
+ollama run helix-coder "Debug este error de SQLAlchemy: [error]"
+```
 
 ---
 
