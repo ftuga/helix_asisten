@@ -181,6 +181,84 @@ Declarar en el `CLAUDE.md` de cada proyecto: `HELIX_MODE: helix_control_total`
 
 ---
 
+## 3-Tier Model Routing (CLAUDE.md de RuFlo)
+
+Ruflo enruta automáticamente cada operación al tier más barato:
+
+| Tier | Handler | Latencia | Cuándo |
+|------|---------|----------|--------|
+| **1** | Agent Booster (WASM) | <1ms | Transforms simples: var→const, add-types, async-await, add-logging |
+| **2** | Claude Haiku | ~500ms | Complejidad baja (<30%) |
+| **3** | Claude Sonnet/Opus | 2-5s | Razonamiento complejo (>30%) |
+
+Ahorro combinado de tokens: **30-50%** (ReasoningBank -32%, caché 95% hit rate -10%, batch -20%).
+
+## 12 Background Workers (Daemon)
+
+Configurados en `helix-engine/.claude/settings.json` bajo `claudeFlow.daemon.workers`:
+
+| Worker | Intervalo | Qué hace |
+|--------|-----------|----------|
+| `audit` | 1h (critical) | CVE scan + threat model automático |
+| `optimize` | 30m (high) | Performance optimization |
+| `consolidate` | 2h (low) | Consolida patrones de memoria HNSW |
+| `document` | 1h — triggers: adr-update, api-change | Genera/actualiza documentación |
+| `deepdive` | 4h — trigger: complex-change | Análisis profundo de cambios |
+| `ultralearn` | 1h | SONA self-learning, EWC++ |
+| `map` | — | Knowledge graph mapping |
+| `refactor` | — | Refactor suggestions |
+| `benchmark` | — | Performance benchmarks |
+| `testgaps` | — | Detecta cobertura de tests faltante |
+
+Activar: `ruflo daemon start`
+
+## Hooks del sistema (9 tipos en settings.json)
+
+| Hook | Cuándo se dispara |
+|------|-------------------|
+| `PreToolUse (Bash)` | Antes de cada comando bash |
+| `PreToolUse (Write/Edit)` | Antes de editar archivos |
+| `PostToolUse (Write/Edit)` | Después de editar archivos |
+| `PostToolUse (Bash)` | Después de cada comando bash |
+| `UserPromptSubmit` | Routing de cada prompt (router.cjs) |
+| `SessionStart` | Restaura sesión + importa memoria |
+| `SessionEnd` | Guarda estado + sincroniza memoria |
+| `Stop` | Sync de memoria al parar |
+| `PreCompact (manual/auto)` | Antes de compactar contexto |
+| `SubagentStart/Stop` | Monitoreo de subagentes |
+| `Notification` | Notificaciones del sistema |
+
+## Verificar instalación en nueva máquina
+
+```bash
+# Verificación rápida (categorías críticas)
+sh ~/helix_asisten/scripts/verify-appliance.sh --quick
+
+# Verificación completa (35 categorías, 95+ checks)
+sh ~/helix_asisten/scripts/verify-appliance.sh
+
+# Verificar categoría específica
+sh ~/helix_asisten/scripts/verify-appliance.sh --category memory
+sh ~/helix_asisten/scripts/verify-appliance.sh --category security
+
+# Output JSON para integración
+sh ~/helix_asisten/scripts/verify-appliance.sh --json
+```
+
+## CLI de ruflo (comandos frecuentes)
+
+```bash
+ruflo --version                           # verificar versión
+ruflo doctor --fix                        # diagnóstico y auto-reparación
+ruflo init --wizard                       # inicializar proyecto con wizard
+ruflo daemon start                        # activar 10 background workers
+ruflo memory search -q "patrón"          # buscar en memoria HNSW
+ruflo security scan --depth full         # CVE scan completo
+ruflo swarm init --topology hierarchical # iniciar swarm
+ruflo hooks list                          # ver hooks activos
+ruflo neural status                       # estado SONA
+```
+
 ## Inyectar Helix en un nuevo proyecto
 
 ```bash
