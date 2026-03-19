@@ -29,6 +29,10 @@ helix-engine/.claude-flow/neural/
 helix-engine/.claude-flow/metrics/
 helix-engine/.claude/settings.local.json
 
+# Runtime en raíz del repo (sesiones de trabajo sobre helix_asisten/)
+.claude-flow/
+.mcp.json
+
 # Sistema
 .DS_Store
 Thumbs.db

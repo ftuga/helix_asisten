@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # ============================================================
 # Helix — Sincronizar cambios de ~/.claude al repo
-# Uso: bash update.sh  (desde ~/helix_asisten/)
+# Uso: bash update.sh          → solo sync (muestra diff al final)
+#      bash update.sh --push   → sync + commit + push automático
 # ============================================================
 set -euo pipefail
+
+AUTO_PUSH=0
+[[ "${1:-}" == "--push" ]] && AUTO_PUSH=1
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
@@ -59,4 +63,28 @@ rsync -a "$TEMPLATE_DIR/.claude/memory/" "$REPO_DIR/template/.claude/memory/" 2>
 rsync -a "$TEMPLATE_DIR/.claude/skills/" "$REPO_DIR/template/.claude/skills/" 2>/dev/null || true
 
 echo "✅ Sincronización completa."
-echo "   Ahora: git add -A && git commit -m 'sync: \$(date +%Y-%m-%d)' && git push"
+
+# Mostrar resumen de cambios
+cd "$REPO_DIR"
+CHANGED=$(git status --short | wc -l | tr -d '[:space:]')
+if [[ "$CHANGED" -eq 0 ]]; then
+  echo "   Sin cambios — repo ya está al día."
+  exit 0
+fi
+
+echo ""
+echo "   Cambios detectados ($CHANGED archivos):"
+git status --short | head -20
+
+if [[ "$AUTO_PUSH" -eq 1 ]]; then
+  FECHA=$(date +%Y-%m-%d)
+  git add -A
+  git commit -m "sync: $FECHA"
+  git push origin main
+  echo ""
+  echo "   ✓ Commit y push realizados."
+else
+  echo ""
+  echo "   Para guardar: bash update.sh --push"
+  echo "   O manualmente: git add -A && git commit -m 'sync: \$(date +%Y-%m-%d)' && git push"
+fi

@@ -144,12 +144,17 @@ ollama create helix-scout -f ~/helix_asisten/ollama/helix-scout.Modelfile
 
 **Cómo Helix los invoca (Capa 0):**
 ```bash
-# Para logs / salida Docker
-ollama run helix-scout "Analiza este log y resume los errores:\n$(cat app.log)"
+# Helper unificado (recomendado)
+bash ~/helix_asisten/scripts/capa0.sh logs      "$(cat app.log)"
+bash ~/helix_asisten/scripts/capa0.sh code      "Debug este error de SQLAlchemy: ..."
+bash ~/helix_asisten/scripts/capa0.sh transform "class User(BaseModel): ..."
 
-# Para bug de código
-ollama run helix-coder "Debug este error de SQLAlchemy: [error]"
+# Invocación directa
+ollama run helix-scout "Analiza este log: $(cat app.log)"
+ollama run helix-coder "Debug este error: ..."
 ```
+
+Si `ollama` no está instalado, `capa0.sh` retorna exit code 2 → Helix escala automáticamente a Capa 1.
 
 ---
 
@@ -263,18 +268,14 @@ Activar: `ruflo daemon start`
 ## Verificar instalación en nueva máquina
 
 ```bash
-# Verificación rápida (categorías críticas)
+# 1. Verificar RuFlo (35 categorías, 95+ checks)
 sh ~/helix_asisten/scripts/verify-appliance.sh --quick
+sh ~/helix_asisten/scripts/verify-appliance.sh            # completo
+sh ~/helix_asisten/scripts/verify-appliance.sh --json     # output JSON
 
-# Verificación completa (35 categorías, 95+ checks)
-sh ~/helix_asisten/scripts/verify-appliance.sh
-
-# Verificar categoría específica
-sh ~/helix_asisten/scripts/verify-appliance.sh --category memory
-sh ~/helix_asisten/scripts/verify-appliance.sh --category security
-
-# Output JSON para integración
-sh ~/helix_asisten/scripts/verify-appliance.sh --json
+# 2. Verificar Helix engine inyectado en un proyecto
+bash ~/helix_asisten/scripts/verify-helix-engine.sh ~/mi-proyecto
+# (sin argumento usa el directorio actual)
 ```
 
 ## CLI de ruflo (comandos frecuentes)
