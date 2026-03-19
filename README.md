@@ -14,19 +14,34 @@ Luego instalar los MCPs (el script te los muestra).
 ## Estructura
 
 ```
-claude/           → ~/.claude/
-  CLAUDE.md       → Instrucciones globales de Helix
-  settings.json   → Configuración Claude Code (Agent Teams habilitado)
-  *.sh / *.py     → Scripts de auto-evolución
-  agents/         → Definiciones de agentes especializados
-  commands/       → Comandos personalizados
-  memory/         → Memoria persistente (design-system, agents-index, evoluciones)
-  skills/         → Skills reutilizables entre proyectos
+claude/              → ~/.claude/ (config global)
+  CLAUDE.md          → Instrucciones globales de Helix + protocolo de capas
+  settings.json      → Agent Teams habilitado
+  *.sh / *.py        → Scripts de auto-evolución (evolve, session-start/end, self-check)
+  agents/            → 18 agentes activos + 17 deshabilitados
+  commands/          → claude-flow-help/memory/swarm
+  memory/            → design-system, agents-index, evolution-log, topics
+  skills/            → 28 skills reutilizables
 
-template/         → ~/.claude-template/
-  CLAUDE.md       → Template CLAUDE.md para nuevos proyectos
-  init-project.sh → Script de inicialización de proyecto
-  .claude/        → Memoria y skills base del template
+template/            → ~/.claude-template/ (base para nuevos proyectos)
+  CLAUDE.md          → Template CLAUDE.md de proyecto
+  init-project.sh    → Script de inicialización
+  .claude/           → Memoria y skills del template
+
+helix-engine/        → Motor Helix inyectable en cualquier proyecto
+  .mcp.json          → MCP claude-flow con v3 + HNSW + SONA activados
+  .claude/
+    agents/          → 26 categorías: sparc, swarm, v3, github, optimization...
+    commands/        → analysis, automation, github, hooks, monitoring, sparc...
+    helpers/         → hook-handler.cjs, auto-memory-hook.mjs, router.cjs,
+                       session.cjs, intelligence.cjs, memory.cjs, statusline.cjs...
+    skills/          → 31 skills: v3-*, swarm-*, agentdb-*, reasoningbank-*, sparc-*
+    settings.json    → Hooks: PreToolUse, PostToolUse, UserPromptSubmit, SessionStart/End
+    statusline.mjs   → Status line dinámica
+  .claude-flow/
+    config.yaml      → RuFlo V3: hierarchical-mesh, HNSW, SONA, ReasoningBank
+    CAPABILITIES.md  → Referencia completa de capacidades
+    security/        → Audit config
 ```
 
 ## MCPs requeridos
@@ -48,6 +63,15 @@ template/         → ~/.claude-template/
 
 Declarar en el `CLAUDE.md` de cada proyecto: `HELIX_MODE: helix_control_total`
 
+## Inyectar Helix en un nuevo proyecto
+
+```bash
+# Desde la raíz del proyecto nuevo:
+bash ~/helix_asisten/inject-project.sh
+# O pasar la ruta explícita:
+bash ~/helix_asisten/inject-project.sh ~/mis-proyectos/nuevo-proyecto
+```
+
 ## Actualizar el repo desde la máquina actual
 
 ```bash
@@ -56,3 +80,9 @@ bash update.sh
 git add -A && git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```
+
+## Nota sobre Ollama (Capa 0)
+
+Ollama no es una config técnica — es un protocolo de comportamiento en `claude/CLAUDE.md`.
+Helix evalúa si usar Ollama primero (logs/texto largo) basado en la señal de la tarea, no por config cableada.
+El modelo local se instala con: `ollama pull <modelo>` en la nueva máquina.

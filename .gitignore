@@ -21,6 +21,14 @@ mcp-servers/
 # Per-project memory (vive en cada proyecto)
 projects/
 
+# Helix engine — runtime (no versionar)
+helix-engine/.claude-flow/data/
+helix-engine/.claude-flow/sessions/
+helix-engine/.claude-flow/logs/
+helix-engine/.claude-flow/neural/
+helix-engine/.claude-flow/metrics/
+helix-engine/.claude/settings.local.json
+
 # Sistema
 .DS_Store
 Thumbs.db
