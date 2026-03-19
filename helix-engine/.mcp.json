@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@claude-flow/cli@latest",
+        "@claude-flow/cli@3.5.41",
         "mcp",
         "start"
       ],
