@@ -1,0 +1,20 @@
+[INIT] Ecosistema global inicializado
+[2026-03-08 20:20] [LEARN] [operatividad] sed falla con caracteres especiales : , # | — usar python3 con env vars para manipulación de texto en bash (trigger: bug en evolve.sh sesión #1)
+[2026-03-08 20:29] [LEARN] [operatividad] test desde fuera de proyecto (trigger: prueba auto-detección)
+[2026-03-08 20:29] [LEARN] [operatividad] test desde raíz del proyecto (trigger: prueba dual-write)
+[2026-03-08 20:27] [LEARN] [operatividad] test desde fuera de proyecto (trigger: prueba auto-detección)
+[2026-03-08 20:27] [LEARN] [docker] test dual-write desde proyecto (trigger: prueba dual-write)
+[2026-03-08 20:32] [LEARN] [operatividad] set -euo pipefail: [[ -n '' ]] && cmd devuelve exit 1 cuando condición es falsa — usar if/fi en lugar de && para comandos condicionales (trigger: bug en evolve.sh dual-write)
+[2026-03-08 20:32] [LEARN] [operatividad] Los marcadores de sección en CLAUDE.md usan nombres en inglés (OPERABILITY, SECURITY, etc.) pero las categorías de evolve.sh son en español — siempre mapear con case/esac antes de construir el marcador (trigger: bug categorías español/inglés en evolve.sh)
+[2026-03-08 20:30] [LEARN] [operatividad] Para pasar strings con caracteres especiales a python3 desde bash: usar variables de entorno (PYVAR=valor python3 - archivo <<'PYEOF') — evita todo problema de escaping (trigger: patrón py_insert con env vars)
+[2026-03-08 20:58] [LEARN] [operatividad] ((VAR++)) falla con set -euo pipefail cuando VAR=0 porque evalúa a 0 (falso) — siempre usar VAR=$((VAR + 1)) para aritmética segura en bash (trigger: bug en self-check.sh)
+[2026-03-08 20:58] [LEARN] [operatividad] git diff HEAD sin filtro de archivos puede capturar texto de CLAUDE.md causando falsos positivos — filtrar con -- '*.ts' '*.tsx' para checks de frontend (trigger: bug en self-check.sh detección admin)
+[2026-03-08 20:58] [LEARN] [operatividad] wc -l puede devolver espacios y saltos de línea — siempre limpiar con tr -d '[:space:]' o usar trim antes de comparar numéricamente (trigger: bug en self-check.sh RECENT_ERRORS)
+[2026-03-08 20:58] [LEARN] [arquitectura] Memoria por capas: CLAUDE.md=índice liviano (~200 líneas), topics/=historial por categoría, evolution-log.txt=log completo. compress.sh archiva automáticamente al cerrar sesión si >200 líneas (trigger: diseño sistema de memoria Helix)
+[2026-03-08 21:00] [FORGET] 'test desde fuera de proyecto' — era un aprendizaje de prueba, no real
+[2026-03-08 21:07] [VALIDATE] 'selectinload' — usado correctamente en todos los endpoints con relaciones
+[2026-03-08 21:08] [LEARN] [arquitectura] Documentación estática del proyecto (Stack, Commands, Env Vars, Roles) no debe vivir en CLAUDE.md — extraer a .claude/memory/project.md, cargar bajo demanda (trigger: migración docs estáticas)
+[2026-03-08 21:08] [LEARN] [arquitectura] health-check.sh verifica integridad del ecosistema: scripts, markers, JSON, tamaño y peso de tokens — ejecutar si algo se comporta raro (trigger: nuevo script health-check)
+[2026-03-08 21:11] [LEARN] [arquitectura] El proyecto tiene 9 routers (no 5): auth, users, retiros, tareas, activos, adjuntos, reportes, colaboradores, config, modulo_privado — CLAUDE.md code map estaba desactualizado (trigger: exploración inicial del proyecto)
+[2026-03-08 21:11] [LEARN] [arquitectura] Modelos adicionales no documentados: Colaborador (directorio empleados para búsqueda en nuevo retiro) y PlazoConfig (días hábiles por área, configurable desde AdminPage) (trigger: exploración inicial del proyecto)
+[2026-03-08 21:11] [LEARN] [funcionalidad] modulo_privado.py existe como router pero es WIP/placeholder — genera PDF del retiro completado. Es una funcionalidad pendiente identificada (trigger: exploración inicial del proyecto)
