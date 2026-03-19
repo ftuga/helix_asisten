@@ -33,6 +33,25 @@ cp "$CLAUDE_DIR/memory/topics/"*.md    "$REPO_DIR/claude/memory/topics/" 2>/dev/
 # Skills (sync completo)
 rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
 
+# ── helix-engine (proyecto CLIENTE_PRIVADO como fuente) ───────────
+PROJECT_SRC="$HOME/documentos/proyectos_tecnologicos/registro_retiros/proyecto"
+if [[ -d "$PROJECT_SRC/.claude" ]]; then
+  echo "→ Sincronizando helix-engine..."
+  cp "$PROJECT_SRC/.mcp.json" "$REPO_DIR/helix-engine/" 2>/dev/null || true
+  rsync -a --delete "$PROJECT_SRC/.claude/agents/"   "$REPO_DIR/helix-engine/.claude/agents/"
+  rsync -a --delete "$PROJECT_SRC/.claude/commands/" "$REPO_DIR/helix-engine/.claude/commands/"
+  rsync -a --delete "$PROJECT_SRC/.claude/helpers/"  "$REPO_DIR/helix-engine/.claude/helpers/"
+  rsync -a --delete "$PROJECT_SRC/.claude/skills/"   "$REPO_DIR/helix-engine/.claude/skills/"
+  cp "$PROJECT_SRC/.claude/settings.json"  "$REPO_DIR/helix-engine/.claude/" 2>/dev/null || true
+  cp "$PROJECT_SRC/.claude/statusline.mjs" "$REPO_DIR/helix-engine/.claude/" 2>/dev/null || true
+  cp "$PROJECT_SRC/.claude/statusline.sh"  "$REPO_DIR/helix-engine/.claude/" 2>/dev/null || true
+  cp "$PROJECT_SRC/.claude-flow/config.yaml"     "$REPO_DIR/helix-engine/.claude-flow/" 2>/dev/null || true
+  cp "$PROJECT_SRC/.claude-flow/CAPABILITIES.md" "$REPO_DIR/helix-engine/.claude-flow/" 2>/dev/null || true
+  # security (no runtime)
+  [[ -f "$PROJECT_SRC/.claude-flow/security/audit-status.json" ]] && \
+    cp "$PROJECT_SRC/.claude-flow/security/audit-status.json" "$REPO_DIR/helix-engine/.claude-flow/security/" 2>/dev/null || true
+fi
+
 # Template
 [[ -f "$TEMPLATE_DIR/CLAUDE.md" ]]       && cp "$TEMPLATE_DIR/CLAUDE.md" "$REPO_DIR/template/"
 [[ -f "$TEMPLATE_DIR/init-project.sh" ]] && cp "$TEMPLATE_DIR/init-project.sh" "$REPO_DIR/template/"
