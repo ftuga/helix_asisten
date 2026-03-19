@@ -127,16 +127,21 @@ Definidas en `claude/CLAUDE.md`:
 
 Helix se integra con **3 paquetes npm** del ecosistema RuFlo:
 
+**Versión activa: `ruflo v3.5.41`**
+
 | Paquete | Uso en Helix |
 |---------|-------------|
+| `ruflo` | **Paquete principal** — instala todo el ecosistema. Versión activa: 3.5.41 |
 | `@claude-flow/cli` | **MCP server** — el que está en `.mcp.json`. Expone todas las herramientas `mcp__claude-flow__*` |
 | `claude-flow@alpha` | **CLI + transitive deps** — instala `@claude-flow/memory` que usa `auto-memory-hook.mjs` |
 | `agentic-flow@alpha` | **ONNX embeddings** — usado por `learning-service.mjs` para embeddings semánticos reales |
 
 ```
-.mcp.json  ──uses──►  @claude-flow/cli@latest  (MCP server)
-auto-memory-hook.mjs  ──requires──►  @claude-flow/memory  (via claude-flow@alpha transitivo)
-learning-service.mjs  ──requires──►  agentic-flow@alpha  (ONNX OptimizedEmbedder)
+ruflo v3.5.41  ──incluye──►  @claude-flow/cli  +  @claude-flow/memory  +  agentic-flow
+
+.mcp.json             ──uses──►  @claude-flow/cli@latest  (MCP server)
+auto-memory-hook.mjs  ──uses──►  @claude-flow/memory      (memoria persistente)
+learning-service.mjs  ──uses──►  agentic-flow@alpha       (ONNX OptimizedEmbedder)
 statusline.mjs        ──calls──►  npx agentic-flow@alpha mcp status
 ```
 
