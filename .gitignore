@@ -1,0 +1,26 @@
+# Nunca subir credentials ni historial
+*.credentials.json
+.credentials.json
+history.jsonl
+*.jsonl
+
+# Caché y efímeros
+cache/
+downloads/
+paste-cache/
+shell-snapshots/
+session-env/
+sessions/
+telemetry/
+file-history/
+backups/
+plans/
+plugins/
+mcp-servers/
+
+# Per-project memory (vive en cada proyecto)
+projects/
+
+# Sistema
+.DS_Store
+Thumbs.db
