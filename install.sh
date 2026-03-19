@@ -46,6 +46,8 @@ cp "$REPO_DIR/claude/agents/disabled/"*.md "$CLAUDE_DIR/agents/disabled/" 2>/dev
 # ── 4. Commands ─────────────────────────────────────────────
 echo "→ Copiando commands..."
 cp "$REPO_DIR/claude/commands/"*.md     "$CLAUDE_DIR/commands/" 2>/dev/null || true
+# Comando helix_control_total (activa el modo desde cualquier proyecto)
+cp "$REPO_DIR/claude/commands/helix_control_total.md" "$CLAUDE_DIR/commands/" 2>/dev/null || true
 
 # ── 5. Memory ───────────────────────────────────────────────
 echo "→ Copiando memory..."
