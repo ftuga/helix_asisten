@@ -11,17 +11,19 @@ bash ~/helix_asisten/install.sh
 
 Luego instalar los MCPs (el script te los muestra).
 
+---
+
 ## Estructura
 
 ```
 claude/              → ~/.claude/ (config global)
   CLAUDE.md          → Instrucciones globales de Helix + protocolo de capas
-  settings.json      → Agent Teams habilitado
+  settings.json      → Agent Teams habilitado (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1)
   *.sh / *.py        → Scripts de auto-evolución (evolve, session-start/end, self-check)
   agents/            → 18 agentes activos + 17 deshabilitados
   commands/          → claude-flow-help/memory/swarm
   memory/            → design-system, agents-index, evolution-log, topics
-  skills/            → 28 skills reutilizables
+  skills/            → 28 skills reutilizables entre proyectos
 
 template/            → ~/.claude-template/ (base para nuevos proyectos)
   CLAUDE.md          → Template CLAUDE.md de proyecto
@@ -31,18 +33,93 @@ template/            → ~/.claude-template/ (base para nuevos proyectos)
 helix-engine/        → Motor Helix inyectable en cualquier proyecto
   .mcp.json          → MCP claude-flow con v3 + HNSW + SONA activados
   .claude/
-    agents/          → 26 categorías: sparc, swarm, v3, github, optimization...
+    agents/          → 26 categorías: sparc, swarm, v3, github, optimization,
+                       hive-mind, consensus, sublinear, goal, dual-mode...
     commands/        → analysis, automation, github, hooks, monitoring, sparc...
     helpers/         → hook-handler.cjs, auto-memory-hook.mjs, router.cjs,
                        session.cjs, intelligence.cjs, memory.cjs, statusline.cjs...
     skills/          → 31 skills: v3-*, swarm-*, agentdb-*, reasoningbank-*, sparc-*
     settings.json    → Hooks: PreToolUse, PostToolUse, UserPromptSubmit, SessionStart/End
-    statusline.mjs   → Status line dinámica
+    statusline.mjs   → Status line dinámica (swarm + tokens)
+    statusline.sh    → Status line alternativa bash
   .claude-flow/
     config.yaml      → RuFlo V3: hierarchical-mesh, HNSW, SONA, ReasoningBank
     CAPABILITIES.md  → Referencia completa de capacidades
     security/        → Audit config
 ```
+
+---
+
+## Panel de estado (RuFlo V3 Statusline)
+
+Al abrir Claude Code en un proyecto con helix-engine, verás este panel en la barra de estado:
+
+```
+▊ RuFlo V3 ● usuario  │  ⏇ main  │  Claude Code
+──────────────────────────────────────────────────────
+🏗️  DDD Domains    [○○○○○]  0/5    ⚡ target: 150x-12500x
+🤖 Swarm  ○ [ 0/15]  👥 0    🪝 0/17    🔴 CVE 0/3    💾 5MB    🧠   0%
+🔧 Architecture    ADRs ●0/0  │  DDD ●  0%  │  Security ●PENDING
+📊 AgentDB    Vectors ●0  │  Size 0KB  │  Tests ●0  │  ◆API
+```
+
+| Indicador | Qué mide |
+|-----------|----------|
+| `DDD Domains [○○○○○]` | Progreso de dominios DDD implementados (0-5) |
+| `target: 150x-12500x` | Objetivo de speedup con HNSW vs búsqueda lineal |
+| `Swarm [0/15]` | Agentes activos del swarm (máx 15) |
+| `🪝 0/17` | Hooks ejecutándose en esta sesión |
+| `CVE 0/3` | CVEs de seguridad pendientes de resolver |
+| `💾` | Uso de memoria del proceso |
+| `🧠` | Porcentaje de contexto de Claude utilizado |
+| `ADRs` | Architecture Decision Records registrados |
+| `AgentDB Vectors` | Vectores HNSW indexados en memoria semántica |
+
+Lo genera `statusline.cjs` en `.claude/helpers/`. Lee métricas de `.claude-flow/data/` y `.claude-flow/metrics/`.
+
+---
+
+## Capas de memoria (RuFlo V3)
+
+Definidas en `helix-engine/.claude-flow/config.yaml`:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Capa 1: Working Memory (cache en RAM, 100 entradas) │
+│     ↓ desborda a                                     │
+│  Capa 2: HNSW Vector Store (búsqueda semántica)      │
+│     persistida en .claude-flow/data/                 │
+│     150x-12500x más rápida que búsqueda lineal       │
+│     ↓ conectada a                                    │
+│  Capa 3: Memory Graph (PageRank, máx 5000 nodos)     │
+│     similarityThreshold: 0.8                         │
+│     pageRankDamping: 0.85                            │
+│     ↓ aprende con                                    │
+│  Capa 4: LearningBridge (SONA + ReasoningBank)       │
+│     confidenceDecayRate: 0.005                       │
+│     accessBoostAmount: 0.03                          │
+│     consolidationThreshold: 10 accesos               │
+└─────────────────────────────────────────────────────┘
+```
+
+**AgentScopes:** cada agente tiene su propia vista de memoria (project/local/user). No se mezclan contextos entre agentes.
+
+---
+
+## Capas de orquestación de Helix
+
+Definidas en `claude/CLAUDE.md`:
+
+| Capa | Cuándo | Qué activa |
+|------|--------|------------|
+| **0 — Ollama** | Logs, texto largo, salida Docker | Modelo local gratuito. Si detecta problema → escala |
+| **1 — Subagents** | Un artefacto concreto (endpoint, componente, query) | Agent tool con agente especializado |
+| **2 — Swarm** | Feature que toca ≥2 capas del stack | claude-flow `swarm_init` + `task_orchestrate` |
+| **3 — Agent Teams** | Colaboración activa frontend+backend+tests | Agent Teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) |
+
+**Ollama:** no es config técnica. Es una regla de comportamiento en `CLAUDE.md`. En máquina nueva: `ollama pull <modelo>`.
+
+---
 
 ## MCPs requeridos
 
@@ -53,6 +130,15 @@ helix-engine/        → Motor Helix inyectable en cualquier proyecto
 | `browser-tools` | Auditorías de browser |
 | `puppeteer` | Verificación visual de UI |
 
+```bash
+claude mcp add context7 -- npx -y @upstash/context7-mcp
+claude mcp add claude-flow -- npx claude-flow@alpha mcp start
+claude mcp add browser-tools -- npx @agentdeskai/browser-tools-mcp@1.2.0
+claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
+```
+
+---
+
 ## Modos de Helix
 
 | Modo | Descripción |
@@ -62,6 +148,8 @@ helix-engine/        → Motor Helix inyectable en cualquier proyecto
 | `helix_off` | Claude responde directo |
 
 Declarar en el `CLAUDE.md` de cada proyecto: `HELIX_MODE: helix_control_total`
+
+---
 
 ## Inyectar Helix en un nuevo proyecto
 
@@ -80,9 +168,3 @@ bash update.sh
 git add -A && git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```
-
-## Nota sobre Ollama (Capa 0)
-
-Ollama no es una config técnica — es un protocolo de comportamiento en `claude/CLAUDE.md`.
-Helix evalúa si usar Ollama primero (logs/texto largo) basado en la señal de la tarea, no por config cableada.
-El modelo local se instala con: `ollama pull <modelo>` en la nueva máquina.
