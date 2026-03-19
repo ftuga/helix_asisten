@@ -60,6 +60,11 @@ cp "$REPO_DIR/claude/memory/topics/"*.md   "$CLAUDE_DIR/memory/topics/" 2>/dev/n
 echo "→ Copiando skills..."
 cp -r "$REPO_DIR/claude/skills/." "$CLAUDE_DIR/skills/"
 
+# ── 6b. Statusline global (RuFlo V3 panel en cualquier proyecto) ──
+echo "→ Instalando statusline global..."
+mkdir -p "$CLAUDE_DIR/helpers"
+cp "$REPO_DIR/helix-engine/.claude/helpers/statusline.cjs" "$CLAUDE_DIR/helpers/"
+
 # ── 7. Template de nuevo proyecto ───────────────────────────
 echo "→ Copiando template..."
 cp "$REPO_DIR/template/CLAUDE.md"       "$TEMPLATE_DIR/"

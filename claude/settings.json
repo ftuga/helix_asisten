@@ -4,6 +4,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "printf 'Claude  |  %s  |  %s' \"$(whoami)@$(hostname -s)\" \"$(pwd)\""
+    "command": "node \"$HOME/.claude/helpers/statusline.cjs\""
   }
 }

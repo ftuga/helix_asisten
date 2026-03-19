@@ -37,6 +37,10 @@ cp "$CLAUDE_DIR/memory/topics/"*.md    "$REPO_DIR/claude/memory/topics/" 2>/dev/
 # Skills (sync completo)
 rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
 
+# Statusline global (si fue actualizado en ~/.claude/helpers/)
+[[ -f "$CLAUDE_DIR/helpers/statusline.cjs" ]] && \
+  cp "$CLAUDE_DIR/helpers/statusline.cjs" "$REPO_DIR/helix-engine/.claude/helpers/"
+
 # ── helix-engine (proyecto CLIENTE_PRIVADO como fuente) ───────────
 PROJECT_SRC="$HOME/documentos/proyectos_tecnologicos/registro_retiros/proyecto"
 if [[ -d "$PROJECT_SRC/.claude" ]]; then
