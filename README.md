@@ -121,20 +121,45 @@ Definidas en `claude/CLAUDE.md`:
 
 ---
 
+## Ecosistema RuFlo
+
+> Fuente: https://github.com/ruvnet/ruflo  |  https://github.com/ruvnet/claude-flow
+
+Helix se integra con **3 paquetes npm** del ecosistema RuFlo:
+
+| Paquete | Uso en Helix |
+|---------|-------------|
+| `@claude-flow/cli` | **MCP server** — el que está en `.mcp.json`. Expone todas las herramientas `mcp__claude-flow__*` |
+| `claude-flow@alpha` | **CLI + transitive deps** — instala `@claude-flow/memory` que usa `auto-memory-hook.mjs` |
+| `agentic-flow@alpha` | **ONNX embeddings** — usado por `learning-service.mjs` para embeddings semánticos reales |
+
+```
+.mcp.json  ──uses──►  @claude-flow/cli@latest  (MCP server)
+auto-memory-hook.mjs  ──requires──►  @claude-flow/memory  (via claude-flow@alpha transitivo)
+learning-service.mjs  ──requires──►  agentic-flow@alpha  (ONNX OptimizedEmbedder)
+statusline.mjs        ──calls──►  npx agentic-flow@alpha mcp status
+```
+
 ## MCPs requeridos
 
 | MCP | Propósito |
 |-----|-----------|
+| `claude-flow` | Orquestación de swarms (Capa 2) — via `@claude-flow/cli` |
 | `context7` | Documentación actualizada de librerías |
-| `claude-flow` | Orquestación de swarms (Capa 2) |
 | `browser-tools` | Auditorías de browser |
 | `puppeteer` | Verificación visual de UI |
 
 ```bash
+# MCP principal (usa @claude-flow/cli — NO claude-flow@alpha, son distintos)
+claude mcp add claude-flow -- npx -y @claude-flow/cli@latest mcp start
+
+# Otros MCPs
 claude mcp add context7 -- npx -y @upstash/context7-mcp
-claude mcp add claude-flow -- npx claude-flow@alpha mcp start
 claude mcp add browser-tools -- npx @agentdeskai/browser-tools-mcp@1.2.0
 claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
+
+# Calentar caché de agentic-flow (para ONNX embeddings en learning-service)
+npx agentic-flow@alpha --version
 ```
 
 ---
