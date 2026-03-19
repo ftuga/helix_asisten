@@ -78,12 +78,35 @@ for entry in "${HELIX_IGNORES[@]}"; do
 done
 echo "  ✓ .gitignore actualizado"
 
+# ── CLAUDE.md — insertar HELIX_MODE si falta ────────────────
+CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
+if [[ -f "$CLAUDE_MD" ]]; then
+  if ! grep -q "HELIX_MODE:" "$CLAUDE_MD"; then
+    # Insertar después de la primera línea (título)
+    sed -i '1a\\n> HELIX_MODE: helix_control_total' "$CLAUDE_MD"
+    echo "  ✓ HELIX_MODE: helix_control_total insertado en CLAUDE.md"
+  else
+    echo "  ⚠️  HELIX_MODE ya declarado en CLAUDE.md"
+  fi
+else
+  # Crear CLAUDE.md mínimo si no existe
+  cat > "$CLAUDE_MD" <<'EOF'
+# CLAUDE.md
+
+> HELIX_MODE: helix_control_total
+
+Proyecto inicializado con Helix engine.
+Ver reglas universales en `~/.claude/CLAUDE.md`.
+EOF
+  echo "  ✓ CLAUDE.md creado con HELIX_MODE: helix_control_total"
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ Helix engine inyectado en $PROJECT_DIR"
 echo ""
 echo "   Próximos pasos:"
-echo "   1. Declara en tu CLAUDE.md: HELIX_MODE: helix_control_total"
+echo "   1. HELIX_MODE ya declarado en CLAUDE.md ✓"
 echo "   2. Instala MCPs si no están (ver install.sh)"
 echo "   3. Abre Claude Code en el proyecto"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
