@@ -189,7 +189,9 @@ SKILL_COUNT=$(find "$GLOBAL_SKILLS_DIR" "$PROJECT_SKILLS_DIR" -name "*.md" 2>/de
 check "${SKILL_COUNT:-0} skill(s) disponibles"
 
 LINES=$(wc -l < "$HOME/.claude/CLAUDE.md" | tr -d '[:space:]')
-if [[ "$LINES" -gt 180 ]]; then
+if [[ "$LINES" -gt 220 ]]; then
+  fail "CLAUDE.md en $LINES líneas — EJECUTAR: bash ~/.claude/compress.sh AHORA"
+elif [[ "$LINES" -gt 180 ]]; then
   warn "CLAUDE.md en $LINES líneas — ejecutar compress.sh pronto"
 else
   check "CLAUDE.md en $LINES líneas (dentro del límite)"
