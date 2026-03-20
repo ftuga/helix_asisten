@@ -104,6 +104,13 @@ fi
 # ── Registrar inicio de sesión ────────────────────────────────
 echo "$DATE — SESIÓN INICIADA${PROJECT_ROOT:+ [$PROJECT_ROOT]}" >> "$GLOBAL_MEMORY_DIR/session-log.txt"
 
+# ── Detectar modo economía persistente ───────────────────────
+if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/.helix-economia" ]]; then
+  echo -e "${YELLOW}💰 [HELIX-ECONOMIA-ACTIVO] Modo economía persistente.${NC}"
+  echo "   Sin subagentes · Sin swarm · Grep antes que Read · Respuestas cortas"
+  echo ""
+fi
+
 # ── Detectar si proyecto necesita análisis inicial ────────────
 if [[ -n "$PROJECT_ROOT" ]]; then
   ANALYSIS_FILE="$PROJECT_ROOT/.claude/memory/helix-analysis.md"
