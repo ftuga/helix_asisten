@@ -1,89 +1,116 @@
 # /helix-analiza — Análisis Inicial del Proyecto
 
-Ejecuta un diagnóstico completo del proyecto actual y guarda los resultados como memoria permanente.
-Esto evita que Helix tenga que releer el proyecto desde cero en cada sesión.
+Diagnóstico completo del proyecto. Guarda memoria persistente para no repetir el trabajo.
+Arquitectura híbrida: resumen en archivo (carga siempre), detalles en vector memory si está disponible.
 
 ---
 
-## Protocolo de ejecución (seguir en orden)
+## Paso 0 — Auto-detectar capacidades disponibles
 
-### Paso 1 — Detección del stack
-Leer en paralelo los archivos que existan:
-- `package.json` → frameworks y dependencias JS/TS
-- `requirements.txt` / `pyproject.toml` → dependencias Python
-- `compose.yml` / `docker-compose.yml` → servicios y arquitectura Docker
-- `CLAUDE.md` del proyecto → contexto ya registrado por el usuario
-- Estructura de carpetas raíz → arquitectura general del proyecto
+Antes de empezar, evaluar:
 
-### Paso 2 — Identificar agentes necesarios
-Basado en el stack, mapear qué agentes de Helix aplican a este proyecto.
-Indicar cuáles ya están activos y cuáles habría que traer o configurar.
-
-### Paso 3 — Identificar skills aplicables
-Comparar las skills disponibles en `~/.claude/skills/` y `.claude/skills/` del proyecto
-contra las necesidades detectadas. Indicar si falta alguna skill crítica.
-
-### Paso 4 — Pre-mapear zonas de riesgo
-Identificar archivos/funciones que típicamente son frágiles en este tipo de stack.
-Si el proyecto ya tiene un mapa de riesgo en CLAUDE.md, enriquecerlo.
-
-### Paso 5 — Generar helix-analysis.md
-Escribir el diagnóstico completo en `.claude/memory/helix-analysis.md`
-usando la estructura del template (ver abajo). Crear directorio si no existe.
-
-### Paso 6 — Inicializar helix-bitacora.md
-Crear `.claude/memory/helix-bitacora.md` con estructura vacía lista para usar.
-Si ya existe, NO sobreescribir — solo informar que existe.
-
-### Paso 7 — Reportar al usuario
-Mostrar resumen del diagnóstico: stack detectado, agentes recomendados (lista),
-skills faltantes (si hay), zonas de riesgo iniciales.
-Confirmar qué archivos se guardaron y que no volverá a preguntar.
-
----
-
-## Template: helix-analysis.md
-
-```markdown
-# Helix Analysis — {nombre del proyecto}
-> Generado: {fecha} | Versión: 1.0
-> Este archivo es memoria persistente. Helix lo carga al inicio de cada sesión.
-
-## Stack detectado
-- **Backend:** {framework, lenguaje, versión}
-- **Frontend:** {framework, lenguaje, bundler}
-- **Base de datos:** {motor, ORM}
-- **Infraestructura:** {Docker, Nginx, servicios externos}
-- **Auth:** {método de autenticación}
-
-## Agentes recomendados para este proyecto
-| Agente | Cuándo usarlo en este proyecto |
-|--------|-------------------------------|
-| {agente} | {contexto específico} |
-
-## Skills aplicables
-| Skill | Estado | Propósito en este proyecto |
-|-------|--------|---------------------------|
-| {skill} | disponible / falta | {uso concreto} |
-
-## Zonas de riesgo pre-identificadas
-| Archivo/Módulo | Nivel | Razón |
-|----------------|-------|-------|
-| {archivo} | 🔴/🟡/🟢 | {por qué es frágil} |
-
-## Resumen ejecutivo (carga rápida)
-> Máx. 150 palabras. Lo que Helix necesita saber para orientarse sin leer el código.
-{resumen}
+```
+¿Está disponible mcp__claude-flow__memory_store?
+  → Sí: modo VECTOR (detalles en vector, solo resumen en archivo)
+  → No: modo FILE   (todo en helix-analysis-full.md + resumen en helix-analysis.md)
 ```
 
+Para detectarlo: intentar `mcp__claude-flow__memory_store` con un valor de prueba mínimo.
+Si falla o no existe → usar modo FILE. No preguntar al usuario cuál usar.
+
 ---
 
-## Template: helix-bitacora.md
+## Paso 1 — Detección de stack (bash — determinista)
+
+```bash
+bash ~/.claude/helpers/helix-detect-stack.sh {PROJECT_ROOT}
+```
+
+Esto devuelve JSON con: backend, frontend, database, auth, infra, servicios Docker, conteos de archivos.
+Leer el JSON. Si el script falla → detectar manualmente leyendo los archivos clave en paralelo.
+
+---
+
+## Paso 2 — Leer contexto ya conocido
+
+Si existe `{PROJECT_ROOT}/CLAUDE.md` → leer las secciones:
+- MAPA DE ZONAS DE RIESGO
+- DECISIONES DE DISEÑO
+- ARQUITECTURA
+No releer si ya están en contexto.
+
+---
+
+## Paso 3 — Mapear agentes necesarios
+
+Basado en el stack detectado, mapear qué agentes de `~/.claude/memory/agents-index.md` aplican.
+Indicar: cuáles están activos, cuáles habría que habilitar.
+
+---
+
+## Paso 4 — Mapear skills aplicables
+
+Listar skills en `~/.claude/skills/` y `{PROJECT_ROOT}/.claude/skills/` que aplican al stack.
+Indicar si falta alguna skill crítica para este tipo de proyecto.
+
+---
+
+## Paso 5 — Pre-identificar zonas de riesgo
+
+Basado en el stack y los patrones conocidos, identificar archivos/módulos que típicamente
+son frágiles. Si CLAUDE.md ya tiene un mapa de riesgo, enriquecerlo.
+
+---
+
+## Paso 6 — Guardar resultados
+
+### Siempre (ambos modos):
+
+Escribir `{PROJECT_ROOT}/.claude/memory/helix-analysis.md` con SOLO el resumen ejecutivo:
+
+```markdown
+# Helix Analysis — {nombre}
+> Generado: {fecha} | Modo: vector|file | Actualizar con: /helix-actualiza
+> ⚠️ Si este archivo tiene >30 días, ejecutar /helix-actualiza
+
+## Resumen ejecutivo
+{≤150 palabras: stack, agentes clave, skills críticas, riesgos principales}
+
+## Stack (resumen)
+Backend: {x} | Frontend: {x} | DB: {x} | Auth: {x} | Infra: {x}
+
+## Agentes prioritarios para este proyecto
+{lista corta: agente → cuándo usarlo aquí}
+
+## Skills críticas
+{lista: skill → disponible/falta}
+
+## Zonas de riesgo iniciales
+{lista: archivo → nivel → razón}
+```
+
+### Modo VECTOR (si MCP disponible):
+
+Almacenar en vector memory con namespace `helix/{project_name}/`:
+- `helix/{name}/stack` → JSON completo del stack detectado
+- `helix/{name}/agents` → mapeo detallado de agentes
+- `helix/{name}/skills` → skills completas con razones
+- `helix/{name}/risks` → zonas de riesgo con contexto
+
+### Modo FILE (fallback):
+
+Escribir `{PROJECT_ROOT}/.claude/memory/helix-analysis-full.md` con todos los detalles.
+
+---
+
+## Paso 7 — Inicializar bitácora
+
+Si `helix-bitacora.md` NO existe → crearlo:
 
 ```markdown
 # Helix Bitácora — {nombre del proyecto}
 > Iniciada: {fecha}
-> Propósito: Registro continuo para orientación rápida sin releer el proyecto.
+> Propósito: Registro continuo. Helix actualiza automáticamente vía hook PostToolUse.
 
 ## 📝 Cambios Realizados
 | Fecha | Archivo(s) | Cambio | Sesión |
@@ -92,22 +119,37 @@ Confirmar qué archivos se guardaron y que no volverá a preguntar.
 ## 💡 Recomendaciones
 | Fecha | Recomendación | Estado |
 |-------|--------------|--------|
-| | | pendiente / implementada / descartada |
 
 ## 🐛 Errores Cometidos
-| Fecha | Error | Solución | Aprendizaje registrado |
-|-------|-------|----------|------------------------|
+| Fecha | Error | Solución | Aprendizaje |
+|-------|-------|----------|-------------|
 
 ## 🧠 Decisiones de Diseño Validadas
 | Fecha | Decisión | Por qué |
 |-------|---------|---------|
 ```
 
+Si ya existe → NO sobreescribir. Informar que existe.
+
 ---
 
-## Si el usuario dice "no" al análisis inicial
+## Paso 8 — Reportar al usuario
 
-1. Ejecutar: `touch {PROJECT_ROOT}/.claude/memory/.analysis-declined`
-   (crear el directorio `.claude/memory/` si no existe)
-2. Decirle: "Entendido. Podés pedirlo cuando quieras con `/helix-analiza`."
-3. No volver a preguntar en sesiones siguientes.
+Mostrar resumen breve:
+- Stack detectado (1 línea)
+- Agentes recomendados (lista)
+- Skills faltantes (si hay)
+- Zonas de riesgo iniciales
+- Modo usado (vector/file) y qué se guardó
+- Confirmar que no volverá a preguntar automáticamente
+
+---
+
+## Si el usuario dijo "no" al análisis automático
+
+```bash
+mkdir -p {PROJECT_ROOT}/.claude/memory
+touch {PROJECT_ROOT}/.claude/memory/.analysis-declined
+```
+
+Decir: "Entendido. Cuando quieras: `/helix-analiza`. No vuelvo a preguntar."
