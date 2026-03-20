@@ -176,6 +176,13 @@ Si `.claude/memory/helix-bitacora.md` existe en el proyecto:
 - Después de cometer un error (bug introducido, enfoque incorrecto) → agregar fila en `🐛 Errores Cometidos`.
 No pedir permiso para actualizar la bitácora — es mantenimiento silencioso.
 
+**9. "Tenemos que hablar" — alerta de salud**
+Si session-start incluye `[HELIX-NECESITAMOS-HABLAR]`:
+- ANTES de responder cualquier tarea → leer `helix-alerta.md` y reportar los problemas al usuario.
+- Formato: "Helix necesita hablar — detecté estos problemas al cerrar la sesión anterior: [lista]. ¿Resolvemos esto primero? (`/helix-actualiza` resuelve la mayoría)"
+- Si el usuario dice "sí" → ejecutar `/helix-actualiza`.
+- Si el usuario dice "no" o quiere continuar → respetar y borrar el archivo: `rm helix-alerta.md`.
+
 ---
 
 ## 💰 CONTROL DE COSTOS (Universal)

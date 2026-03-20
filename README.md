@@ -218,7 +218,7 @@ Declarar en el `CLAUDE.md` de cada proyecto: `HELIX_MODE: helix_control_total`
 
 ---
 
-## Protocolo de Diálogo (v2 — 2026-03-20)
+## Protocolo de Diálogo (v3 — 2026-03-20)
 
 Helix sigue estas reglas de comunicación en toda solicitud:
 
@@ -230,6 +230,99 @@ Helix sigue estas reglas de comunicación en toda solicitud:
 | **Alerta zona 🔴** | Antes de tocar archivos marcados de alto riesgo → declarar qué línea/función se va a cambiar y esperar confirmación. |
 | **Exploración → Implementación** | Features nuevas → proponer ≤3 opciones, esperar elección, implementar. Bugs/tasks concretas → implementar directo. |
 | **Decisiones proactivas** | Decisiones de diseño no triviales → registrarlas en `DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida. |
+| **Análisis inicial** | Si `[HELIX-SUGGEST-ANALYSIS]` en session-start → sugerir `/helix-analiza` al final del primer mensaje. Solo una vez. |
+| **Bitácora silenciosa** | Si `helix-bitacora.md` existe → registrar cambios/recomendaciones/errores sin pedir permiso. |
+| **"Tenemos que hablar"** | Si `[HELIX-NECESITAMOS-HABLAR]` en session-start → reportar problemas de salud ANTES de cualquier tarea. |
+
+---
+
+## Sistema de Auto-Mantenimiento (v3 — 2026-03-20)
+
+Helix monitorea su propia salud y gestiona su contexto automáticamente.
+
+### Análisis de proyecto (`/helix-analiza`)
+
+Al llegar a un proyecto nuevo, Helix ofrece hacer un diagnóstico inicial:
+- Detecta stack (FastAPI, React, PostgreSQL, Docker...) con `helix-detect-stack.sh`
+- Mapea agentes y skills relevantes
+- Identifica zonas de riesgo
+- Guarda en **memoria híbrida**: resumen ≤150 palabras en `helix-analysis.md`, detalles en vector memory (si claude-flow MCP disponible) o `helix-analysis-full.md` (fallback)
+- Inicializa `helix-bitacora.md` con 4 tablas: Cambios / Recomendaciones / Errores / Decisiones
+
+```bash
+# Activar manualmente
+/helix-analiza
+
+# Helix lo sugiere automáticamente al detectar [HELIX-SUGGEST-ANALYSIS]
+# en session-start cuando el proyecto no tiene helix-analysis.md
+```
+
+### Bitácora automática (`helix-bitacora.md`)
+
+Hook real en `settings.json` (PostToolUse para Write/Edit/MultiEdit):
+
+```
+helix-bitacora-hook.sh  →  agrega fila en tabla "📝 Cambios Realizados"
+```
+
+Helix también actualiza la bitácora al dar recomendaciones y al cometer errores (regla en CLAUDE.md).
+
+### Salud de Helix (`/helix-salud`)
+
+Evalúa 3 dimensiones en tiempo real:
+
+| Dimensión | Qué mide | Umbral |
+|-----------|----------|--------|
+| **Contexto** | Líneas de CLAUDE.md + edad del análisis | <60pts = alerta |
+| **Calidad** | Errores en bitácora + recomendaciones pendientes | <60pts = alerta |
+| **Overhead** | Agentes activos + skills + sesiones sin aprendizajes | <60pts = alerta |
+
+```bash
+/helix-salud    # reporte interactivo on-demand
+```
+
+### Sistema "Tenemos que hablar"
+
+Pipeline automático de detección de problemas:
+
+```
+session-end.sh
+  └─► helix-metricas.sh  (evalúa 3 dimensiones)
+      └─► si alerta=true  → escribe helix-alerta.md
+          si alerta=false → borra helix-alerta.md (si existía)
+
+session-start.sh
+  └─► detecta helix-alerta.md
+      └─► emite [HELIX-NECESITAMOS-HABLAR]
+          Helix lee la alerta y la reporta ANTES de cualquier tarea
+```
+
+### Mantenimiento de CLAUDE.md
+
+Ningún comando deja CLAUDE.md "por arreglar después":
+
+| Comando | Qué hace con CLAUDE.md |
+|---------|------------------------|
+| `/helix-actualiza` | Paso A (obligatorio primero): comprime si >180 líneas, archiva evoluciones antiguas |
+| `/economia` | Paso 1 (obligatorio primero): comprime si >180 líneas antes de activar restricciones |
+| `self-check.sh` | Falla HARD si >220 líneas — bloquea cierre de tarea |
+
+### Control de costos (`/economia`)
+
+```bash
+/economia       # activar (comprime CLAUDE.md + activa restricciones)
+/economia off   # desactivar
+/economia?      # estado actual
+```
+
+Restricciones del modo economía:
+- Sin subagentes salvo ≥3 dominios simultáneos
+- Sin Capa 2 (swarm deshabilitado)
+- Respuestas en bullets, sin prosa explicativa
+- Grep antes que Read siempre
+- Sin sugerencias proactivas fuera del scope
+
+Persiste entre sesiones via `.helix-economia` en `.claude/memory/` del proyecto.
 
 ---
 
