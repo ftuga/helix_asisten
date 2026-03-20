@@ -113,11 +113,22 @@ if [[ -n "$PROJECT_ROOT" ]]; then
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo "[HELIX-SUGGEST-ANALYSIS]"
     echo "Este proyecto no tiene análisis inicial ni bitácora guardados."
-    echo "Helix debe preguntar al usuario si desea que los cree ahora."
+    echo "Helix: al final de tu primer mensaje, sugerir /helix-analiza al usuario."
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
   elif [[ -f "$ANALYSIS_FILE" ]]; then
-    echo -e "${GREEN}🔍 Análisis de proyecto cargado desde memoria.${NC}"
+    # Verificar obsolescencia (>30 días)
+    ANALYSIS_AGE=$(python3 -c "
+import os, time
+mtime = os.path.getmtime('$ANALYSIS_FILE')
+days = (time.time() - mtime) / 86400
+print(int(days))
+" 2>/dev/null || echo "0")
+    if [[ "$ANALYSIS_AGE" -gt 30 ]]; then
+      echo -e "${YELLOW}⚠️  Análisis del proyecto tiene ${ANALYSIS_AGE} días — considerar /helix-actualiza${NC}"
+    else
+      echo -e "${GREEN}🔍 Análisis del proyecto en memoria (${ANALYSIS_AGE} días).${NC}"
+    fi
     echo ""
   fi
 fi

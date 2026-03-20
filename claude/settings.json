@@ -5,5 +5,18 @@
   "statusLine": {
     "type": "command",
     "command": "node \"$HOME/.claude/helpers/statusline.cjs\""
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/helix-bitacora-hook.sh\""
+          }
+        ]
+      }
+    ]
   }
 }

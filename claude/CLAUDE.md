@@ -160,12 +160,14 @@ Para features nuevas → proponer opciones (máx 3 alternativas breves) y espera
 Cuando se toma una decisión de diseño no trivial → agregarla a `## 🧠 DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
 
 **7. Análisis inicial de proyecto**
-Si session-start incluye `[HELIX-SUGGEST-ANALYSIS]` → en el primer mensaje preguntar:
-> "Noto que este proyecto no tiene análisis inicial guardado. ¿Querés que haga un diagnóstico ahora? (stack, agentes necesarios, skills, zonas de riesgo, bitácora). Solo lo hago una vez y queda guardado como memoria — no vuelvo a preguntar."
-
-- Si "sí" → ejecutar `/helix-analiza` completo.
-- Si "no" → `touch {PROJECT_ROOT}/.claude/memory/.analysis-declined` (crear dir si no existe), decir que puede usar `/helix-analiza` cuando quiera. No volver a preguntar.
+Si session-start incluye `[HELIX-SUGGEST-ANALYSIS]`:
+- Responder primero la tarea del usuario si la hay.
+- Al FINAL del primer mensaje agregar una nota breve:
+  > "💡 Noto que este proyecto no tiene análisis guardado. ¿Querés que haga un diagnóstico inicial? (`/helix-analiza`). Solo se hace una vez."
+- Si "sí" → ejecutar `/helix-analiza`.
+- Si "no" → `mkdir -p {PROJECT_ROOT}/.claude/memory && touch {PROJECT_ROOT}/.claude/memory/.analysis-declined`. Mencionar que puede usarlo con `/helix-analiza`. No volver a preguntar.
 - Si `helix-analysis.md` ya existe → no preguntar, cargarlo en silencio.
+- Detección de modo (vector/file): automática — intentar MCP primero, fallback a archivo.
 
 **8. Actualización continua de bitácora**
 Si `.claude/memory/helix-bitacora.md` existe en el proyecto:
