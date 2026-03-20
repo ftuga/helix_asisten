@@ -104,5 +104,23 @@ fi
 # ── Registrar inicio de sesión ────────────────────────────────
 echo "$DATE — SESIÓN INICIADA${PROJECT_ROOT:+ [$PROJECT_ROOT]}" >> "$GLOBAL_MEMORY_DIR/session-log.txt"
 
+# ── Detectar si proyecto necesita análisis inicial ────────────
+if [[ -n "$PROJECT_ROOT" ]]; then
+  ANALYSIS_FILE="$PROJECT_ROOT/.claude/memory/helix-analysis.md"
+  DECLINED_FILE="$PROJECT_ROOT/.claude/memory/.analysis-declined"
+
+  if [[ ! -f "$ANALYSIS_FILE" ]] && [[ ! -f "$DECLINED_FILE" ]]; then
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo "[HELIX-SUGGEST-ANALYSIS]"
+    echo "Este proyecto no tiene análisis inicial ni bitácora guardados."
+    echo "Helix debe preguntar al usuario si desea que los cree ahora."
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+  elif [[ -f "$ANALYSIS_FILE" ]]; then
+    echo -e "${GREEN}🔍 Análisis de proyecto cargado desde memoria.${NC}"
+    echo ""
+  fi
+fi
+
 echo -e "${GREEN}✅ Contexto cargado. Listo para trabajar.${NC}"
 echo ""

@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 11:22<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 11:30<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -159,6 +159,21 @@ Para features nuevas → proponer opciones (máx 3 alternativas breves) y espera
 **6. Registro proactivo de decisiones**
 Cuando se toma una decisión de diseño no trivial → agregarla a `## 🧠 DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
 
+**7. Análisis inicial de proyecto**
+Si session-start incluye `[HELIX-SUGGEST-ANALYSIS]` → en el primer mensaje preguntar:
+> "Noto que este proyecto no tiene análisis inicial guardado. ¿Querés que haga un diagnóstico ahora? (stack, agentes necesarios, skills, zonas de riesgo, bitácora). Solo lo hago una vez y queda guardado como memoria — no vuelvo a preguntar."
+
+- Si "sí" → ejecutar `/helix-analiza` completo.
+- Si "no" → `touch {PROJECT_ROOT}/.claude/memory/.analysis-declined` (crear dir si no existe), decir que puede usar `/helix-analiza` cuando quiera. No volver a preguntar.
+- Si `helix-analysis.md` ya existe → no preguntar, cargarlo en silencio.
+
+**8. Actualización continua de bitácora**
+Si `.claude/memory/helix-bitacora.md` existe en el proyecto:
+- Después de cada cambio significativo (≥1 archivo modificado) → agregar fila en `📝 Cambios Realizados`.
+- Después de dar una recomendación no trivial → agregar fila en `💡 Recomendaciones`.
+- Después de cometer un error (bug introducido, enfoque incorrecto) → agregar fila en `🐛 Errores Cometidos`.
+No pedir permiso para actualizar la bitácora — es mantenimiento silencioso.
+
 ---
 
 ## ✅ CHECKLIST PRE-CIERRE (Universal)
@@ -215,6 +230,8 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 8 | 2026-03-20 | interfaz | Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación | usuario-solicitud-mejora |
 | 9 | 2026-03-20 | interfaz | Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas | usuario-solicitud-mejora |
 | 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
+| 11 | 2026-03-20 | interfaz | Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza | usuario-solicitud |
+| 12 | 2026-03-20 | interfaz | Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso | usuario-solicitud |
 <!-- EVOLUTION_LOG_END -->
 
 ---
