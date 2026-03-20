@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 11:30<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 11:52<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -178,6 +178,28 @@ No pedir permiso para actualizar la bitácora — es mantenimiento silencioso.
 
 ---
 
+## 💰 CONTROL DE COSTOS (Universal)
+
+**Modo economía** — activar con `modo economía` al inicio de la tarea:
+- Sin subagentes salvo ≥3 dominios simultáneos con coordinación activa
+- Sin Capa 2 (swarm deshabilitado)
+- Respuestas ultra-concisas: solo bullets, sin prosa explicativa
+- Grep antes que Read — Read solo con `limit`/`offset` cuando sea necesario
+- Sin sugerencias proactivas fuera del scope exacto de la tarea
+
+**Checklist pre-Read (siempre activo, incluso fuera de modo economía):**
+1. ¿Ya tengo el contenido en contexto? → omitir Read
+2. ¿Grep encuentra lo que necesito? → usar Grep, no Read
+3. ¿Necesito todo el archivo? → usar `limit` y `offset` en Read
+
+**Umbral para subagentes:**
+Un archivo / un dominio → yo solo. Dos dominios en paralelo → 1 subagente máximo. Tres+ dominios con coordinación activa → Capa 2.
+
+**Capa 0 agresiva:**
+Logs, texto largo, salida Docker, CRUDs simples → Ollama primero (`bash ~/helix_asisten/scripts/capa0.sh logs|code "..."`). Escalar solo si respuesta es insuficiente.
+
+---
+
 ## ✅ CHECKLIST PRE-CIERRE (Universal)
 
 ```
@@ -221,9 +243,6 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- EVOLUTION_LOG_START -->
 | # | Fecha | Categoría | Aprendizaje |
 |---|---|---|---|
-| 1 | 2026-03-08 | operatividad | `VAR=$((VAR + 1))` — `((VAR++))` falla con set -euo pipefail cuando VAR=0 |
-| 2 | 2026-03-08 | operatividad | `wc -l` devuelve espacios — siempre limpiar con `tr -d '[:space:]'` |
-| 3 | 2026-03-08 | operatividad | `git diff HEAD` sin filtro captura CLAUDE.md — filtrar con `-- '*.ts' '*.tsx'` |
 | 4 | 2026-03-08 | operatividad | Pasar strings a Python desde bash: usar variables de entorno, no escaping |
 | 5 | 2026-03-14 | arquitectura | CLAUDE.md global = reglas universales. CLAUDE.md proyecto = reglas específicas. No mezclar. |
 | 5 | 2026-03-20 | interfaz | Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento | usuario-solicitud-mejora |
@@ -234,6 +253,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
 | 11 | 2026-03-20 | interfaz | Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza | usuario-solicitud |
 | 12 | 2026-03-20 | interfaz | Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso | usuario-solicitud |
+| 10 | 2026-03-20 | performance | Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia | usuario-solicitud |
+| 11 | 2026-03-20 | performance | Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo | usuario-solicitud |
+| 12 | 2026-03-20 | performance | Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2 | usuario-solicitud |
 <!-- EVOLUTION_LOG_END -->
 
 ---

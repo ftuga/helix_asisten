@@ -26,3 +26,8 @@
 | 5 | 2026-03-08 | docker | test dual-write desde proyecto | prueba dual-write |
 | 6 | 2026-03-08 | operatividad | set -euo pipefail: [[ -n '' ]] && cmd devuelve exit 1 cuando condición es falsa — usar if/fi en lugar de && para comandos condicionales | bug en evolve.sh dual-write |
 | 7 | 2026-03-08 | operatividad | Los marcadores de sección en CLAUDE.md usan nombres en inglés (OPERABILITY, SECURITY, etc.) pero las categorías de evolve.sh son en español — siempre mapear con case/esac antes de construir el marcador | bug categorías español/inglés en evolve.sh |
+
+## Archivado 2026-03-20 11:52 — Historial evoluciones
+| 1 | 2026-03-08 | operatividad | `VAR=$((VAR + 1))` — `((VAR++))` falla con set -euo pipefail cuando VAR=0 |
+| 2 | 2026-03-08 | operatividad | `wc -l` devuelve espacios — siempre limpiar con `tr -d '[:space:]'` |
+| 3 | 2026-03-08 | operatividad | `git diff HEAD` sin filtro captura CLAUDE.md — filtrar con `-- '*.ts' '*.tsx'` |

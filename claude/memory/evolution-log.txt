@@ -26,3 +26,6 @@
 [2026-03-20 11:22] [LEARN] [interfaz] Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto (trigger: usuario-solicitud-mejora)
 [2026-03-20 11:30] [LEARN] [interfaz] Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza (trigger: usuario-solicitud)
 [2026-03-20 11:30] [LEARN] [interfaz] Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso (trigger: usuario-solicitud)
+[2026-03-20 11:52] [LEARN] [performance] Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia (trigger: usuario-solicitud)
+[2026-03-20 11:52] [LEARN] [performance] Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo (trigger: usuario-solicitud)
+[2026-03-20 11:52] [LEARN] [performance] Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2 (trigger: usuario-solicitud)
