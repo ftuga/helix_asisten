@@ -125,3 +125,59 @@ if [[ "$LINES" -gt 200 ]]; then
   echo -e "\033[1;33mCLAUDE.md tiene $LINES lineas — comprimiendo memoria...\033[0m"
   bash "$HOME/.claude/compress.sh"
 fi
+
+# ── Evaluar salud de Helix — escribir alerta si hay problemas ─
+ALERTA_FILE="${PROJECT_MEMORY_DIR:-$GLOBAL_MEMORY_DIR}/helix-alerta.md"
+METRICS=$(bash "$HOME/.claude/helpers/helix-metricas.sh" "${PROJECT_ROOT:-}" 2>/dev/null || echo "")
+
+if [[ -n "$METRICS" ]]; then
+  TIENE_ALERTA=$(echo "$METRICS" | python3 -c "import sys,json; d=json.load(sys.stdin); print('si' if d.get('alerta') else 'no')" 2>/dev/null || echo "no")
+
+  if [[ "$TIENE_ALERTA" == "si" ]]; then
+    echo "$METRICS" | python3 - "$ALERTA_FILE" <<'PYEOF'
+import sys, json
+from pathlib import Path
+
+data = json.load(sys.stdin)
+out  = Path(sys.argv[1])
+out.parent.mkdir(parents=True, exist_ok=True)
+
+lines = [
+    f"# Helix Alerta — {data['fecha']}",
+    f"> Proyecto: {data['proyecto']}",
+    f"> Generada al cerrar sesión. Helix la leerá al inicio de la próxima.",
+    "",
+    "## Problemas detectados",
+]
+i = 1
+for dim, info in data['scores'].items():
+    for p in info.get('problemas', []):
+        lines.append(f"{i}. [{dim}] {p}")
+        i += 1
+
+lines += [
+    "",
+    "## Scores",
+    f"| Dimensión | Score | Estado |",
+    f"|-----------|-------|--------|",
+]
+for dim, info in data['scores'].items():
+    estado = "✅" if info['ok'] else "❌"
+    lines.append(f"| {dim} | {info['valor']}/100 | {estado} |")
+
+lines += [
+    "",
+    "## Acción recomendada",
+    "- Si contexto ❌ → `/helix-actualiza`",
+    "- Si calidad ❌  → revisar errores en `helix-bitacora.md`",
+    "- Si overhead ❌ → `/helix-actualiza` + evaluar agentes/skills activos",
+]
+out.write_text('\n'.join(lines) + '\n')
+print(f"[HELIX] Alerta escrita → {out}")
+PYEOF
+    echo -e "\033[1;33m⚠️  Helix detectó problemas — te avisará al inicio de la próxima sesión.\033[0m"
+  else
+    # Todo bien — limpiar alerta anterior si existía
+    [[ -f "$ALERTA_FILE" ]] && rm "$ALERTA_FILE" && echo -e "${GREEN}✅ Alerta anterior resuelta — eliminada.${NC}"
+  fi
+fi

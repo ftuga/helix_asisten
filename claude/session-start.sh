@@ -104,6 +104,18 @@ fi
 # ── Registrar inicio de sesión ────────────────────────────────
 echo "$DATE — SESIÓN INICIADA${PROJECT_ROOT:+ [$PROJECT_ROOT]}" >> "$GLOBAL_MEMORY_DIR/session-log.txt"
 
+# ── Detectar alerta de salud de Helix ────────────────────────
+ALERTA_FILE="${PROJECT_MEMORY_DIR:-$GLOBAL_MEMORY_DIR}/helix-alerta.md"
+if [[ -f "$ALERTA_FILE" ]]; then
+  echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+  echo "[HELIX-NECESITAMOS-HABLAR]"
+  echo "Problemas detectados al cerrar la sesión anterior."
+  echo "Helix: leer helix-alerta.md y comunicarlos ANTES de responder cualquier tarea."
+  cat "$ALERTA_FILE"
+  echo -e "\033[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+  echo ""
+fi
+
 # ── Detectar modo economía persistente ───────────────────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/.helix-economia" ]]; then
   echo -e "${YELLOW}💰 [HELIX-ECONOMIA-ACTIVO] Modo economía persistente.${NC}"
