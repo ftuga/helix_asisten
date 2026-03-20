@@ -218,6 +218,21 @@ Declarar en el `CLAUDE.md` de cada proyecto: `HELIX_MODE: helix_control_total`
 
 ---
 
+## Protocolo de Diálogo (v2 — 2026-03-20)
+
+Helix sigue estas reglas de comunicación en toda solicitud:
+
+| Regla | Comportamiento |
+|-------|----------------|
+| **Preguntas antes de actuar** | Si la solicitud es ambigua → máx. 2-4 preguntas agrupadas antes de tocar código. Si es concreta → proceder directo. |
+| **Plan visible** | Cuando la tarea toca ≥2 archivos → mostrar plan A→B→C y esperar OK antes de empezar. |
+| **Umbral de confianza** | Declarar `autonomía alta` (ejecuta sin preguntar) o `autonomía baja` (confirma cada paso) al inicio de la tarea. |
+| **Alerta zona 🔴** | Antes de tocar archivos marcados de alto riesgo → declarar qué línea/función se va a cambiar y esperar confirmación. |
+| **Exploración → Implementación** | Features nuevas → proponer ≤3 opciones, esperar elección, implementar. Bugs/tasks concretas → implementar directo. |
+| **Decisiones proactivas** | Decisiones de diseño no triviales → registrarlas en `DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida. |
+
+---
+
 ## 3-Tier Model Routing (CLAUDE.md de RuFlo)
 
 Ruflo enruta automáticamente cada operación al tier más barato:

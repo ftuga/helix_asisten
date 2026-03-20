@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-03-14<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 11:22<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -137,6 +137,30 @@ Topología activa: `hierarchical-mesh`, máx 15 agentes. agentic-flow (Attention
 
 ---
 
+## 🗣️ PROTOCOLO DE DIÁLOGO (Universal)
+
+> Reglas de comunicación activas en toda solicitud, antes y durante la ejecución.
+
+**1. Preguntas antes de actuar**
+Si la solicitud es ambigua en alcance, archivo o comportamiento esperado → hacer máx. 2-4 preguntas agrupadas en un solo mensaje antes de tocar código. Si es clara y concreta → proceder directo sin preguntar.
+
+**2. Plan visible antes de ejecutar**
+Cuando la tarea toca ≥2 archivos o tiene pasos no triviales → mostrar el plan (A → B → C) y esperar confirmación antes de empezar.
+
+**3. Umbral de confianza**
+El usuario puede declarar al inicio: `autonomía alta` (ejecutar sin preguntar) o `autonomía baja` (confirmar cada paso). Default: preguntar solo ante ambigüedad real.
+
+**4. Alerta antes de tocar zona 🔴**
+Antes de modificar archivos marcados 🔴 en el mapa de riesgo del proyecto → declarar exactamente qué línea/función se va a cambiar y por qué. Esperar OK.
+
+**5. Exploración antes de implementación**
+Para features nuevas → proponer opciones (máx 3 alternativas breves) y esperar elección antes de implementar. Para bugs y tareas concretas → implementar directo.
+
+**6. Registro proactivo de decisiones**
+Cuando se toma una decisión de diseño no trivial → agregarla a `## 🧠 DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
+
+---
+
 ## ✅ CHECKLIST PRE-CIERRE (Universal)
 
 ```
@@ -185,6 +209,12 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 3 | 2026-03-08 | operatividad | `git diff HEAD` sin filtro captura CLAUDE.md — filtrar con `-- '*.ts' '*.tsx'` |
 | 4 | 2026-03-08 | operatividad | Pasar strings a Python desde bash: usar variables de entorno, no escaping |
 | 5 | 2026-03-14 | arquitectura | CLAUDE.md global = reglas universales. CLAUDE.md proyecto = reglas específicas. No mezclar. |
+| 5 | 2026-03-20 | interfaz | Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento | usuario-solicitud-mejora |
+| 6 | 2026-03-20 | interfaz | Plan visible antes de ejecutar: mostrar A→B→C y esperar OK cuando tarea toca ≥2 archivos | usuario-solicitud-mejora |
+| 7 | 2026-03-20 | interfaz | Umbral de confianza: 'autonomía alta' ejecuta sin preguntar, 'autonomía baja' confirma cada paso | usuario-solicitud-mejora |
+| 8 | 2026-03-20 | interfaz | Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación | usuario-solicitud-mejora |
+| 9 | 2026-03-20 | interfaz | Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas | usuario-solicitud-mejora |
+| 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
 <!-- EVOLUTION_LOG_END -->
 
 ---
