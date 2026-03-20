@@ -24,3 +24,5 @@
 [2026-03-20 11:22] [LEARN] [interfaz] Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación (trigger: usuario-solicitud-mejora)
 [2026-03-20 11:22] [LEARN] [interfaz] Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas (trigger: usuario-solicitud-mejora)
 [2026-03-20 11:22] [LEARN] [interfaz] Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto (trigger: usuario-solicitud-mejora)
+[2026-03-20 11:30] [LEARN] [interfaz] Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza (trigger: usuario-solicitud)
+[2026-03-20 11:30] [LEARN] [interfaz] Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso (trigger: usuario-solicitud)
