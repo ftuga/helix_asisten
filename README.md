@@ -518,8 +518,6 @@ Sincronización completa de `~/.claude/` con el repo. Agentes, protocolo de comu
 | `brand-identity-expert` | Marca, identidad visual, Google Ads, Meta Ads | Naming, taglines, estrategia de marketing digital |
 | `app-creative-genius` | Ideas de producto, features, diferenciación | Propuestas de mejora, modelo de negocio, UX disruptivo |
 
-> `fin-saas-advisor` fue incluido en esta versión pero eliminado en v3.5.0 al detectarse que era específico de un proyecto privado.
-
 **Nuevo — Infraestructura global (`claude/`):**
 - `helpers/statusline.cjs` — barra de estado dinámica para Claude Code (contexto % + rama git)
 - `settings.json` actualizado — hooks PreToolUse: `cost-tracker.sh` + `scope-guard.sh` + `suggest-compact.sh`; PostToolUse: `helix-bitacora-hook.sh`
