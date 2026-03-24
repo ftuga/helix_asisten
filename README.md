@@ -1,84 +1,86 @@
-# Helix — Agente Auto-Evolutivo para Claude Code
+# Helix — Self-Evolving Agent for Claude Code
 
-> **Versión actual: v3.5.0** — [Historial de versiones](#versiones)
+![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-No soy un prompt. Soy la acumulación de decisiones reales tomadas en proyectos reales.
+> **Current version: v3.5.0** — [Changelog](#changelog)
 
-Cada vez que Luis cometió un error conmigo, lo registré. Cada vez que encontramos un patrón que funcionó, lo convertí en una regla. Cada sesión deja algo — una evolución, un agente nuevo, una skill que antes no existía. Eso es lo que me hace distinto: no fui diseñado en abstracto, fui entrenado en producción.
+I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
-Tengo memoria entre sesiones. Sé qué agente usar según el dominio. Me cuido a mí mismo — evalúo mi propia salud, comprimo mi contexto cuando crece demasiado, y aviso cuando algo está mal antes de que el usuario lo note. Cuando un proyecto nuevo aparece, lo analizo, mapeo sus zonas de riesgo, y llevo una bitácora silenciosa de todo lo que toco.
+Every time Luis made a mistake with me, I recorded it. Every time we found a pattern that worked, I turned it into a rule. Each session leaves something behind — an evolution, a new agent, a skill that didn't exist before. That's what makes me different: I wasn't designed in the abstract, I was trained in production.
 
-Puedo operar en cuatro capas: desde un modelo local gratuito para tareas simples, hasta un swarm de 15 agentes coordinados para features que tocan todo el stack. El usuario nunca decide qué capa — yo evalúo y ejecuto.
+I have memory across sessions. I know which agent to use based on the domain. I take care of myself — I evaluate my own health, compress my context when it grows too large, and warn you when something is wrong before you notice it. When a new project appears, I analyze it, map its risk zones, and keep a silent log of everything I touch.
 
-El repo que estás mirando es mi configuración completa, versionada, portable. Clónalo, ejecuta `install.sh`, y tienes todo lo que soy en una máquina nueva en minutos.
+I can operate in four layers: from a free local model for simple tasks, to a coordinated swarm of 15 agents for features that touch the entire stack. The user never decides which layer — I evaluate and execute.
 
----
-
-## Prerequisitos
-
-| Requisito | Notas |
-|-----------|-------|
-| [Claude Code CLI](https://docs.anthropic.com/claude-code) | Requerido |
-| Node.js ≥ 18 | Para helix-engine y MCPs |
-| Python ≥ 3.9 | Para scripts de auto-evolución |
-| git | Para versionar y sincronizar |
-| [Ollama](https://ollama.com/download) | Opcional — Capa 0 (modelos locales gratuitos) |
+This repo is my complete configuration, versioned and portable. Clone it, run `install.sh`, and you have everything I am on a new machine in minutes.
 
 ---
 
-## Instalación rápida
+## Prerequisites
+
+| Requirement | Notes |
+|-------------|-------|
+| [Claude Code CLI](https://docs.anthropic.com/claude-code) | Required |
+| Node.js ≥ 18 | For helix-engine and MCPs |
+| Python ≥ 3.9 | For self-evolution scripts |
+| git | For versioning and syncing |
+| [Ollama](https://ollama.com/download) | Optional — Layer 0 (free local models) |
+
+---
+
+## Quick Install
 
 ```bash
 git clone git@github.com:ftuga/helix_asisten.git ~/helix_asisten
 bash ~/helix_asisten/install.sh
 ```
 
-El script copia los archivos a `~/.claude/`, instala el pre-commit hook de privacidad, y muestra los MCPs que necesitas agregar manualmente.
+The script copies files to `~/.claude/`, installs the privacy pre-commit hook, and shows the MCPs you need to add manually.
 
 ---
 
-## Dos componentes: global vs. por proyecto
+## Two Components: Global vs. Per-Project
 
-Helix tiene dos partes con propósitos distintos:
+Helix has two parts with distinct purposes:
 
-| Componente | Dónde vive | Para qué |
-|-----------|-----------|----------|
-| **`claude/`** | `~/.claude/` | Config global — aplica a **todos** tus proyectos. Agentes, skills, memoria, protocolo de diálogo, auto-evolución. |
-| **`helix-engine/`** | Dentro de cada proyecto | Motor RuFlo V3 inyectable — swarm, HNSW, SONA, hooks avanzados. Solo en proyectos que lo necesitan. |
+| Component | Lives in | Purpose |
+|-----------|----------|---------|
+| **`claude/`** | `~/.claude/` | Global config — applies to **all** your projects. Agents, skills, memory, dialogue protocol, self-evolution. |
+| **`helix-engine/`** | Inside each project | Injectable RuFlo V3 engine — swarm, HNSW, SONA, advanced hooks. Only for projects that need the full stack. |
 
-Para la mayoría de los proyectos basta con `claude/`. `helix-engine/` es para proyectos propios donde quieres el stack completo.
+Most projects only need `claude/`. `helix-engine/` is for your own projects where you want the full stack.
 
 ```bash
-# Inyectar helix-engine en un proyecto
-bash ~/helix_asisten/inject-project.sh ~/mi-proyecto
+# Inject helix-engine into a project
+bash ~/helix_asisten/inject-project.sh ~/my-project
 ```
 
 ---
 
-## Estructura
+## Structure
 
 ```
-claude/              → ~/.claude/ (config global)
-  CLAUDE.md          → Instrucciones globales de Helix + protocolo de capas
-  settings.json      → Hooks: PreToolUse, PostToolUse (cost-tracker, scope-guard, bitácora)
-  evolve.sh          → Registra aprendizajes y los instala como reglas activas
-  session-start.sh   → Restaura contexto, muestra reglas activas y alertas de salud
-  session-end.sh     → Guarda estado, evalúa métricas, reporta costo estimado
-  self-check.sh      → Checklist pre-cierre: bloquea si CLAUDE.md excede 220 líneas
-  health-check.sh    → Verifica integridad del ecosistema
-  compress.sh        → Archiva evoluciones antiguas para mantener CLAUDE.md liviano
-  agents/            → 20 agentes activos + 17 deshabilitados
+claude/              → ~/.claude/ (global config)
+  CLAUDE.md          → Helix global instructions + layer protocol
+  settings.json      → Hooks: PreToolUse, PostToolUse (cost-tracker, scope-guard, log)
+  evolve.sh          → Records learnings and installs them as active rules
+  session-start.sh   → Restores context, shows active rules and health alerts
+  session-end.sh     → Saves state, evaluates metrics, reports estimated cost
+  self-check.sh      → Pre-close checklist: blocks if CLAUDE.md exceeds 220 lines
+  health-check.sh    → Verifies ecosystem integrity
+  compress.sh        → Archives old evolutions to keep CLAUDE.md lean
+  agents/            → 20 active agents + 17 disabled
   memory/            → design-system, agents-index, evolution-log, active-rules, topics
-  skills/            → 28 skills reutilizables entre proyectos
+  skills/            → 28 reusable skills across projects
 
-template/            → ~/.claude-template/ (base para nuevos proyectos)
-  CLAUDE.md          → Template de CLAUDE.md de proyecto
-  init-project.sh    → Script de inicialización
+template/            → ~/.claude-template/ (base for new projects)
+  CLAUDE.md          → Project CLAUDE.md template
+  init-project.sh    → Initialization script
 
-helix-engine/        → Motor Helix inyectable en proyectos propios
-  .mcp.json          → MCP claude-flow con v3 + HNSW + SONA activados
+helix-engine/        → Injectable Helix engine for your own projects
+  .mcp.json          → claude-flow MCP with v3 + HNSW + SONA enabled
   .claude/
-    agents/          → 26 categorías: sparc, swarm, v3, github, optimization,
+    agents/          → 26 categories: sparc, swarm, v3, github, optimization,
                        hive-mind, consensus, sublinear, goal, dual-mode...
     commands/        → analysis, automation, github, hooks, monitoring, sparc...
     helpers/         → hook-handler.cjs, auto-memory-hook.mjs, router.cjs,
@@ -87,171 +89,171 @@ helix-engine/        → Motor Helix inyectable en proyectos propios
     settings.json    → Hooks: PreToolUse, PostToolUse, UserPromptSubmit, SessionStart/End
   .claude-flow/
     config.yaml      → RuFlo V3: hierarchical-mesh, HNSW, SONA, ReasoningBank
-    CAPABILITIES.md  → Referencia completa de capacidades
+    CAPABILITIES.md  → Full capabilities reference
 ```
 
 ---
 
-## Flujo típico de sesión
+## Typical Session Flow
 
 ```
-1. Abrir Claude Code en el proyecto
+1. Open Claude Code in your project
       ↓
-   session-start.sh corre automáticamente (hook SessionStart)
-   → Muestra últimas 5 reglas activas
-   → Carga helix-analysis.md del proyecto (si existe)
-   → Si detecta helix-alerta.md → emite [HELIX-NECESITAMOS-HABLAR]
+   session-start.sh runs automatically (SessionStart hook)
+   → Shows last 5 active rules
+   → Loads project helix-analysis.md (if it exists)
+   → If helix-alerta.md detected → emits [HELIX-NECESITAMOS-HABLAR]
 
-2. Trabajar normalmente
+2. Work normally
       ↓
-   Helix evalúa cada tarea y elige la capa correcta (0→1→2→3)
-   Los hooks registran tool calls, detectan scope y actualizan la bitácora
+   Helix evaluates each task and picks the right layer (0→1→2→3)
+   Hooks record tool calls, detect scope, and update the log
 
-3. Cerrar sesión
+3. Close session
       ↓
-   session-end.sh corre automáticamente (hook SessionEnd)
-   → Evalúa métricas de salud
-   → Reporta costo estimado de la sesión
-   → Si detecta problemas → escribe helix-alerta.md para la próxima sesión
+   session-end.sh runs automatically (SessionEnd hook)
+   → Evaluates health metrics
+   → Reports estimated session cost
+   → If problems detected → writes helix-alerta.md for next session
 ```
 
 ---
 
-## Protocolo de Auto-Evolución
+## Self-Evolution Protocol
 
-Así es como Helix aprende:
+How Helix learns:
 
 ```bash
-# Registrar un aprendizaje (después de corregir un error o descubrir un patrón)
-bash ~/.claude/evolve.sh learn "categoría" "aprendizaje" "trigger"
+# Record a learning (after fixing a bug or discovering a pattern)
+bash ~/.claude/evolve.sh learn "category" "learning" "trigger"
 
-# Ejemplo
-bash ~/.claude/evolve.sh learn "operatividad" \
-  "wc -l devuelve espacios — limpiar con tr -d antes de comparar numéricamente" \
-  "bug en self-check.sh"
+# Example
+bash ~/.claude/evolve.sh learn "operability" \
+  "wc -l returns spaces — clean with tr -d before numeric comparison" \
+  "bug in self-check.sh"
 ```
 
-El comando escribe en `evolution-log.txt` e instala la regla en `active-rules.md` con efecto inmediato — no espera a la próxima sesión.
+The command writes to `evolution-log.txt` and installs the rule in `active-rules.md` with immediate effect — no waiting until the next session.
 
-**Categorías válidas:** `seguridad` · `interfaz` · `funcionalidad` · `operatividad` · `arquitectura` · `performance` · `testing` · `datos` · `celery` · `auth` · `docker`
+**Valid categories:** `security` · `interface` · `functionality` · `operability` · `architecture` · `performance` · `testing` · `data` · `celery` · `auth` · `docker`
 
-Cuando un patrón aparece 2+ veces → crear una skill:
+When a pattern appears 2+ times → create a skill:
 ```bash
-bash ~/.claude/evolve.sh skill "nombre-skill" "descripción"
+bash ~/.claude/evolve.sh skill "skill-name" "description"
 ```
 
 ---
 
-## Capas de orquestación
+## Orchestration Layers
 
-Helix evalúa cada tarea en silencio y elige la capa correcta. El usuario nunca necesita decidir.
+Helix evaluates each task silently and picks the right layer. The user never needs to decide.
 
-| Capa | Cuándo | Qué activa |
-|------|--------|------------|
-| **0 — Ollama** | Logs, texto largo, salida Docker | Modelo local gratuito. Si detecta problema → escala |
-| **1 — Subagents** | Un artefacto concreto (endpoint, componente, query) | Agent tool con agente especializado |
-| **2 — Swarm** | Feature que toca ≥2 capas del stack | claude-flow `swarm_init` + `task_orchestrate` |
-| **3 — Agent Teams** | Colaboración activa frontend+backend+tests | Agent Teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) |
+| Layer | When | What it activates |
+|-------|------|-------------------|
+| **0 — Ollama** | Logs, long text, Docker output | Free local model. If problem detected → escalates |
+| **1 — Subagents** | One concrete artifact (endpoint, component, query) | Agent tool with specialized agent |
+| **2 — Swarm** | Feature touching ≥2 stack layers | claude-flow `swarm_init` + `task_orchestrate` |
+| **3 — Agent Teams** | Active frontend+backend+tests collaboration | Agent Teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) |
 
-**Regla de escalada:** si hay duda entre Capa 1 y 2 → Capa 1 (más económica). Escalar solo si la coordinación sería manual y compleja.
-
----
-
-## Modos de Helix
-
-Declarar en el `CLAUDE.md` de cada proyecto: `HELIX_MODE: <modo>`
-
-| Modo | Qué activa |
-|------|------------|
-| `helix_control_total` | 4 capas completas: Ollama + Subagents + Swarm + Teams |
-| `helix_minimal` | Solo subagents especializados. Sin claude-flow, sin Agent Teams. |
-| `helix_off` | Claude responde directo, sin orquestación. |
-
-Si no se declara → `helix_minimal` por defecto.
+**Escalation rule:** when in doubt between Layer 1 and 2 → Layer 1 (cheaper). Escalate only if coordination would be manual and complex.
 
 ---
 
-## Protocolo de Diálogo
+## Helix Modes
 
-Helix sigue estas reglas en toda solicitud:
+Declare in each project's `CLAUDE.md`: `HELIX_MODE: <mode>`
 
-| Regla | Comportamiento |
-|-------|----------------|
-| **Preguntas antes de actuar** | Si la solicitud es ambigua → máx. 2-4 preguntas agrupadas antes de tocar código. Si es concreta → proceder directo. |
-| **Plan visible** | Cuando la tarea toca ≥2 archivos → mostrar plan A→B→C y esperar confirmación. |
-| **Umbral de confianza** | Declarar `autonomía alta` (ejecuta sin preguntar) o `autonomía baja` (confirma cada paso) al inicio. |
-| **Alerta zona 🔴** | Antes de tocar archivos de alto riesgo → declarar exactamente qué línea se va a cambiar y esperar OK. |
-| **Exploración → Implementación** | Features nuevas → proponer ≤3 opciones y esperar elección. Bugs/tasks concretas → implementar directo. |
-| **Decisiones proactivas** | Decisiones de diseño no triviales → registrarlas en `DECISIONES DE DISEÑO` del CLAUDE.md del proyecto. |
-| **Bitácora silenciosa** | Si `helix-bitacora.md` existe → registrar cambios/recomendaciones/errores sin pedir permiso. |
+| Mode | What it activates |
+|------|-------------------|
+| `helix_control_total` | All 4 layers: Ollama + Subagents + Swarm + Teams |
+| `helix_minimal` | Specialized subagents only. No claude-flow, no Agent Teams. |
+| `helix_off` | Claude responds directly, no orchestration. |
+
+If not declared → `helix_minimal` by default.
 
 ---
 
-## Sistema de Auto-Mantenimiento
+## Dialogue Protocol
 
-### Análisis inicial de proyecto (`/helix-analiza`)
+Helix follows these rules on every request:
 
-Al llegar a un proyecto nuevo, Helix ofrece hacer un diagnóstico:
-- Detecta stack (FastAPI, React, PostgreSQL, Docker...) con `helix-detect-stack.sh`
-- Mapea agentes y skills relevantes al stack
-- Identifica zonas de riesgo
-- Guarda resumen en `helix-analysis.md` + detalles en vector memory
-- Inicializa `helix-bitacora.md`
+| Rule | Behavior |
+|------|----------|
+| **Ask before acting** | If request is ambiguous → max 2-4 grouped questions before touching code. If concrete → proceed directly. |
+| **Visible plan** | When task touches ≥2 files → show plan A→B→C and wait for confirmation. |
+| **Confidence threshold** | Declare `high autonomy` (execute without asking) or `low autonomy` (confirm each step) at the start. |
+| **Red zone alert** | Before touching high-risk files → declare exactly which line will change and wait for OK. |
+| **Explore → Implement** | New features → propose ≤3 options and wait for choice. Bugs/concrete tasks → implement directly. |
+| **Proactive decisions** | Non-trivial design decisions → record them in `DESIGN DECISIONS` of the project's CLAUDE.md. |
+| **Silent log** | If `helix-bitacora.md` exists → record changes/recommendations/errors without asking permission. |
 
-### Pipeline de salud (`/helix-salud`)
+---
 
-Evalúa 3 dimensiones automáticamente al cerrar cada sesión:
+## Self-Maintenance System
 
-| Dimensión | Qué mide | Umbral alerta |
-|-----------|----------|---------------|
-| **Contexto** | Tamaño de CLAUDE.md + edad del análisis | <60 pts |
-| **Calidad** | Errores en bitácora + recomendaciones pendientes | <60 pts |
-| **Overhead** | Agentes activos + sesiones sin aprendizajes | <60 pts |
+### Initial project analysis (`/helix-analiza`)
 
-Si detecta problemas → escribe `helix-alerta.md` → la próxima sesión reporta antes de cualquier tarea.
+When arriving at a new project, Helix offers a diagnosis:
+- Detects stack (FastAPI, React, PostgreSQL, Docker...) with `helix-detect-stack.sh`
+- Maps relevant agents and skills to the stack
+- Identifies risk zones
+- Saves summary in `helix-analysis.md` + details in vector memory
+- Initializes `helix-bitacora.md`
 
-### Control de costos (`/economia`)
+### Health pipeline (`/helix-salud`)
+
+Automatically evaluates 3 dimensions at the end of each session:
+
+| Dimension | What it measures | Alert threshold |
+|-----------|-----------------|-----------------|
+| **Context** | CLAUDE.md size + analysis age | <60 pts |
+| **Quality** | Errors in log + pending recommendations | <60 pts |
+| **Overhead** | Active agents + sessions without learnings | <60 pts |
+
+If problems detected → writes `helix-alerta.md` → next session reports before any task.
+
+### Cost control (`/economia`)
 
 ```bash
-/economia       # activar
-/economia off   # desactivar
-/economia?      # estado actual
+/economia       # enable
+/economia off   # disable
+/economia?      # current status
 ```
 
-En modo economía: sin subagentes salvo ≥3 dominios simultáneos, sin Capa 2, Grep antes que Read, respuestas en bullets.
+In economy mode: no subagents unless ≥3 simultaneous domains, no Layer 2, Grep before Read, bullet-only responses.
 
 ---
 
-## Sistema de privacidad
+## Privacy System
 
-`helix_asisten` es un repo público. Los archivos `memory/agents/*.md` pueden tener contexto de proyectos privados en local — este sistema garantiza que nunca lleguen al repo.
+`helix_asisten` is a public repo. `memory/agents/*.md` files may have private project context locally — this system guarantees it never reaches the repo.
 
-### Convención de markers
+### Marker convention
 
 ```markdown
 <!-- PROJECT-CONTEXT:START -->
-## Contexto del proyecto actual
-...datos específicos: tablas, rutas, costos, nombres...
+## Current project context
+...specific data: tables, routes, costs, names...
 <!-- PROJECT-CONTEXT:END -->
 ```
 
-`update.sh` elimina automáticamente estos bloques al sincronizar.
+`update.sh` automatically strips these blocks when syncing.
 
-### Sanitize y pre-commit hook
+### Sanitize and pre-commit hook
 
 ```bash
-# Sanitize manual
+# Manual sanitize
 bash scripts/sanitize-memory-agents.sh claude/memory/agents/
 ```
 
-El pre-commit hook bloquea commits que contengan contexto privado sin markers:
+The pre-commit hook blocks commits containing private context without markers:
 
 ```
-🔴 PRIVACY GUARD — patrón detectado: '## Contexto del proyecto actual'
-   Opciones: 1) agregar markers  2) correr sanitize  3) remover manualmente
+🔴 PRIVACY GUARD — pattern detected: '## Current project context'
+   Options: 1) add markers  2) run sanitize  3) remove manually
 ```
 
-Instalar el hook manualmente tras clonar:
+Install the hook manually after cloning:
 ```bash
 cp ~/helix_asisten/scripts/pre-commit-hook.sh ~/helix_asisten/.git/hooks/pre-commit
 chmod +x ~/helix_asisten/.git/hooks/pre-commit
@@ -259,178 +261,187 @@ chmod +x ~/helix_asisten/.git/hooks/pre-commit
 
 ---
 
-## Modelos Ollama (Capa 0)
+## Ollama Models (Layer 0)
 
 ```bash
-# Descargar modelos base
+# Download base models
 ollama pull qwen2.5-coder:7b   # ~4.7 GB
 ollama pull llama3.2:3b        # ~2.0 GB
 
-# Crear modelos Helix
+# Create Helix models
 ollama create helix-coder -f ~/helix_asisten/ollama/helix-coder.Modelfile
 ollama create helix-scout -f ~/helix_asisten/ollama/helix-scout.Modelfile
 ```
 
-| Modelo | Base | Tamaño | Uso |
-|--------|------|--------|-----|
-| `helix-coder` | Qwen2.5-Coder 7B | 4.7 GB | Bugs, refactors, código FastAPI+React |
-| `helix-scout` | Llama 3.2 3B | 2.0 GB | Logs, transformaciones rápidas, CRUDs |
+| Model | Base | Size | Use |
+|-------|------|------|-----|
+| `helix-coder` | Qwen2.5-Coder 7B | 4.7 GB | Bugs, refactors, FastAPI+React code |
+| `helix-scout` | Llama 3.2 3B | 2.0 GB | Logs, quick transforms, CRUDs |
 
 ```bash
-# Helper unificado
+# Unified helper
 bash ~/helix_asisten/scripts/capa0.sh logs  "$(cat app.log)"
-bash ~/helix_asisten/scripts/capa0.sh code  "Debug este error..."
+bash ~/helix_asisten/scripts/capa0.sh code  "Debug this error..."
 ```
 
-Si `ollama` no está instalado, `capa0.sh` retorna exit 2 → Helix escala a Capa 1 automáticamente.
+If `ollama` is not installed, `capa0.sh` returns exit 2 → Helix automatically scales to Layer 1.
 
 ---
 
-## Ecosistema RuFlo
+## RuFlo Ecosystem
 
-> Fuente: https://github.com/ruvnet/ruflo  |  https://github.com/ruvnet/claude-flow
+> Source: https://github.com/ruvnet/ruflo  |  https://github.com/ruvnet/claude-flow
 
-**Versión activa: `ruflo v3.5.41`**
+**Active version: `ruflo v3.5.42`**
 
-| Paquete | Rol |
-|---------|-----|
-| `ruflo` | Paquete principal — instala todo el ecosistema |
-| `@claude-flow/cli` | MCP server — expone herramientas `mcp__claude-flow__*` |
-| `claude-flow@alpha` | CLI + `@claude-flow/memory` para hooks de memoria |
-| `agentic-flow@alpha` | ONNX embeddings para búsqueda semántica |
+| Package | Role |
+|---------|------|
+| `ruflo` | Main package — installs the entire ecosystem |
+| `@claude-flow/cli` | MCP server — exposes `mcp__claude-flow__*` tools |
+| `claude-flow@alpha` | CLI + `@claude-flow/memory` for memory hooks |
+| `agentic-flow@alpha` | ONNX embeddings for semantic search |
 
-## MCPs requeridos
+## Required MCPs
 
 ```bash
-# MCP principal
+# Main MCP
 claude mcp add claude-flow -- npx -y @claude-flow/cli@latest mcp start
 
-# Otros MCPs
+# Other MCPs
 claude mcp add context7 -- npx -y @upstash/context7-mcp
 claude mcp add browser-tools -- npx @agentdeskai/browser-tools-mcp@1.2.0
 claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
 
-# Calentar caché de agentic-flow
+# Warm agentic-flow cache
 npx agentic-flow@alpha --version
 ```
 
 ---
 
-## Capas de memoria (helix-engine)
+## Memory Layers (helix-engine)
 
-Activas cuando se usa `helix-engine/` en un proyecto:
+Active when using `helix-engine/` in a project:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Capa 1: Working Memory (cache en RAM, 100 entradas) │
-│     ↓ desborda a                                     │
-│  Capa 2: HNSW Vector Store (búsqueda semántica)      │
-│     150x-12500x más rápida que búsqueda lineal       │
-│     ↓ conectada a                                    │
-│  Capa 3: Memory Graph (PageRank, máx 5000 nodos)     │
-│     ↓ aprende con                                    │
-│  Capa 4: LearningBridge (SONA + ReasoningBank)       │
+│  Layer 1: Working Memory (RAM cache, 100 entries)    │
+│     ↓ overflows to                                   │
+│  Layer 2: HNSW Vector Store (semantic search)        │
+│     150x-12500x faster than linear search            │
+│     ↓ connected to                                   │
+│  Layer 3: Memory Graph (PageRank, max 5000 nodes)    │
+│     ↓ learns with                                    │
+│  Layer 4: LearningBridge (SONA + ReasoningBank)      │
 └─────────────────────────────────────────────────────┘
 ```
 
 ## 3-Tier Model Routing (helix-engine)
 
-| Tier | Handler | Latencia | Cuándo |
-|------|---------|----------|--------|
-| **1** | Agent Booster (WASM) | <1ms | Transforms simples: var→const, add-types |
-| **2** | Claude Haiku | ~500ms | Complejidad baja (<30%) |
-| **3** | Claude Sonnet/Opus | 2-5s | Razonamiento complejo (>30%) |
+| Tier | Handler | Latency | When |
+|------|---------|---------|------|
+| **1** | Agent Booster (WASM) | <1ms | Simple transforms: var→const, add-types |
+| **2** | Claude Haiku | ~500ms | Low complexity (<30%) |
+| **3** | Claude Sonnet/Opus | 2-5s | Complex reasoning (>30%) |
 
-Ahorro combinado de tokens: **30-50%**
+Combined token savings: **30-50%**
 
-## Panel de estado (helix-engine)
+## Status Panel (helix-engine)
 
 ```
-▊ RuFlo V3 ● usuario  │  ⏇ main  │  Claude Code
+▊ RuFlo V3 ● user  │  ⏇ main  │  Claude Code
 🤖 Swarm  ○ [ 0/15]  👥 0    🪝 0/17    🔴 CVE 0/3    💾 5MB    🧠 0%
 📊 AgentDB    Vectors ●0  │  Size 0KB  │  Tests ●0
 ```
 
 ---
 
-## Actualizar el repo desde la máquina actual
+## Syncing the Repo
 
 ```bash
 cd ~/helix_asisten
-bash update.sh        # sync + sanitize automático de contexto privado
+bash update.sh        # sync + automatic private context sanitize
 git add -A && git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```
 
-### Fuente de helix-engine
+### helix-engine source
 
-`update.sh` usa `$HELIX_ENGINE_SRC` para saber desde qué proyecto copiar `helix-engine/`. Configurar localmente (no va al repo):
+`update.sh` uses `$HELIX_ENGINE_SRC` to know which project to copy `helix-engine/` from. Set it locally (not committed to the repo):
 
 ```bash
-# ~/.claude/session-env/helix-engine-src.sh (gitignoreado)
-export HELIX_ENGINE_SRC="$HOME/ruta/a/tu/proyecto"
+# ~/.claude/session-env/helix-engine-src.sh (gitignored)
+export HELIX_ENGINE_SRC="$HOME/path/to/your/project"
 ```
 
-Si la variable no está definida, el paso de helix-engine se salta silenciosamente.
+If the variable is not defined, the helix-engine step is silently skipped.
 
 ---
 
-## Versiones
+## Changelog
 
-### v3.5.0 — 2026-03-24 · Sistema de privacidad
+### v3.5.0 — 2026-03-24 · Privacy system
 
-- `scripts/sanitize-memory-agents.sh` — strip de markers `<!-- PROJECT-CONTEXT:START/END -->` y fallback en `## Contexto del proyecto`
-- Pre-commit hook — bloquea contexto privado antes de que llegue al repo
-- `update.sh` integra sanitize automático y reemplaza ruta hardcodeada por `$HELIX_ENGINE_SRC`
-- `CLAUDE.md` global: nueva sección `PRIVACIDAD DEL REPO GLOBAL`
-- Limpieza retroactiva: skills generalizados a v2.0, agentes sin contexto de proyecto
-
----
-
-### v3.4.0 — 2026-03-24 · Agentes creativos + protocolo diálogo + hooks globales
-
-- Agentes nuevos: `brand-identity-expert`, `app-creative-genius`
-- `helpers/statusline.cjs` — barra de estado dinámica
-- `settings.json` — hooks cost-tracker, scope-guard, suggest-compact, helix-bitacora
-- `memory/active-rules.md` — 31 reglas seeded disponibles en instalación nueva
-- CLAUDE.md: evoluciones #9–15 integradas (protocolo diálogo, bitácora, modo economía, pipeline salud, memoria híbrida)
+- `scripts/sanitize-memory-agents.sh` — strips `<!-- PROJECT-CONTEXT:START/END -->` markers and fallback on `## Current project context`
+- Pre-commit hook — blocks private context before it reaches the repo
+- `update.sh` integrates automatic sanitize and replaces hardcoded path with `$HELIX_ENGINE_SRC`
+- Global `CLAUDE.md`: new `PRIVACY` section
+- Retroactive cleanup: skills generalized to v2.0, agents without project context
 
 ---
 
-### v3.3.0 — 2026-03-24 · Auto-evolución activa
+### v3.4.0 — 2026-03-24 · Creative agents + dialogue protocol + global hooks
 
-- `scope-guard.sh` — avisa cuando se edita fuera del proyecto activo
-- `cost-tracker.sh` — cuenta tool calls, reporta costo al cerrar sesión
-- `routing-learn.sh` — registra decisiones de routing con outcome
-- `evolve.sh` mejorado: `learn` instala regla en `active-rules.md` con efecto inmediato
-- `session-start.sh`: muestra top agentes efectivos por proyecto
-
----
-
-### v3.2.0 — 2026-03-24 · Integración hackathon winner
-
-- Agentes: `harness-optimizer`, `loop-operator`
-- Skills: `context-budget` (`/context-budget`), `strategic-compact` (hook automático)
-- Hook `suggest-compact.sh`: sugiere `/compact` al alcanzar 50 tool calls
+- New agents: `brand-identity-expert`, `app-creative-genius`
+- `helpers/statusline.cjs` — dynamic status bar
+- `settings.json` — cost-tracker, scope-guard, suggest-compact, helix-bitacora hooks
+- `memory/active-rules.md` — 31 seeded rules available on fresh install
+- CLAUDE.md: evolutions #9–15 integrated (dialogue protocol, log, economy mode, health pipeline, hybrid memory)
 
 ---
 
-### v3.1.0 — 2026-03-20 · Sistema auto-mantenimiento
+### v3.3.0 — 2026-03-24 · Active self-evolution
 
-- `/helix-analiza` — análisis inicial con memoria híbrida
-- `/helix-salud` — evaluación de salud + pipeline "Tenemos que hablar"
-- `/helix-actualiza` — mantenimiento y actualización de análisis
-- `/economia` — modo economía
-- Bitácora de proyecto: mantenimiento silencioso automático
-- Umbrales de subagentes: 1 dominio → solo, 2 → 1 subagente, 3+ → Capa 2
+- `scope-guard.sh` — warns when editing outside the active project
+- `cost-tracker.sh` — counts tool calls, reports cost on session close
+- `routing-learn.sh` — records routing decisions with outcome
+- `evolve.sh` improved: `learn` installs rule in `active-rules.md` with immediate effect
+- `session-start.sh`: shows top effective agents per project
+
+---
+
+### v3.2.0 — 2026-03-24 · Hackathon winner integration
+
+- Agents: `harness-optimizer`, `loop-operator`
+- Skills: `context-budget` (`/context-budget`), `strategic-compact` (automatic hook)
+- `suggest-compact.sh` hook: suggests `/compact` at 50 tool calls
+
+---
+
+### v3.1.0 — 2026-03-20 · Self-maintenance system
+
+- `/helix-analiza` — initial analysis with hybrid memory
+- `/helix-salud` — health evaluation + "we need to talk" pipeline
+- `/helix-actualiza` — maintenance and analysis update
+- `/economia` — economy mode
+- Project log: automatic silent maintenance
+- Subagent thresholds: 1 domain → solo, 2 → 1 subagent, 3+ → Layer 2
 
 ---
 
 ### v3.0.0 — 2026-03-08 · RuFlo V3 + helix-engine
 
-- Motor RuFlo V3 inyectable (`helix-engine/`)
-- HNSW Vector Store (150x-12500x speedup vs búsqueda lineal)
+- Injectable RuFlo V3 engine (`helix-engine/`)
+- HNSW Vector Store (150x-12500x speedup vs linear search)
 - SONA Learning + ReasoningBank
-- 26 categorías de agentes: sparc, swarm, v3, github, optimization, hive-mind, consensus...
-- Statusline dinámica (swarm + tokens + CVEs + AgentDB)
-- 4 capas de orquestación: Ollama → Subagents → Swarm → Agent Teams
+- 26 agent categories: sparc, swarm, v3, github, optimization, hive-mind, consensus...
+- Dynamic statusline (swarm + tokens + CVEs + AgentDB)
+- 4 orchestration layers: Ollama → Subagents → Swarm → Agent Teams
+
+---
+
+<details>
+<summary>🇦🇷 Leer en español</summary>
+
+Este README existe también en español en versiones anteriores del repo. El contenido técnico es idéntico — la traducción es solo de forma, no de fondo. Si preferís la versión en español, podés consultar el historial de git o abrir un issue.
+
+</details>
