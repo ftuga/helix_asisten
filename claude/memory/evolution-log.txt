@@ -29,3 +29,6 @@
 [2026-03-20 11:52] [LEARN] [performance] Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia (trigger: usuario-solicitud)
 [2026-03-20 11:52] [LEARN] [performance] Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo (trigger: usuario-solicitud)
 [2026-03-20 11:52] [LEARN] [performance] Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2 (trigger: usuario-solicitud)
+[2026-03-20 12:07] [LEARN] [performance] helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta (trigger: usuario-solicitud)
+[2026-03-20 12:07] [LEARN] [operatividad] Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea (trigger: usuario-solicitud)
+[2026-03-20 12:07] [LEARN] [arquitectura] Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file) (trigger: usuario-solicitud)

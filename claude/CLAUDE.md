@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 11:52<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 12:07<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -71,6 +71,9 @@ Helix evalúa en silencio antes de cada tarea:
 | Tests / cobertura | `test-engineer` diseña → `test-automator` automatiza |
 | Monitoreo / logs / alertas | `monitoring-specialist` |
 | Análisis de datos / reportes | `data-analyst` |
+| Nombre de marca / identidad visual / tagline | `brand-identity-expert` |
+| Estrategia de marketing / Google Ads / Meta Ads | `brand-identity-expert` |
+| Ideas de producto / nuevas features / diferenciación / modelo de negocio | `app-creative-genius` |
 
 ---
 
@@ -250,12 +253,6 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- EVOLUTION_LOG_START -->
 | # | Fecha | Categoría | Aprendizaje |
 |---|---|---|---|
-| 4 | 2026-03-08 | operatividad | Pasar strings a Python desde bash: usar variables de entorno, no escaping |
-| 5 | 2026-03-14 | arquitectura | CLAUDE.md global = reglas universales. CLAUDE.md proyecto = reglas específicas. No mezclar. |
-| 5 | 2026-03-20 | interfaz | Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento | usuario-solicitud-mejora |
-| 6 | 2026-03-20 | interfaz | Plan visible antes de ejecutar: mostrar A→B→C y esperar OK cuando tarea toca ≥2 archivos | usuario-solicitud-mejora |
-| 7 | 2026-03-20 | interfaz | Umbral de confianza: 'autonomía alta' ejecuta sin preguntar, 'autonomía baja' confirma cada paso | usuario-solicitud-mejora |
-| 8 | 2026-03-20 | interfaz | Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación | usuario-solicitud-mejora |
 | 9 | 2026-03-20 | interfaz | Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas | usuario-solicitud-mejora |
 | 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
 | 11 | 2026-03-20 | interfaz | Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza | usuario-solicitud |
@@ -263,6 +260,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 10 | 2026-03-20 | performance | Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia | usuario-solicitud |
 | 11 | 2026-03-20 | performance | Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo | usuario-solicitud |
 | 12 | 2026-03-20 | performance | Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2 | usuario-solicitud |
+| 13 | 2026-03-20 | performance | helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta | usuario-solicitud |
+| 14 | 2026-03-20 | operatividad | Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea | usuario-solicitud |
+| 15 | 2026-03-20 | arquitectura | Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file) | usuario-solicitud |
 <!-- EVOLUTION_LOG_END -->
 
 ---
