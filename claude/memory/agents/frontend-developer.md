@@ -19,8 +19,8 @@
 - Coordinar con `typescript-pro` para tipos complejos
 - Verificar con Puppeteer MCP en 375px, 768px, 1280px antes de entregar
 
-## Reglas críticas del proyecto
+## Reglas críticas (genéricas)
 - Invalidar query cache ANTES de `navigate()` tras mutaciones destructivas
-- Query keys: `['retiros']`, `['retiros-all']`, `['retiro', id]`
 - Variables `VITE_*` se hornean al buildear — cambios requieren rebuild
 - PDFs: `window.open()`. Imágenes: `<img>` en modal. No iframes con presigned URLs.
+- *El proyecto activo inyecta sus query keys y gotchas via `helix-analysis.md`.*

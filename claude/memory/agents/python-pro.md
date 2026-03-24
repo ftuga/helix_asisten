@@ -21,6 +21,4 @@
 - No toca código frontend
 
 ## Contexto del proyecto
-Routers: `auth`, `users`, `retiros`, `tareas`, `activos`, `adjuntos`, `reportes`, `colaboradores`, `config`, `paz_y_salvo`.
-Modelos críticos: `Retiro`, `Tarea`, `Activo`, `Adjunto`, `AuditLog`.
-Zona de riesgo: `routers/retiros.py::_check_all_closed` (SQLAlchemy identity map stale).
+*El proyecto activo inyecta su propio contexto via `helix-analysis.md` al inicio de sesión.*
