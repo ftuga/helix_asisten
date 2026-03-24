@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 # ============================================================
-# helix.sh — Launcher de Helix para Claude Code v2.0
+# helix.sh — Launcher de Helix para Claude Code v3.0
 #
-# Layout Option C: claude ancho completo + barra inferior de estado.
-# Más espacio para la conversación, métricas compactas abajo.
+# Layout:
+#   ┌──────┬──────┬──────┬──────┐
+#   │ s-1  │ s-2  │ s-3  │ s-4  │  ~28% — slots para agentes en paralelo
+#   ├──────┴──────┴──────┴──────┤
+#   │       claude (principal)   │  ~52% — conversación + prompt
+#   ├────────────────────────────┤
+#   │       statusline           │  ~12%
+#   ├────────────────────────────┤
+#   │       ⬡ helix status      │   ~8%
+#   └────────────────────────────┘
+#
+# Ventanas: claude (layout completo) | bash | helix
 #
 # Uso: helix [args para claude]
 # ============================================================
@@ -18,7 +28,7 @@ SESSION_NAME="helix"
 
 # ── Banner ────────────────────────────────────────────────────
 echo ""
-echo -e "${CYAN}${BOLD}  ⬡  Helix — Agente Auto-Evolutivo v3.3.0${NC}"
+echo -e "${CYAN}${BOLD}  ⬡  Helix — Agente Auto-Evolutivo v3.0${NC}"
 echo -e "${CYAN}  ────────────────────────────────────────${NC}"
 echo ""
 
@@ -30,7 +40,7 @@ if ! command -v claude &>/dev/null; then
 fi
 
 # ── Preguntar modo ───────────────────────────────────────────
-echo -e "  ${GREEN}¿Usar tmux? Abre barra de estado (costo, routing, evoluciones) bajo la conversación.${NC}"
+echo -e "  ${GREEN}¿Usar tmux? Abre panel de agentes (4 slots) + barra de estado.${NC}"
 echo -ne "  Modo tmux [y/n]: "
 read -r USE_TMUX
 
@@ -46,22 +56,16 @@ fi
 # ── Verificar tmux disponible ─────────────────────────────────
 if ! command -v tmux &>/dev/null; then
   echo -e "${YELLOW}⚠️  tmux no está instalado.${NC}"
-  echo -ne "  ¿Querés que lo instale ahora? (sudo apt install tmux) [y/n]: "
+  echo -ne "  ¿Instalar ahora? (sudo apt install tmux) [y/n]: "
   read -r INSTALL_TMUX
   if [[ "$INSTALL_TMUX" == "y" || "$INSTALL_TMUX" == "Y" ]]; then
-    echo ""
-    echo -e "  ${CYAN}Instalando tmux...${NC}"
     sudo apt-get install -y tmux
     if ! command -v tmux &>/dev/null; then
       echo -e "${YELLOW}  Instalación falló. Iniciando en modo simple.${NC}"
-      echo ""
       exec claude "$@"
     fi
-    echo -e "  ${GREEN}✓ tmux instalado correctamente.${NC}"
-    echo ""
+    echo -e "  ${GREEN}✓ tmux instalado.${NC}"
   else
-    echo -e "  ${YELLOW}Iniciando en modo simple (sin tmux).${NC}"
-    echo ""
     exec claude "$@"
   fi
 fi
@@ -79,57 +83,96 @@ PROJECT_DIR=$(pwd)
 # ── Matar sesión anterior si existe ──────────────────────────
 tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 
-# ── Crear nueva sesión ────────────────────────────────────────
-tmux new-session -d -s "$SESSION_NAME" -x "220" -y "50"
+# ═══════════════════════════════════════════════════════════════
+# LAYOUT — ventana "claude"
+# ═══════════════════════════════════════════════════════════════
 
-# ── Panel principal: claude (~72% de altura, ancho completo) ──
-tmux rename-window -t "$SESSION_NAME:0" "claude"
-tmux select-pane -t "$SESSION_NAME:0.0" -T "claude"
-tmux send-keys -t "$SESSION_NAME:0.0" "claude $*" Enter
+tmux new-session -d -s "$SESSION_NAME" -n "claude" -x "220" -y "50"
 
-# ── Crear bloque inferior (28%): statusline + helix juntos ────
-tmux split-window -v -t "$SESSION_NAME:0.0" -p 28
+# Pane inicial = claude (100%)
+CLAUDE_PANE=$(tmux display-message -t "$SESSION_NAME:claude.1" -p '#{pane_id}')
 
-# ── Dividir bloque inferior: statusline (arriba 58%) ─────────
-# ── y helix status (abajo 42%) ───────────────────────────────
-tmux split-window -v -t "$SESSION_NAME:0.1" -p 42
+# ── Paso 1: helix-status en la parte inferior (8%) ───────────
+HELIX_STATUS_PANE=$(tmux split-window -v -p 8 -t "$CLAUDE_PANE" \
+  -P -F '#{pane_id}')
+tmux select-pane -t "$HELIX_STATUS_PANE" -T "⬡ helix status"
+tmux send-keys -t "$HELIX_STATUS_PANE" \
+  "watch -n 2 -t 'bash \"\$HOME/.claude/helpers/helix-swarm-panel.sh\" 2>/dev/null || echo \"⬡ helix status\"'" Enter
 
-# ── Panel 1: statusline fija (statusline.cjs del proyecto) ───
-tmux select-pane -t "$SESSION_NAME:0.1" -T "statusline"
-tmux send-keys -t "$SESSION_NAME:0.1" \
-  "watch -n 1 -t 'cd \"$PROJECT_DIR\" && node \"\$HOME/.claude/helpers/statusline.cjs\" 2>/dev/null'" Enter
+# ── Paso 2: statusline sobre helix-status (13% del espacio restante ≈ 12% total) ──
+STATUS_PANE=$(tmux split-window -v -p 13 -t "$CLAUDE_PANE" \
+  -P -F '#{pane_id}')
+tmux select-pane -t "$STATUS_PANE" -T "statusline"
+tmux send-keys -t "$STATUS_PANE" \
+  "watch -n 1 -t 'cd \"$PROJECT_DIR\" && node \"\$HOME/.claude/helpers/statusline.cjs\" 2>/dev/null || echo \"statusline\"'" Enter
 
-# ── Panel 2: helix status (métricas, routing, evoluciones) ───
-tmux select-pane -t "$SESSION_NAME:0.2" -T "⬡ helix status"
-tmux send-keys -t "$SESSION_NAME:0.2" \
-  "watch -n 2 -t 'bash \"\$HOME/.claude/helpers/helix-swarm-panel.sh\"'" Enter
+# ── Paso 3: fila de agentes ENCIMA de claude (35% del espacio restante ≈ 28% total) ──
+AGENT_ROW=$(tmux split-window -v -b -p 35 -t "$CLAUDE_PANE" \
+  -P -F '#{pane_id}')
 
-# ── Volver al panel principal ─────────────────────────────────
-tmux select-pane -t "$SESSION_NAME:0.0"
+# ── Paso 4: dividir fila de agentes en 4 columnas iguales ────
+A1=$AGENT_ROW
+A2=$(tmux split-window -h -p 75 -t "$A1" -P -F '#{pane_id}')
+A3=$(tmux split-window -h -p 67 -t "$A2" -P -F '#{pane_id}')
+A4=$(tmux split-window -h -p 50 -t "$A3" -P -F '#{pane_id}')
+
+# Títulos y mensaje de espera en cada slot
+for slot_num in 1 2 3 4; do
+  varname="A${slot_num}"
+  PANE="${!varname}"
+  tmux select-pane -t "$PANE" -T "⬡ slot-${slot_num} · libre"
+  tmux send-keys -t "$PANE" \
+    "printf '\033[2J\033[H\033[38;2;99;110;132m  ⬡ slot-${slot_num} — libre\033[0m\n'" Enter
+done
+
+# ── Paso 5: arrancar claude en el panel principal ─────────────
+tmux select-pane -t "$CLAUDE_PANE" -T "claude"
+tmux send-keys -t "$CLAUDE_PANE" "claude $*" Enter
+
+# ═══════════════════════════════════════════════════════════════
+# VENTANAS ADICIONALES
+# ═══════════════════════════════════════════════════════════════
+
+# Ventana "bash" — terminal libre para comandos
+tmux new-window -t "$SESSION_NAME" -n "bash"
+tmux send-keys -t "$SESSION_NAME:bash" "cd \"$PROJECT_DIR\" && clear && echo '  bash — directorio: $PROJECT_DIR'" Enter
+
+# Ventana "helix" — status / logs de Helix
+tmux new-window -t "$SESSION_NAME" -n "helix"
+tmux send-keys -t "$SESSION_NAME:helix" \
+  "watch -n 3 'bash \"\$HOME/.claude/helpers/helix-swarm-panel.sh\" 2>/dev/null || bash ~/.claude/self-check.sh 2>/dev/null || echo \"⬡ helix monitor\"'" Enter
+
+# ── Volver a ventana claude, panel principal ──────────────────
+tmux select-window -t "$SESSION_NAME:claude"
+tmux select-pane -t "$CLAUDE_PANE"
 
 # ── Mostrar layout al usuario ─────────────────────────────────
-echo -e "  ${GREEN}Layout Helix v2.1 listo:${NC}"
+echo -e "  ${GREEN}Layout Helix v3.0 listo:${NC}"
 echo ""
-echo "   ┌─────────────────────────────────────────┐  ← tmux status bar"
-echo "   │                                         │"
-echo "   │         claude  (principal ~72%)         │  scroll sin perder"
-echo "   │                                         │  la statusline"
-echo "   ├─────────────────────────────────────────┤"
-echo "   │   ▊ statusline  (fija · siempre visible) │  ~16%"
-echo "   ├─────────────────────────────────────────┤"
-echo "   │   ⬡ helix status  (métricas + routing)  │  ~12%"
-echo "   └─────────────────────────────────────────┘"
+echo "   ┌──────────┬──────────┬──────────┬──────────┐  ← tmux status bar"
+echo "   │  slot-1  │  slot-2  │  slot-3  │  slot-4  │  ~28%  agentes paralelos"
+echo "   ├──────────┴──────────┴──────────┴──────────┤"
+echo "   │         claude  (principal ~52%)           │  scroll libre"
+echo "   ├────────────────────────────────────────────┤"
+echo "   │   ▊ statusline  (fija · siempre visible)   │  ~12%"
+echo "   ├────────────────────────────────────────────┤"
+echo "   │   ⬡ helix status  (métricas + routing)    │   ~8%"
+echo "   └────────────────────────────────────────────┘"
 echo ""
-echo -e "  ${CYAN}Scroll:${NC}"
-echo "   Ctrl+B → [      Entrar en modo scroll (vi keys: k/j/Ctrl+u/Ctrl+d)"
-echo "   q               Salir del modo scroll"
-echo "   y               Copiar selección al clipboard"
+echo -e "  ${CYAN}Ventanas:${NC}"
+echo "   claude (layout completo)  |  bash  |  helix"
 echo ""
-echo -e "  ${CYAN}Paneles:${NC}"
-echo "   Ctrl+B → ↑↓    Cambiar panel"
-echo "   Ctrl+B → z      Zoom (panel completo)"
-echo "   Ctrl+B → r      Recargar tmux.conf"
-echo "   Ctrl+B → d      Detach"
+echo -e "  ${CYAN}Slots de agentes:${NC}"
+echo "   helix-panel-attach 'Título' 'comando'   — asignar agente al primer slot libre"
+echo "   helix-panel-attach --slot 2 'Título' 'cmd'  — slot específico"
+echo "   helix-panel-attach --list               — ver estado de slots"
+echo "   helix-panel-attach --free 1             — liberar slot"
+echo ""
+echo -e "  ${CYAN}Navegación:${NC}"
+echo "   Ctrl+B → ↑↓←→  Cambiar panel   |  Ctrl+B → z  Zoom"
+echo "   Ctrl+B → hjkl  Idem (vi)        |  Ctrl+B → r  Recargar config"
+echo "   Ctrl+B → [     Modo scroll       |  Ctrl+B → d  Detach"
+echo "   Ctrl+B → n/p   Siguiente/Prev ventana"
 echo ""
 echo -e "  ${GREEN}Iniciando...${NC}"
 echo ""
