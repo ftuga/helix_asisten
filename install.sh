@@ -60,10 +60,18 @@ cp "$REPO_DIR/claude/memory/topics/"*.md   "$CLAUDE_DIR/memory/topics/" 2>/dev/n
 echo "→ Copiando skills..."
 cp -r "$REPO_DIR/claude/skills/." "$CLAUDE_DIR/skills/"
 
-# ── 6b. Statusline global (RuFlo V3 panel en cualquier proyecto) ──
-echo "→ Instalando statusline global..."
+# ── 6b. Helpers globales (statusline + scope-guard + cost-tracker + routing) ──
+echo "→ Instalando helpers globales..."
 mkdir -p "$CLAUDE_DIR/helpers"
 cp "$REPO_DIR/helix-engine/.claude/helpers/statusline.cjs" "$CLAUDE_DIR/helpers/"
+# Helpers de la base claude/
+for helper in helix-bitacora-hook.sh helix-detect-stack.sh helix-metricas.sh \
+              scope-guard.sh cost-tracker.sh routing-learn.sh; do
+  if [[ -f "$REPO_DIR/claude/helpers/$helper" ]]; then
+    cp "$REPO_DIR/claude/helpers/$helper" "$CLAUDE_DIR/helpers/"
+    chmod +x "$CLAUDE_DIR/helpers/$helper"
+  fi
+done
 
 # ── 7. Template de nuevo proyecto ───────────────────────────
 echo "→ Copiando template..."

@@ -202,7 +202,32 @@ cmd_learn() {
   # Persistir en memoria global
   echo "[$DATE] [LEARN] [$categoria] $aprendizaje (trigger: $trigger)" >> "$GLOBAL_MEMORY_DIR/evolution-log.txt"
 
+  # ── Instalar como regla activa en active-rules.md ────────────
+  ACTIVE_RULES_FILE="$GLOBAL_MEMORY_DIR/active-rules.md"
+  PYLEARN="$aprendizaje" PYCAT="$categoria" PYDATE="$SHORT_DATE" python3 - "$ACTIVE_RULES_FILE" <<'PYEOF'
+import os, sys
+from pathlib import Path
+
+rule_file = Path(sys.argv[1])
+learn = os.environ['PYLEARN']
+cat   = os.environ['PYCAT']
+date  = os.environ['PYDATE']
+
+if not rule_file.exists():
+    rule_file.write_text("# Active Rules — Reglas activas instaladas de evoluciones\n\n")
+
+content = rule_file.read_text()
+new_rule = f"- [{date}] [{cat}] {learn}"
+
+if new_rule not in content:
+    lines = content.splitlines()
+    insert_at = 2  # después de título y línea en blanco
+    lines.insert(insert_at, new_rule)
+    rule_file.write_text('\n'.join(lines) + '\n')
+PYEOF
+
   log "✅ Aprendizaje registrado en ambos CLAUDE.md — sección $marker_name"
+  log "✅ Regla instalada en active-rules.md"
 }
 
 # ════════════════════════════════════════════════════════════

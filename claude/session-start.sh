@@ -152,5 +152,62 @@ print(int(days))
   fi
 fi
 
+# ── Reglas activas (últimas 5 evoluciones instaladas) ────────
+ACTIVE_RULES="$GLOBAL_MEMORY_DIR/active-rules.md"
+if [[ -f "$ACTIVE_RULES" ]]; then
+  RULE_COUNT=$(grep -c "^- \[" "$ACTIVE_RULES" 2>/dev/null || echo "0")
+  if [[ "$RULE_COUNT" -gt 0 ]]; then
+    echo -e "${GREEN}🧠 Reglas activas (${RULE_COUNT} instaladas — últimas 5):${NC}"
+    grep "^- \[" "$ACTIVE_RULES" | head -5 | sed 's/^- \[/   · [/'
+    echo ""
+  fi
+fi
+
+# ── Contexto rápido del proyecto (si hay análisis) ────────────
+if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-analysis.md" ]]; then
+  echo -e "${GREEN}📋 Contexto del proyecto:${NC}"
+  python3 -c "
+from pathlib import Path
+content = Path('$PROJECT_ROOT/.claude/memory/helix-analysis.md').read_text()
+# Extraer sección de resumen o primeras líneas con contenido
+lines = [l for l in content.splitlines() if l.strip() and not l.startswith('#')]
+for line in lines[:6]:
+    print('   ' + line[:100])
+" 2>/dev/null || true
+  echo ""
+fi
+
+# ── Routing feedback — agentes más efectivos del proyecto ─────
+FEEDBACK_FILE="$GLOBAL_MEMORY_DIR/routing-feedback.jsonl"
+if [[ -f "$FEEDBACK_FILE" ]]; then
+  FEEDBACK_COUNT=$(wc -l < "$FEEDBACK_FILE" 2>/dev/null | tr -d ' ' || echo "0")
+  if [[ "$FEEDBACK_COUNT" -gt 5 ]]; then
+    echo -e "${GREEN}🎯 Routing aprendido ($FEEDBACK_COUNT decisiones registradas):${NC}"
+    python3 -c "
+import json
+from collections import Counter
+hits = []
+proj = '$(basename ${PROJECT_ROOT:-global})'
+with open('$FEEDBACK_FILE') as f:
+    for line in f:
+        try:
+            d = json.loads(line)
+            if proj == 'global' or d.get('proyecto','') == proj:
+                hits.append((d['agente'], d['resultado']))
+        except:
+            pass
+if hits:
+    by_agent = Counter(a for a,_ in hits)
+    success = Counter(a for a,r in hits if r == 'success')
+    top = by_agent.most_common(3)
+    for agent, total in top:
+        wins = success.get(agent, 0)
+        pct = int(wins/total*100) if total else 0
+        print(f'   {agent}: {wins}/{total} éxitos ({pct}%)')
+" 2>/dev/null || true
+    echo ""
+  fi
+fi
+
 echo -e "${GREEN}✅ Contexto cargado. Listo para trabajar.${NC}"
 echo ""
