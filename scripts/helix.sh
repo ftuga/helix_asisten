@@ -4,16 +4,12 @@
 #
 # Layout:
 #   ┌──────┬──────┬──────┬──────┐
-#   │ s-1  │ s-2  │ s-3  │ s-4  │  ~28% — slots para agentes en paralelo
+#   │ s-1  │ s-2  │ s-3  │ s-4  │  ~35% — slots para agentes en paralelo
 #   ├──────┴──────┴──────┴──────┤
-#   │       claude (principal)   │  ~52% — conversación + prompt
-#   ├────────────────────────────┤
-#   │       statusline           │  ~12%
-#   ├────────────────────────────┤
-#   │       ⬡ helix status      │   ~8%
+#   │       claude (principal)   │  ~65% — conversación + prompt
 #   └────────────────────────────┘
 #
-# Ventanas: claude (layout completo) | bash | helix
+# Ventanas: claude (layout completo) | bash
 #
 # Uso: helix [args para claude]
 # ============================================================
@@ -92,25 +88,11 @@ tmux new-session -d -s "$SESSION_NAME" -n "claude" -x "220" -y "50"
 # Pane inicial = claude (100%)
 CLAUDE_PANE=$(tmux display-message -t "$SESSION_NAME:claude.1" -p '#{pane_id}')
 
-# ── Paso 1: helix-status en la parte inferior (8%) ───────────
-HELIX_STATUS_PANE=$(tmux split-window -v -p 8 -t "$CLAUDE_PANE" \
-  -P -F '#{pane_id}')
-tmux select-pane -t "$HELIX_STATUS_PANE" -T "⬡ helix status"
-tmux send-keys -t "$HELIX_STATUS_PANE" \
-  "watch -n 2 -t 'bash \"\$HOME/.claude/helpers/helix-swarm-panel.sh\" 2>/dev/null || echo \"⬡ helix status\"'" Enter
-
-# ── Paso 2: statusline sobre helix-status (13% del espacio restante ≈ 12% total) ──
-STATUS_PANE=$(tmux split-window -v -p 13 -t "$CLAUDE_PANE" \
-  -P -F '#{pane_id}')
-tmux select-pane -t "$STATUS_PANE" -T "statusline"
-tmux send-keys -t "$STATUS_PANE" \
-  "watch -n 1 -t 'cd \"$PROJECT_DIR\" && node \"\$HOME/.claude/helpers/statusline.cjs\" 2>/dev/null || echo \"statusline\"'" Enter
-
-# ── Paso 3: fila de agentes ENCIMA de claude (35% del espacio restante ≈ 28% total) ──
+# ── Paso 1: fila de agentes ENCIMA de claude (35%) ───────────
 AGENT_ROW=$(tmux split-window -v -b -p 35 -t "$CLAUDE_PANE" \
   -P -F '#{pane_id}')
 
-# ── Paso 4: dividir fila de agentes en 4 columnas iguales ────
+# ── Paso 2: dividir fila de agentes en 4 columnas iguales ────
 A1=$AGENT_ROW
 A2=$(tmux split-window -h -p 75 -t "$A1" -P -F '#{pane_id}')
 A3=$(tmux split-window -h -p 67 -t "$A2" -P -F '#{pane_id}')
@@ -125,7 +107,7 @@ for slot_num in 1 2 3 4; do
     "printf '\033[2J\033[H\033[38;2;99;110;132m  ⬡ slot-${slot_num} — libre\033[0m\n'" Enter
 done
 
-# ── Paso 5: arrancar claude en el panel principal ─────────────
+# ── Paso 3: arrancar claude en el panel principal ─────────────
 tmux select-pane -t "$CLAUDE_PANE" -T "claude"
 tmux send-keys -t "$CLAUDE_PANE" "claude $*" Enter
 
@@ -137,11 +119,6 @@ tmux send-keys -t "$CLAUDE_PANE" "claude $*" Enter
 tmux new-window -t "$SESSION_NAME" -n "bash"
 tmux send-keys -t "$SESSION_NAME:bash" "cd \"$PROJECT_DIR\" && clear && echo '  bash — directorio: $PROJECT_DIR'" Enter
 
-# Ventana "helix" — status / logs de Helix
-tmux new-window -t "$SESSION_NAME" -n "helix"
-tmux send-keys -t "$SESSION_NAME:helix" \
-  "watch -n 3 'bash \"\$HOME/.claude/helpers/helix-swarm-panel.sh\" 2>/dev/null || bash ~/.claude/self-check.sh 2>/dev/null || echo \"⬡ helix monitor\"'" Enter
-
 # ── Volver a ventana claude, panel principal ──────────────────
 tmux select-window -t "$SESSION_NAME:claude"
 tmux select-pane -t "$CLAUDE_PANE"
@@ -150,17 +127,13 @@ tmux select-pane -t "$CLAUDE_PANE"
 echo -e "  ${GREEN}Layout Helix v3.0 listo:${NC}"
 echo ""
 echo "   ┌──────────┬──────────┬──────────┬──────────┐  ← tmux status bar"
-echo "   │  slot-1  │  slot-2  │  slot-3  │  slot-4  │  ~28%  agentes paralelos"
+echo "   │  slot-1  │  slot-2  │  slot-3  │  slot-4  │  ~35%  agentes paralelos"
 echo "   ├──────────┴──────────┴──────────┴──────────┤"
-echo "   │         claude  (principal ~52%)           │  scroll libre"
-echo "   ├────────────────────────────────────────────┤"
-echo "   │   ▊ statusline  (fija · siempre visible)   │  ~12%"
-echo "   ├────────────────────────────────────────────┤"
-echo "   │   ⬡ helix status  (métricas + routing)    │   ~8%"
+echo "   │         claude  (principal ~65%)           │  prompt fijo"
 echo "   └────────────────────────────────────────────┘"
 echo ""
 echo -e "  ${CYAN}Ventanas:${NC}"
-echo "   claude (layout completo)  |  bash  |  helix"
+echo "   claude (layout completo)  |  bash"
 echo ""
 echo -e "  ${CYAN}Slots de agentes:${NC}"
 echo "   helix-panel-attach 'Título' 'comando'   — asignar agente al primer slot libre"
