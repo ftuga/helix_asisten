@@ -46,8 +46,9 @@ rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
 [[ -f "$CLAUDE_DIR/helpers/statusline.cjs" ]] && \
   cp "$CLAUDE_DIR/helpers/statusline.cjs" "$REPO_DIR/helix-engine/.claude/helpers/"
 
-# ── helix-engine (proyecto SerSocial como fuente) ───────────
-PROJECT_SRC="$HOME/documentos/proyectos_tecnologicos/registro_retiros/proyecto"
+# ── helix-engine (fuente: proyecto local con helix-engine inyectado) ────────
+# Configurar HELIX_ENGINE_SRC en ~/.claude/session-env o exportar antes de correr
+PROJECT_SRC="${HELIX_ENGINE_SRC:-}"
 if [[ -d "$PROJECT_SRC/.claude" ]]; then
   echo "→ Sincronizando helix-engine..."
   cp "$PROJECT_SRC/.mcp.json" "$REPO_DIR/helix-engine/" 2>/dev/null || true
