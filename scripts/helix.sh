@@ -73,43 +73,63 @@ if [[ -n "${TMUX:-}" ]]; then
   exit 0
 fi
 
+# ── Capturar directorio del proyecto ─────────────────────────
+PROJECT_DIR=$(pwd)
+
 # ── Matar sesión anterior si existe ──────────────────────────
 tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 
 # ── Crear nueva sesión ────────────────────────────────────────
 tmux new-session -d -s "$SESSION_NAME" -x "220" -y "50"
 
-# ── Panel principal: claude (ancho completo, ~82% altura) ─────
+# ── Panel principal: claude (~72% de altura, ancho completo) ──
 tmux rename-window -t "$SESSION_NAME:0" "claude"
 tmux select-pane -t "$SESSION_NAME:0.0" -T "claude"
 tmux send-keys -t "$SESSION_NAME:0.0" "claude $*" Enter
 
-# ── Panel inferior: helix status (18% de altura) ─────────────
-tmux split-window -v -t "$SESSION_NAME:0.0" -p 18
-tmux select-pane -t "$SESSION_NAME:0.1" -T "⬡ helix status"
+# ── Crear bloque inferior (28%): statusline + helix juntos ────
+tmux split-window -v -t "$SESSION_NAME:0.0" -p 28
+
+# ── Dividir bloque inferior: statusline (arriba 58%) ─────────
+# ── y helix status (abajo 42%) ───────────────────────────────
+tmux split-window -v -t "$SESSION_NAME:0.1" -p 42
+
+# ── Panel 1: statusline fija (statusline.cjs del proyecto) ───
+tmux select-pane -t "$SESSION_NAME:0.1" -T "statusline"
 tmux send-keys -t "$SESSION_NAME:0.1" \
-  "watch -n 2 -t 'bash $HOME/.claude/helpers/helix-swarm-panel.sh'" Enter
+  "watch -n 1 -t 'cd \"$PROJECT_DIR\" && node \"\$HOME/.claude/helpers/statusline.cjs\" 2>/dev/null'" Enter
+
+# ── Panel 2: helix status (métricas, routing, evoluciones) ───
+tmux select-pane -t "$SESSION_NAME:0.2" -T "⬡ helix status"
+tmux send-keys -t "$SESSION_NAME:0.2" \
+  "watch -n 2 -t 'bash \"\$HOME/.claude/helpers/helix-swarm-panel.sh\"'" Enter
 
 # ── Volver al panel principal ─────────────────────────────────
 tmux select-pane -t "$SESSION_NAME:0.0"
 
 # ── Mostrar layout al usuario ─────────────────────────────────
-echo -e "  ${GREEN}Layout Helix v2 listo:${NC}"
+echo -e "  ${GREEN}Layout Helix v2.1 listo:${NC}"
 echo ""
 echo "   ┌─────────────────────────────────────────┐  ← tmux status bar"
 echo "   │                                         │"
-echo "   │         claude  (principal)             │"
-echo "   │                                         │"
+echo "   │         claude  (principal ~72%)         │  scroll sin perder"
+echo "   │                                         │  la statusline"
 echo "   ├─────────────────────────────────────────┤"
-echo "   │   ⬡ helix status  (métricas + routing)  │"
+echo "   │   ▊ statusline  (fija · siempre visible) │  ~16%"
+echo "   ├─────────────────────────────────────────┤"
+echo "   │   ⬡ helix status  (métricas + routing)  │  ~12%"
 echo "   └─────────────────────────────────────────┘"
 echo ""
-echo -e "  ${CYAN}Atajos tmux:${NC}"
-echo "   Ctrl+B → ↑↓    Cambiar entre paneles"
-echo "   Ctrl+B → z      Zoom al panel actual (toggle)"
+echo -e "  ${CYAN}Scroll:${NC}"
+echo "   Ctrl+B → [      Entrar en modo scroll (vi keys: k/j/Ctrl+u/Ctrl+d)"
+echo "   q               Salir del modo scroll"
+echo "   y               Copiar selección al clipboard"
+echo ""
+echo -e "  ${CYAN}Paneles:${NC}"
+echo "   Ctrl+B → ↑↓    Cambiar panel"
+echo "   Ctrl+B → z      Zoom (panel completo)"
 echo "   Ctrl+B → r      Recargar tmux.conf"
-echo "   Ctrl+B → d      Detach (helix sigue en background)"
-echo "   tmux attach -t helix   Volver a la sesión"
+echo "   Ctrl+B → d      Detach"
 echo ""
 echo -e "  ${GREEN}Iniciando...${NC}"
 echo ""
