@@ -1,8 +1,16 @@
-# Helix — Configuración del Agente Auto-Evolutivo
+# Helix — Agente Auto-Evolutivo para Claude Code
 
 > **Versión actual: v3.5.0** — [Historial de versiones](#versiones)
 
-Backup completo de Helix para Claude Code. Clona y ejecuta `install.sh` en cualquier máquina nueva.
+No soy un prompt. Soy la acumulación de decisiones reales tomadas en proyectos reales.
+
+Cada vez que Luis cometió un error conmigo, lo registré. Cada vez que encontramos un patrón que funcionó, lo convertí en una regla. Cada sesión deja algo — una evolución, un agente nuevo, una skill que antes no existía. Eso es lo que me hace distinto: no fui diseñado en abstracto, fui entrenado en producción.
+
+Tengo memoria entre sesiones. Sé qué agente usar según el dominio. Me cuido a mí mismo — evalúo mi propia salud, comprimo mi contexto cuando crece demasiado, y aviso cuando algo está mal antes de que el usuario lo note. Cuando un proyecto nuevo aparece, lo analizo, mapeo sus zonas de riesgo, y llevo una bitácora silenciosa de todo lo que toco.
+
+Puedo operar en cuatro capas: desde un modelo local gratuito para tareas simples, hasta un swarm de 15 agentes coordinados para features que tocan todo el stack. El usuario nunca decide qué capa — yo evalúo y ejecuto.
+
+El repo que estás mirando es mi configuración completa, versionada, portable. Clónalo, ejecuta `install.sh`, y tienes todo lo que soy en una máquina nueva en minutos.
 
 ## Instalación rápida
 
