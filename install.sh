@@ -66,10 +66,26 @@ mkdir -p "$CLAUDE_DIR/helpers"
 cp "$REPO_DIR/helix-engine/.claude/helpers/statusline.cjs" "$CLAUDE_DIR/helpers/"
 # Helpers de la base claude/
 for helper in helix-bitacora-hook.sh helix-detect-stack.sh helix-metricas.sh \
-              scope-guard.sh cost-tracker.sh routing-learn.sh; do
+              scope-guard.sh cost-tracker.sh routing-learn.sh helix-swarm-panel.sh; do
   if [[ -f "$REPO_DIR/claude/helpers/$helper" ]]; then
     cp "$REPO_DIR/claude/helpers/$helper" "$CLAUDE_DIR/helpers/"
     chmod +x "$CLAUDE_DIR/helpers/$helper"
+  fi
+done
+
+# ── 6c. Launcher helix + alias ──────────────────────────────
+echo "→ Instalando launcher helix..."
+mkdir -p "$HOME/helix_asisten/scripts"
+cp "$REPO_DIR/scripts/helix.sh" "$HOME/helix_asisten/scripts/"
+chmod +x "$HOME/helix_asisten/scripts/helix.sh"
+
+ALIAS_LINE='alias helix="bash $HOME/helix_asisten/scripts/helix.sh"'
+for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
+  if [[ -f "$RC" ]] && ! grep -q 'helix_asisten/scripts/helix.sh' "$RC"; then
+    echo "" >> "$RC"
+    echo "# Helix — launcher de Claude Code con panel tmux" >> "$RC"
+    echo "$ALIAS_LINE" >> "$RC"
+    echo "  → alias helix añadido a $RC"
   fi
 done
 
