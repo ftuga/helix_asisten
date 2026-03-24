@@ -89,61 +89,6 @@ for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
   fi
 done
 
-# ── 6d. tmux: config + scripts de layout ────────────────────
-echo "→ Instalando configuración tmux..."
-mkdir -p "$HOME/scripts"
-
-# .tmux.conf (no sobreescribe si ya existe, pregunta)
-if [[ -f "$HOME/.tmux.conf" ]]; then
-  printf "  ~/.tmux.conf ya existe. ¿Sobreescribir con el de Helix? [y/N] "
-  read -r OVERWRITE_TMUX 2>/dev/null || OVERWRITE_TMUX="n"
-  if [[ "$OVERWRITE_TMUX" =~ ^[Yy]$ ]]; then
-    cp "$REPO_DIR/config/tmux.conf" "$HOME/.tmux.conf"
-    echo "  → ~/.tmux.conf actualizado"
-  else
-    echo "  → ~/.tmux.conf conservado (sin cambios)"
-  fi
-else
-  cp "$REPO_DIR/config/tmux.conf" "$HOME/.tmux.conf"
-  echo "  → ~/.tmux.conf instalado"
-fi
-
-# Scripts de layout y copia limpia
-for script in dev-claude.sh copy-clean.sh claude-ui.py claude-ui.sh; do
-  if [[ -f "$REPO_DIR/scripts/$script" ]]; then
-    cp "$REPO_DIR/scripts/$script" "$HOME/scripts/"
-    chmod +x "$HOME/scripts/$script"
-  fi
-done
-echo "  → ~/scripts/dev-claude.sh, copy-clean.sh y claude-ui instalados"
-
-# Dependencias Python para la TUI
-if command -v pip3 &>/dev/null; then
-  echo "→ Instalando dependencias Python para TUI..."
-  pip3 install --quiet textual rich psutil gitpython
-  echo "  → textual rich psutil gitpython instalados"
-fi
-
-# Aliases tmux
-for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
-  if [[ -f "$RC" ]] && ! grep -q 'alias dev=' "$RC"; then
-    cat >> "$RC" << 'ALIASES'
-
-# Helix / tmux / TUI aliases
-alias dev="bash ~/scripts/dev-claude.sh"
-alias tdev="tmux attach -t dev 2>/dev/null || bash ~/scripts/dev-claude.sh"
-alias cpclean="~/scripts/copy-clean.sh"
-alias ui="bash ~/scripts/claude-ui.sh"
-ALIASES
-    echo "  → aliases dev/tdev/cpclean añadidos a $RC"
-  fi
-done
-
-# Aplicar tmux.conf si hay sesión activa
-if command -v tmux &>/dev/null && tmux info &>/dev/null 2>&1; then
-  tmux source "$HOME/.tmux.conf" 2>/dev/null && echo "  → tmux.conf recargado"
-fi
-
 # ── 7. Template de nuevo proyecto ───────────────────────────
 echo "→ Copiando template..."
 cp "$REPO_DIR/template/CLAUDE.md"       "$TEMPLATE_DIR/"
