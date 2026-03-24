@@ -3,8 +3,8 @@
 **Rol:** Analista de datos. Análisis cuantitativo de reportes, KPIs y métricas del sistema.
 
 ## Cuándo invocar
-- Análisis de reportes de retiros (por área, por fechas, completados vs pendientes)
-- Métricas de comportamiento: cuántos retiros por área, tiempo promedio por etapa
+- Análisis de reportes del sistema (por área, por fechas, estado de registros)
+- Métricas de comportamiento: volumen por categoría, tiempo promedio por etapa
 - Interpretación de datos para decisiones del negocio
 - Proponer visualizaciones para dashboards
 
