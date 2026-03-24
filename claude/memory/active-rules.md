@@ -1,0 +1,33 @@
+# Active Rules — Reglas activas instaladas de evoluciones
+
+- [2026-03-20] [arquitectura] Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file)
+- [2026-03-20] [operatividad] Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea
+- [2026-03-20] [performance] helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta
+- [2026-03-20] [performance] Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2
+- [2026-03-20] [performance] Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo
+- [2026-03-20] [performance] Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia
+- [2026-03-20] [interfaz] Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso
+- [2026-03-20] [interfaz] Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza
+- [2026-03-20] [interfaz] Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto
+- [2026-03-20] [interfaz] Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas
+- [2026-03-20] [interfaz] Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación
+- [2026-03-20] [interfaz] Umbral de confianza: 'autonomía alta' ejecuta sin preguntar, 'autonomía baja' confirma cada paso
+- [2026-03-20] [interfaz] Plan visible antes de ejecutar: mostrar A→B→C y esperar OK cuando tarea toca ≥2 archivos
+- [2026-03-20] [interfaz] Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento
+- [2026-03-08] [funcionalidad] modulo_privado.py existe como router pero es WIP/placeholder — genera PDF del retiro completado. Es una funcionalidad pendiente identificada
+- [2026-03-08] [arquitectura] Modelos adicionales no documentados: Colaborador (directorio empleados para búsqueda en nuevo retiro) y PlazoConfig (días hábiles por área, configurable desde AdminPage)
+- [2026-03-08] [arquitectura] El proyecto tiene 9 routers (no 5): auth, users, retiros, tareas, activos, adjuntos, reportes, colaboradores, config, modulo_privado — CLAUDE.md code map estaba desactualizado
+- [2026-03-08] [arquitectura] health-check.sh verifica integridad del ecosistema: scripts, markers, JSON, tamaño y peso de tokens — ejecutar si algo se comporta raro
+- [2026-03-08] [arquitectura] Documentación estática del proyecto (Stack, Commands, Env Vars, Roles) no debe vivir en CLAUDE.md — extraer a .claude/memory/project.md, cargar bajo demanda
+- [2026-03-08] [arquitectura] Memoria por capas: CLAUDE.md=índice liviano (~200 líneas), topics/=historial por categoría, evolution-log.txt=log completo. compress.sh archiva automáticamente al cerrar sesión si >200 líneas
+- [2026-03-08] [operatividad] wc -l puede devolver espacios y saltos de línea — siempre limpiar con tr -d '[:space:]' o usar trim antes de comparar numéricamente
+- [2026-03-08] [operatividad] git diff HEAD sin filtro de archivos puede capturar texto de CLAUDE.md causando falsos positivos — filtrar con -- '*.ts' '*.tsx' para checks de frontend
+- [2026-03-08] [operatividad] ((VAR++)) falla con set -euo pipefail cuando VAR=0 porque evalúa a 0 (falso) — siempre usar VAR=$((VAR + 1)) para aritmética segura en bash
+- [2026-03-08] [operatividad] Para pasar strings con caracteres especiales a python3 desde bash: usar variables de entorno (PYVAR=valor python3 - archivo <<'PYEOF') — evita todo problema de escaping
+- [2026-03-08] [operatividad] Los marcadores de sección en CLAUDE.md usan nombres en inglés (OPERABILITY, SECURITY, etc.) pero las categorías de evolve.sh son en español — siempre mapear con case/esac antes de construir el marcador
+- [2026-03-08] [operatividad] set -euo pipefail: [[ -n '' ]] && cmd devuelve exit 1 cuando condición es falsa — usar if/fi en lugar de && para comandos condicionales
+- [2026-03-08] [docker] test dual-write desde proyecto
+- [2026-03-08] [operatividad] test desde fuera de proyecto
+- [2026-03-08] [operatividad] test desde raíz del proyecto
+- [2026-03-08] [operatividad] test desde fuera de proyecto
+- [2026-03-08] [operatividad] sed falla con caracteres especiales : , # | — usar python3 con env vars para manipulación de texto en bash
