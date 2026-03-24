@@ -24,26 +24,21 @@ if ! command -v claude &>/dev/null; then
   exit 1
 fi
 
-# ── Prompt tmux ───────────────────────────────────────────────
-printf "  ${CYAN}¿Iniciar con tmux?${NC} ${BOLD}[y/n]${NC} "
-read -r USE_TMUX 2>/dev/null || USE_TMUX="n"
+# ── Prompt TUI ────────────────────────────────────────────────
+printf "  ${CYAN}¿Iniciar con TUI (panel visual)?${NC} ${BOLD}[y/n]${NC} "
+read -r USE_TUI 2>/dev/null || USE_TUI="n"
 
-if [[ "$USE_TMUX" =~ ^[Yy]$ ]]; then
-  if ! command -v tmux &>/dev/null; then
-    echo -e "${YELLOW}⚠️  tmux no instalado: sudo apt install tmux${NC}"
+if [[ "$USE_TUI" =~ ^[Yy]$ ]]; then
+  TUI="$HOME/scripts/claude-ui.sh"
+  [[ -f "$TUI" ]] || TUI="$HOME/helix_asisten/scripts/claude-ui.sh"
+  if ! python3 -c "import textual" &>/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  Falta textual: pip install textual rich psutil gitpython${NC}"
     echo -e "  Continuando en modo normal...\n"
-  elif [[ -n "${TMUX:-}" ]]; then
-    echo -e "${YELLOW}⚠️  Ya estás en tmux — iniciando claude directo.${NC}\n"
-    exec claude "$@"
+  elif [[ -f "$TUI" ]]; then
+    echo -e "  ${GREEN}Levantando TUI...${NC}\n"
+    exec bash "$TUI"
   else
-    LAYOUT="$HOME/scripts/dev-claude.sh"
-    [[ -f "$LAYOUT" ]] || LAYOUT="$HOME/helix_asisten/scripts/dev-claude.sh"
-    if [[ -f "$LAYOUT" ]]; then
-      echo -e "  ${GREEN}Levantando entorno tmux...${NC}\n"
-      exec bash "$LAYOUT"
-    else
-      echo -e "${YELLOW}⚠️  No se encontró dev-claude.sh — modo normal.${NC}\n"
-    fi
+    echo -e "${YELLOW}⚠️  No se encontró claude-ui.sh — modo normal.${NC}\n"
   fi
 fi
 
