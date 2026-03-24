@@ -1,6 +1,6 @@
 # Helix — Configuración del Agente Auto-Evolutivo
 
-> **Versión actual: v3.2.0** — [Historial de versiones](#versiones)
+> **Versión actual: v3.3.0** — [Historial de versiones](#versiones)
 
 Backup completo de Helix para Claude Code. Clona y ejecuta `install.sh` en cualquier máquina nueva.
 
@@ -423,6 +423,43 @@ git push
 ---
 
 ## Versiones
+
+### v3.3.0 — 2026-03-24 · Auto-evolución activa
+
+5 sistemas nuevos que hacen que Helix aprenda, mida y se cuide a sí mismo.
+
+**Nuevo — Helpers:**
+| Helper | Qué hace |
+|--------|----------|
+| `scope-guard.sh` | PreToolUse: avisa cuando se edita un archivo fuera del proyecto activo. No bloquea, crea fricción. |
+| `cost-tracker.sh` | PreToolUse: cuenta tool calls por sesión. session-end calcula costo estimado en USD. |
+| `routing-learn.sh` | CLI: registra decisiones de routing con outcome. session-start muestra los agentes más efectivos por contexto. |
+
+**Modificado — Scripts core:**
+| Script | Qué mejoró |
+|--------|-----------|
+| `evolve.sh` | `learn` ahora también instala la regla en `active-rules.md` (efecto inmediato, no solo archivo) |
+| `session-start.sh` | Muestra últimas 5 reglas activas + contexto rápido del proyecto + top agentes del routing feedback |
+| `session-end.sh` | Reporta costo estimado de la sesión (tool calls × ~$0.014) |
+
+**Nuevo — Hooks en settings.json:**
+```json
+PreToolUse Write|Edit|MultiEdit|Bash|Read|Grep|Glob|Agent → cost-tracker.sh
+PreToolUse Write|Edit|MultiEdit                            → scope-guard.sh  (ya estaba: suggest-compact.sh)
+```
+
+**Nuevo — Memoria:**
+- `~/.claude/memory/active-rules.md` — reglas activas derivadas del evolution-log (31 reglas seeded al instalar)
+- `~/.claude/memory/routing-feedback.jsonl` — historial de decisiones de routing con outcome
+
+**Uso del routing feedback:**
+```bash
+bash ~/.claude/helpers/routing-learn.sh "bug en endpoint FastAPI" "error-detective" "success"
+bash ~/.claude/helpers/routing-learn.sh "nueva migración DB" "database-architect" "partial"
+```
+Después de ≥5 registros, session-start muestra los agentes más efectivos por proyecto.
+
+---
 
 ### v3.2.0 — 2026-03-24 · Integración hackathon winner
 
