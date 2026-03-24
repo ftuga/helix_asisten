@@ -73,7 +73,14 @@ for helper in helix-bitacora-hook.sh helix-detect-stack.sh helix-metricas.sh \
   fi
 done
 
-# ── 6c. Launcher helix + alias ──────────────────────────────
+# ── 6c. Configuración tmux ──────────────────────────────────
+echo "→ Instalando configuración tmux..."
+if [[ -f "$REPO_DIR/scripts/tmux.conf" ]]; then
+  cp "$REPO_DIR/scripts/tmux.conf" "$HOME/.tmux.conf"
+  echo "  → ~/.tmux.conf actualizado (tema Catppuccin Mocha)"
+fi
+
+# ── 6d. Launcher helix + alias ──────────────────────────────
 echo "→ Instalando launcher helix..."
 mkdir -p "$HOME/helix_asisten/scripts"
 cp "$REPO_DIR/scripts/helix.sh" "$HOME/helix_asisten/scripts/"
