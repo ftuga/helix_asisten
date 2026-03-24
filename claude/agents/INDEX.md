@@ -4,7 +4,7 @@
 > Usar `~/.claude/memory/agents-index.md` como referencia principal (liviano).
 > Descripciones completas en `~/.claude/memory/agents/<nombre>.md`.
 
-## Activos (18)
+## Activos (20)
 
 | Agente | Trigger | Detalle completo |
 |---|---|---|
@@ -26,6 +26,8 @@
 | `test-automator` | Implementar tests automatizados | [→](../memory/agents/test-automator.md) |
 | `monitoring-specialist` | Logs, alertas, observabilidad | [→](../memory/agents/monitoring-specialist.md) |
 | `architect-reviewer` | Decisión arquitectónica o SOLID | [→](../memory/agents/architect-reviewer.md) |
+| `harness-optimizer` | Auto-optimizar Helix (hooks, routing, tokens) | — |
+| `loop-operator` | Supervisar loops autónomos con escalación segura | — |
 
 ## Deshabilitados (17)
 Ver `disabled/` — no aplican a este proyecto.
