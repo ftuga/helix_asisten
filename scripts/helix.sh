@@ -24,7 +24,30 @@ if ! command -v claude &>/dev/null; then
   exit 1
 fi
 
-# ── Iniciar Helix ────────────────────────────────────────────
+# ── Prompt tmux ───────────────────────────────────────────────
+printf "  ${CYAN}¿Iniciar con tmux?${NC} ${BOLD}[y/n]${NC} "
+read -r USE_TMUX 2>/dev/null || USE_TMUX="n"
+
+if [[ "$USE_TMUX" =~ ^[Yy]$ ]]; then
+  if ! command -v tmux &>/dev/null; then
+    echo -e "${YELLOW}⚠️  tmux no está instalado. Instalar con: sudo apt install tmux${NC}"
+    echo -e "  Continuando en modo normal...\n"
+  elif [[ -n "${TMUX:-}" ]]; then
+    echo -e "${YELLOW}⚠️  Ya estás dentro de tmux. Iniciando claude directo.${NC}\n"
+    exec claude "$@"
+  else
+    LAYOUT_SCRIPT="$HOME/scripts/dev-claude.sh"
+    if [[ ! -f "$LAYOUT_SCRIPT" ]]; then
+      echo -e "${YELLOW}⚠️  No se encontró ~/scripts/dev-claude.sh${NC}"
+      echo -e "  Continuando en modo normal...\n"
+    else
+      echo -e "  ${GREEN}Levantando entorno tmux...${NC}\n"
+      exec bash "$LAYOUT_SCRIPT"
+    fi
+  fi
+fi
+
+# ── Iniciar Helix (modo normal) ───────────────────────────────
 echo -e "  ${GREEN}Iniciando Helix...${NC}"
 echo ""
 exec claude "$@"
