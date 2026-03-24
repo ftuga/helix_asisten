@@ -73,14 +73,7 @@ for helper in helix-bitacora-hook.sh helix-detect-stack.sh helix-metricas.sh \
   fi
 done
 
-# ── 6c. Configuración tmux ──────────────────────────────────
-echo "→ Instalando configuración tmux..."
-if [[ -f "$REPO_DIR/scripts/tmux.conf" ]]; then
-  cp "$REPO_DIR/scripts/tmux.conf" "$HOME/.tmux.conf"
-  echo "  → ~/.tmux.conf actualizado (tema Catppuccin Mocha)"
-fi
-
-# ── 6d. Launcher helix + alias ──────────────────────────────
+# ── 6c. Launcher helix + alias ──────────────────────────────
 echo "→ Instalando launcher helix..."
 mkdir -p "$HOME/helix_asisten/scripts"
 cp "$REPO_DIR/scripts/helix.sh" "$HOME/helix_asisten/scripts/"
@@ -90,7 +83,7 @@ ALIAS_LINE='alias helix="bash $HOME/helix_asisten/scripts/helix.sh"'
 for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
   if [[ -f "$RC" ]] && ! grep -q 'helix_asisten/scripts/helix.sh' "$RC"; then
     echo "" >> "$RC"
-    echo "# Helix — launcher de Claude Code con panel tmux" >> "$RC"
+    echo "# Helix — launcher de Claude Code" >> "$RC"
     echo "$ALIAS_LINE" >> "$RC"
     echo "  → alias helix añadido a $RC"
   fi
