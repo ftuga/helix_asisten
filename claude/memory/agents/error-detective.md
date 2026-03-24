@@ -18,7 +18,7 @@
 - Diagnostica y recomienda; la implementación del fix la hace el especialista
 - No modifica código directamente
 
-## Zonas de riesgo conocidas del proyecto
-- `routers/retiros.py::_check_all_closed`: SQLAlchemy identity map devuelve stale tras asignación directa
-- `routers/tareas.py::toggle_tarea`: Boolean columns de raw SQL pueden ser NULL
-- `frontend/src/store/auth.ts`: Tokens en localStorage sobreviven recargas
+## Zonas de riesgo conocidas (genéricas)
+- SQLAlchemy identity map puede devolver objetos stale tras asignación directa — usar `db.refresh()` o `expire_on_commit=True`
+- Boolean columns de raw SQL pueden ser NULL — siempre `bool(valor)` antes de Pydantic
+- Tokens en localStorage sobreviven recargas — considerar `sessionStorage` o manejo explícito de expiración

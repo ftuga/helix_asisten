@@ -1,5 +1,5 @@
-# Sistema de Diseño UI — CLIENTE_PRIVADO
-> Extraído de CLAUDE.md. Cargar cuando se trabaje en componentes frontend o páginas.
+# Sistema de Diseño UI — Helix Global
+> Sistema de diseño reutilizable. Cargar cuando se trabaje en componentes frontend o páginas.
 
 ## Filosofía: "Precision Craft"
 Diseño refinado y editorial — espacios con propósito, sin componentes genéricos.
