@@ -1,6 +1,6 @@
 # Helix — Configuración del Agente Auto-Evolutivo
 
-> **Versión actual: v3.4.0** — [Historial de versiones](#versiones)
+> **Versión actual: v3.5.0** — [Historial de versiones](#versiones)
 
 Backup completo de Helix para Claude Code. Clona y ejecuta `install.sh` en cualquier máquina nueva.
 
@@ -22,7 +22,7 @@ claude/              → ~/.claude/ (config global)
   CLAUDE.md          → Instrucciones globales de Helix + protocolo de capas
   settings.json      → Agent Teams habilitado (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1)
   *.sh / *.py        → Scripts de auto-evolución (evolve, session-start/end, self-check)
-  agents/            → 19 agentes activos + 17 deshabilitados + 2 creativos (brand-identity-expert, app-creative-genius)
+  agents/            → 20 agentes activos + 17 deshabilitados
   commands/          → claude-flow-help/memory/swarm
   memory/            → design-system, agents-index, evolution-log, topics
   skills/            → 28 skills reutilizables entre proyectos
@@ -415,14 +415,98 @@ bash ~/helix_asisten/inject-project.sh ~/mis-proyectos/nuevo-proyecto
 
 ```bash
 cd ~/helix_asisten
-bash update.sh
+bash update.sh        # sync + sanitize automático de contexto privado
 git add -A && git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```
 
+### Configurar la fuente de helix-engine (solo si tenés un proyecto con helix-engine inyectado)
+
+`update.sh` usa la variable `HELIX_ENGINE_SRC` para saber desde qué proyecto copiar `helix-engine/`. No va hardcodeada en el repo — configurarla localmente:
+
+```bash
+# Agregar a ~/.claude/session-env/helix-engine-src.sh (gitignoreado)
+export HELIX_ENGINE_SRC="$HOME/ruta/a/tu/proyecto"
+```
+
+Si la variable no está definida o el directorio no existe, el paso de helix-engine se salta silenciosamente.
+
+---
+
+## Sistema de privacidad (v3.5.0)
+
+`helix_asisten` es un repo público. Los archivos `memory/agents/*.md` pueden tener contexto de proyectos privados en local (`~/.claude/`) — este sistema garantiza que nunca lleguen al repo.
+
+### Convención de markers
+
+Para que el contexto de un proyecto coexista en tu `~/.claude/` local sin filtrarse:
+
+```markdown
+<!-- PROJECT-CONTEXT:START -->
+## Contexto del proyecto actual
+...datos específicos: tablas, rutas, costos, nombres...
+<!-- PROJECT-CONTEXT:END -->
+```
+
+`update.sh` strip automáticamente estos bloques al sincronizar.
+
+### Sanitize automático
+
+```bash
+# Corre automáticamente en update.sh — también disponible manual:
+bash scripts/sanitize-memory-agents.sh claude/memory/agents/
+```
+
+Dos mecanismos:
+1. **Markers explícitos** — strip preciso del bloque marcado
+2. **Fallback** — elimina `## Contexto del proyecto` y su contenido si no hay markers (avisa en consola)
+
+### Pre-commit hook
+
+Bloquea commits que contengan en `claude/memory/agents/`, `topics/` o `skills/`:
+- `## Contexto del proyecto actual` sin markers
+- Nombres de clientes o proyectos privados
+- Rutas absolutas a proyectos locales
+
+```
+🔴 PRIVACY GUARD — patrón detectado: '## Contexto del proyecto actual'
+   Opciones: 1) agregar markers  2) correr sanitize  3) remover manualmente
+```
+
+El hook se instala automáticamente con `install.sh`.
+
 ---
 
 ## Versiones
+
+### v3.5.0 — 2026-03-24 · Sistema de privacidad
+
+Previene que contexto de proyectos privados filtre al repo público.
+
+**Nuevo — `scripts/sanitize-memory-agents.sh`:**
+- Strip de bloques `<!-- PROJECT-CONTEXT:START/END -->` (mecanismo explícito)
+- Fallback: elimina secciones `## Contexto del proyecto` sin markers
+- Se ejecuta automáticamente en `update.sh` tras cada sync
+
+**Nuevo — Pre-commit hook (`.git/hooks/pre-commit`):**
+- Escanea staged files en `claude/memory/agents/`, `topics/` y `skills/`
+- Bloquea si detecta patrones privados: nombre de cliente, rutas de proyecto, sección sin markers
+- Mensaje de error con 3 opciones de resolución
+
+**Actualizado — `update.sh`:**
+- Integra paso de sanitize automático post-copia
+- Ruta de helix-engine ahora usa variable `$HELIX_ENGINE_SRC` en lugar de ruta hardcodeada
+
+**Actualizado — `CLAUDE.md` global:**
+- Nueva sección `PRIVACIDAD DEL REPO GLOBAL` con la convención de markers documentada
+
+**Fix — limpieza retroactiva:**
+- Eliminado contexto de dos proyectos privados que habían filtrado en v3.4.0
+- Skills `fastapi-async`, `celery-redis`, `react-query-patterns` generalizados a v2.0
+- `memory/agents/fin-saas-advisor.md` eliminado (era 100% específico de un proyecto)
+- `brand-identity-expert` y `app-creative-genius` ahora piden contexto al usuario en lugar de asumirlo
+
+---
 
 ### v3.4.0 — 2026-03-24 · Agentes creativos + protocolo diálogo + hooks globales
 
@@ -433,7 +517,8 @@ Sincronización completa de `~/.claude/` con el repo. Agentes, protocolo de comu
 |--------|---------|---------------|
 | `brand-identity-expert` | Marca, identidad visual, Google Ads, Meta Ads | Naming, taglines, estrategia de marketing digital |
 | `app-creative-genius` | Ideas de producto, features, diferenciación | Propuestas de mejora, modelo de negocio, UX disruptivo |
-| `fin-saas-advisor` | Precios, márgenes, escalera anti-gaming | Diseño de planes, rentabilidad, descuentos anuales |
+
+> `fin-saas-advisor` fue incluido en esta versión pero eliminado en v3.5.0 al detectarse que era específico de un proyecto privado.
 
 **Nuevo — Infraestructura global (`claude/`):**
 - `helpers/statusline.cjs` — barra de estado dinámica para Claude Code (contexto % + rama git)
