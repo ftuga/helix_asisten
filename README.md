@@ -1,6 +1,6 @@
 # Helix — Configuración del Agente Auto-Evolutivo
 
-> **Versión actual: v3.3.0** — [Historial de versiones](#versiones)
+> **Versión actual: v3.4.0** — [Historial de versiones](#versiones)
 
 Backup completo de Helix para Claude Code. Clona y ejecuta `install.sh` en cualquier máquina nueva.
 
@@ -22,7 +22,7 @@ claude/              → ~/.claude/ (config global)
   CLAUDE.md          → Instrucciones globales de Helix + protocolo de capas
   settings.json      → Agent Teams habilitado (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1)
   *.sh / *.py        → Scripts de auto-evolución (evolve, session-start/end, self-check)
-  agents/            → 18 agentes activos + 17 deshabilitados
+  agents/            → 19 agentes activos + 17 deshabilitados + 2 creativos (brand-identity-expert, app-creative-genius)
   commands/          → claude-flow-help/memory/swarm
   memory/            → design-system, agents-index, evolution-log, topics
   skills/            → 28 skills reutilizables entre proyectos
@@ -423,6 +423,29 @@ git push
 ---
 
 ## Versiones
+
+### v3.4.0 — 2026-03-24 · Agentes creativos + protocolo diálogo + hooks globales
+
+Sincronización completa de `~/.claude/` con el repo. Agentes, protocolo de comunicación y hooks de sesión disponibles para cualquier instalación nueva.
+
+**Nuevo — Agentes especializados:**
+| Agente | Dominio | Cuándo usarlo |
+|--------|---------|---------------|
+| `brand-identity-expert` | Marca, identidad visual, Google Ads, Meta Ads | Naming, taglines, estrategia de marketing digital |
+| `app-creative-genius` | Ideas de producto, features, diferenciación | Propuestas de mejora, modelo de negocio, UX disruptivo |
+| `fin-saas-advisor` | Precios, márgenes, escalera anti-gaming | Diseño de planes, rentabilidad, descuentos anuales |
+
+**Nuevo — Infraestructura global (`claude/`):**
+- `helpers/statusline.cjs` — barra de estado dinámica para Claude Code (contexto % + rama git)
+- `settings.json` actualizado — hooks PreToolUse: `cost-tracker.sh` + `scope-guard.sh` + `suggest-compact.sh`; PostToolUse: `helix-bitacora-hook.sh`
+- `memory/topics/interfaz.md` — topic de reglas de comunicación activas (protocolo diálogo)
+- `memory/active-rules.md` — 31 reglas seeded del evolution-log, disponibles en instalación nueva
+
+**Actualizado — CLAUDE.md global:**
+- Evoluciones #9–15 integradas: protocolo diálogo, análisis inicial automático, bitácora silenciosa, modo economía, pipeline de salud, memoria híbrida
+- Catálogo de agentes ampliado con los 3 nuevos dominios (marca, creatividad de producto, finanzas SaaS)
+
+---
 
 ### v3.3.0 — 2026-03-24 · Auto-evolución activa
 
