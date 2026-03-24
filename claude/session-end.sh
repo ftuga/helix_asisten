@@ -117,6 +117,29 @@ echo "$DATE — SESION #$SESSION_NUM CERRADA — $RESUMEN" >> "$GLOBAL_MEMORY_DI
 echo -e "${GREEN}Sesion #$SESSION_NUM registrada.${NC}"
 echo "   Resumen: $RESUMEN"
 echo "   Aprendizajes: $SESSION_LEARNS | Skills: $SESSION_SKILLS"
+
+# ── Costo estimado de sesión ──────────────────────────────────
+SESSION_ID="${CLAUDE_SESSION_ID:-}"
+COST_FILE=""
+if [[ -n "$SESSION_ID" ]]; then
+  COST_FILE="/tmp/helix-cost-${SESSION_ID}"
+elif ls /tmp/helix-cost-* 2>/dev/null | head -1 | grep -q "helix-cost"; then
+  # Fallback: tomar el más reciente
+  COST_FILE=$(ls -t /tmp/helix-cost-* 2>/dev/null | head -1)
+fi
+
+if [[ -n "$COST_FILE" && -f "$COST_FILE" ]]; then
+  TOOL_CALLS=$(tr -d '[:space:]' < "$COST_FILE" 2>/dev/null || echo "0")
+  python3 -c "
+n = int('$TOOL_CALLS') if '$TOOL_CALLS'.isdigit() else 0
+# Estimación Sonnet 4.6: ~\$3/M input + ~\$15/M output
+# Por tool call promedio: ~2000 tokens input + ~500 output
+# = 0.006 + 0.0075 = ~\$0.014 por call (muy aproximado)
+cost = n * 0.014
+print(f'   💰 Tool calls: {n} · Costo estimado: ~\${cost:.2f} USD (±50%)')
+" 2>/dev/null || echo "   💰 Tool calls: $TOOL_CALLS"
+  rm -f "$COST_FILE" 2>/dev/null || true
+fi
 echo ""
 
 # ── Auto-compresion si CLAUDE.md supera 200 lineas ───────────
