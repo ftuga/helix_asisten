@@ -109,23 +109,31 @@ else
 fi
 
 # Scripts de layout y copia limpia
-for script in dev-claude.sh copy-clean.sh; do
+for script in dev-claude.sh copy-clean.sh claude-ui.py claude-ui.sh; do
   if [[ -f "$REPO_DIR/scripts/$script" ]]; then
     cp "$REPO_DIR/scripts/$script" "$HOME/scripts/"
     chmod +x "$HOME/scripts/$script"
   fi
 done
-echo "  → ~/scripts/dev-claude.sh y copy-clean.sh instalados"
+echo "  → ~/scripts/dev-claude.sh, copy-clean.sh y claude-ui instalados"
+
+# Dependencias Python para la TUI
+if command -v pip3 &>/dev/null; then
+  echo "→ Instalando dependencias Python para TUI..."
+  pip3 install --quiet textual rich psutil gitpython
+  echo "  → textual rich psutil gitpython instalados"
+fi
 
 # Aliases tmux
 for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
   if [[ -f "$RC" ]] && ! grep -q 'alias dev=' "$RC"; then
     cat >> "$RC" << 'ALIASES'
 
-# Helix / tmux aliases
+# Helix / tmux / TUI aliases
 alias dev="bash ~/scripts/dev-claude.sh"
 alias tdev="tmux attach -t dev 2>/dev/null || bash ~/scripts/dev-claude.sh"
 alias cpclean="~/scripts/copy-clean.sh"
+alias ui="bash ~/scripts/claude-ui.sh"
 ALIASES
     echo "  → aliases dev/tdev/cpclean añadidos a $RC"
   fi
