@@ -1,5 +1,7 @@
 # Helix — Configuración del Agente Auto-Evolutivo
 
+> **Versión actual: v3.2.0** — [Historial de versiones](#versiones)
+
 Backup completo de Helix para Claude Code. Clona y ejecuta `install.sh` en cualquier máquina nueva.
 
 ## Instalación rápida
@@ -417,3 +419,50 @@ bash update.sh
 git add -A && git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```
+
+---
+
+## Versiones
+
+### v3.2.0 — 2026-03-24 · Integración hackathon winner
+
+Incorporación selectiva de componentes de `affaan-m/everything-claude-code` (ganador hackathon Anthropic 2025).
+
+**Nuevo — Agentes:**
+| Agente | Descripción |
+|--------|-------------|
+| `harness-optimizer` | Audita y auto-optimiza la configuración de Helix (hooks, routing, tokens, seguridad). No toca código del producto. |
+| `loop-operator` | Opera loops autónomos con escalación segura: detecta stalls, retries infinitos y exceso de presupuesto. |
+
+**Nuevo — Skills:**
+| Skill | Comando | Descripción |
+|-------|---------|-------------|
+| `context-budget` | `/context-budget` | Audita tokens consumidos por agentes, skills, reglas y MCP servers. Identifica bloat y sugiere cortes. |
+| `strategic-compact` | Hook automático | Cuenta tool calls por sesión y sugiere `/compact` al alcanzar 50 llamadas (luego cada 25). Evita compactaciones a mitad de tarea. |
+
+**Nuevo — Hook PreToolUse:**
+- `suggest-compact.sh` registrado en `settings.json` → se ejecuta en cada Write/Edit/Bash
+
+---
+
+### v3.1.0 — 2026-03-20 · Sistema auto-mantenimiento
+
+- `/helix-analiza` — análisis inicial de proyecto con memoria híbrida
+- `/helix-salud` — evaluación de salud + pipeline "Tenemos que hablar"
+- `/helix-actualiza` — mantenimiento y actualización de análisis
+- `/economia` — modo economía (sin subagentes, Grep-first, respuestas ultra-concisas)
+- Bitácora de proyecto: mantenimiento silencioso automático
+- Checklist pre-Read siempre activo
+- Umbrales de subagentes: 1 dominio → yo solo, 2 → 1 subagente, 3+ → Capa 2
+
+---
+
+### v3.0.0 — 2026-03-08 · RuFlo V3 + helix-engine
+
+- Motor RuFlo V3 inyectable (`helix-engine/`)
+- HNSW Vector Store (150x-12500x speedup vs búsqueda lineal)
+- SONA Learning + ReasoningBank
+- 26 categorías de agentes: sparc, swarm, v3, github, optimization, hive-mind, consensus...
+- Statusline dinámica (swarm + tokens + CVEs + AgentDB)
+- AgentDB con quantization y semantic vector search
+- 4 capas de orquestación: Ollama → Subagents → Swarm → Agent Teams
