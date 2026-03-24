@@ -34,6 +34,11 @@ cp "$CLAUDE_DIR/memory/"*.txt          "$REPO_DIR/claude/memory/" 2>/dev/null ||
 cp "$CLAUDE_DIR/memory/agents/"*.md    "$REPO_DIR/claude/memory/agents/" 2>/dev/null || true
 cp "$CLAUDE_DIR/memory/topics/"*.md    "$REPO_DIR/claude/memory/topics/" 2>/dev/null || true
 
+# Sanitize: eliminar contexto de proyecto privado de memory/agents y topics
+echo "→ Sanitizando contexto de proyecto..."
+bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/agents"
+bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/topics"
+
 # Skills (sync completo)
 rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
 
