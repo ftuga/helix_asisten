@@ -30,6 +30,15 @@
             "command": "bash \"$HOME/.claude/helpers/scope-guard.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Bash|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/capa0-guard.sh\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
