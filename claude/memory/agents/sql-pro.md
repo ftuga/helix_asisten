@@ -17,7 +17,3 @@
 ## Limitaciones
 - Solo SQL e índices; no toca código de aplicación
 - Para decisiones de esquema usar `database-architect`
-
-## Contexto del proyecto
-PostgreSQL con AsyncSession + SQLAlchemy. `selectinload()` obligatorio para relaciones N:1 y 1:N.
-*El proyecto activo inyecta sus tablas y gotchas via `helix-analysis.md`.*

@@ -177,6 +177,31 @@ for line in lines[:6]:
   echo ""
 fi
 
+# ── Bitácora reciente del proyecto ───────────────────────────
+if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-bitacora.md" ]]; then
+  BITACORA_ROWS=$(python3 -c "
+from pathlib import Path
+content = Path('$PROJECT_ROOT/.claude/memory/helix-bitacora.md').read_text()
+# Extraer filas de tabla con datos (no headers ni separadores)
+rows = [
+    l.strip() for l in content.splitlines()
+    if l.strip().startswith('|')
+    and not l.strip().startswith('|--')
+    and 'Fecha' not in l
+    and 'Tipo' not in l
+]
+# Últimas 5 entradas
+for row in rows[-5:]:
+    print('   ' + row[:120])
+" 2>/dev/null || true)
+
+  if [[ -n "$BITACORA_ROWS" ]]; then
+    echo -e "${GREEN}📓 Bitácora reciente (últimas entradas):${NC}"
+    echo "$BITACORA_ROWS"
+    echo ""
+  fi
+fi
+
 # ── Routing feedback — agentes más efectivos del proyecto ─────
 FEEDBACK_FILE="$GLOBAL_MEMORY_DIR/routing-feedback.jsonl"
 if [[ -f "$FEEDBACK_FILE" ]]; then

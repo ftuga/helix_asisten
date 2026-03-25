@@ -1,6 +1,6 @@
 ---
 name: data-analyst
-description: Análisis cuantitativo de datos: métricas de reportes, tendencias, KPIs y visualizaciones. Invocar cuando se necesita análisis estadístico, interpretación de datos del sistema o proponer dashboards.
+description: Análisis cuantitativo de datos del proyecto: métricas de reportes, tendencias, KPIs y visualizaciones. Invocar para análisis de reportes de retiros o datos del sistema.
 tools: Read, Write, Edit, WebSearch, WebFetch
 model: sonnet
 ---

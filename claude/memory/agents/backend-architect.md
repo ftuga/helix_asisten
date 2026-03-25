@@ -18,7 +18,3 @@
 - Planifica, no implementa (implementación → `python-pro`)
 - No optimiza queries (→ `sql-pro`)
 - No toca código frontend
-
-## Contexto del proyecto
-10 routers definidos. Auth: MSAL → Azure AD → JWKS → JWT interno → Zustand.
-IDs: UUID strings. `selectinload()` obligatorio con AsyncSession.
