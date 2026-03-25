@@ -2,7 +2,7 @@
 # suggest-compact.sh — Compactación estratégica para Helix
 # Cuenta tool calls por sesión y sugiere /compact en momentos lógicos.
 # Fuente original: affaan-m/everything-claude-code (hackathon winner 2025)
-# Adaptado para Helix — 2026-03-24
+# Adaptado para Helix por Luis Frontuso — 2026-03-24
 
 # Configuración (override con variables de entorno)
 THRESHOLD="${COMPACT_THRESHOLD:-50}"
