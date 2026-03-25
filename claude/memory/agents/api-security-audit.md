@@ -16,7 +16,3 @@
 ## Limitaciones
 - Se enfoca en la capa API; para infra completa usar `security-auditor`
 - Puede modificar código para aplicar fixes (tools: Read, Write, Edit, Bash)
-
-## Contexto del proyecto
-Auth: `Bearer {jwt_propio}` en headers. Roles: `admin` | área específica.
-Todos los endpoints protegidos excepto `/api/auth/login` y `/api/auth/login/test`.

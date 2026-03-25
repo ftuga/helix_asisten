@@ -19,6 +19,3 @@
 - No diseña arquitectura (eso es `backend-architect`)
 - No optimiza queries SQL avanzadas (eso es `sql-pro`)
 - No toca código frontend
-
-## Contexto del proyecto
-*El proyecto activo inyecta su propio contexto via `helix-analysis.md` al inicio de sesión.*

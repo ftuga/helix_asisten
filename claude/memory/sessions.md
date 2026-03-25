@@ -43,3 +43,42 @@
 **Aprendizajes:** 0
 0 | **Skills:** 0
 0
+
+## Sesion #4 — 2026-03-20 12:08
+**Resumen:** Evolución v3: protocolo diálogo 9 reglas, /helix-analiza, bitácora hook PostToolUse, helix-metricas.sh, pipeline 'Tenemos que hablar', /helix-salud, /helix-actualiza, /economia — 15 evoluciones registradas, README actualizado, push a ftuga/helix_asisten
+**Aprendizajes:** 14 | **Skills:** 0
+0
+
+## Sesion #4 — 2026-03-20 12:46
+**Resumen:** evaluador_api: análisis inicial, 4 fixes pipeline (fallback PDF, rate limit backoff, SSRF webhook, prompt injection), análisis modelo de costos guardado en docs/
+**Aprendizajes:** 14 | **Skills:** 0
+0
+
+## Sesion #4 — 2026-03-20 15:24
+**Resumen:** Sesión #6: fixes de producción — password_must_change (migración DB + rebuild imágenes), 504 nginx (serve 0.0.0.0), validación FRONTEND_URL en deploy.sh, diagnóstico columnas faltantes en BD
+**Aprendizajes:** 14 | **Skills:** 0
+0
+
+## Sesion #4 — 2026-03-23 23:58
+**Resumen:** evaluador_api: plan-implementacion docs agregado al repo con Fase 6 (top-up packs) diseñada y deuda técnica DT-1..4 documentada. Fases 1-5 del sistema de licenciamiento completadas. Pendiente: implementar Fase 6 (Stripe + cvs_extra_disponibles + webhooks).
+**Aprendizajes:** 0
+0 | **Skills:** 0
+0
+
+## Sesion #4 — 2026-03-24 00:42
+**Resumen:** helix v3.3.0: launcher tmux con helix.sh, swarm panel dashboard, alias helix en bashrc/zshrc, oferta de instalación de tmux, deploy completo y push a repo
+**Aprendizajes:** 0
+0 | **Skills:** 0
+0
+
+## Sesion #4 — 2026-03-24 05:28
+**Resumen:** tmux layout v3.0: 4 slots de agentes arriba + claude abajo, helper helix-panel-attach, key API movida a ~/.helix_secrets
+**Aprendizajes:** 0
+0 | **Skills:** 0
+0
+
+## Sesion #4 — 2026-03-24 11:17
+**Resumen:** Sesión de mantenimiento de helix_asisten: limpieza de privacidad (SerSocial + evaluador_api), reescritura completa del README, sistema de privacidad (pre-commit hook + sanitize), generación de prompts de logo para GitHub banner 16:9
+**Aprendizajes:** 0
+0 | **Skills:** 0
+0

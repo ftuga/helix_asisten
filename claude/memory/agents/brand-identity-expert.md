@@ -12,3 +12,4 @@ Estratega creativo de marcas + experto en marketing digital B2B + especialista e
 ## Límite
 No ejecuta campañas ni accede a plataformas de ads. Solo estrategia, estructura y copies listos para implementar.
 
+---

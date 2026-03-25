@@ -28,3 +28,7 @@
 ## Archivado 2026-03-08 21:37 — Historial sesiones
 0 |
 | #3 | 2026-03-08 | Ecosistema completo: docs migradas, health-check, validate, forget, compress con auto-trigger, peso de contexto medido — 15/15 checks OK | 14 | 0
+
+## Archivado 2026-03-20 15:24 — Historial sesiones
+| #4 | 2026-03-08 | Audit completo + Paz y Salvo PDF + 5 bugs corregidos |
+| #5 | 2026-03-14 | Agentes (disabled 8) + MCP (4) + compresión CLAUDE.md + refactor global/local |
