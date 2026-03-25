@@ -1,6 +1,6 @@
 # Skill: docker-compose
 > Auto-generada · Versión v1.0
-> **Descripción:** Comandos frecuentes Docker Compose para proyectos con backend + worker + DB
+> **Descripción:** Comandos frecuentes Docker Compose
 
 ## Comandos Esenciales
 

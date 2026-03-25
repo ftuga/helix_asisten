@@ -1,6 +1,6 @@
 # Skill: react-query-patterns
-> Versión v2.0 — Patrones genéricos
-> **Descripción:** Patrones React Query + Zustand + Axios para frontends React/TypeScript
+> Auto-generada · Versión v1.0
+> **Descripción:** Patrones React Query + Zustand + Axios
 
 ## Cuándo usar esta skill
 - Al agregar nuevas queries o mutaciones al frontend
@@ -10,13 +10,16 @@
 ## Estructura de api/index.ts
 
 ```typescript
-// ✅ SIEMPRE agregar métodos aquí — nunca fetch directo desde componentes
-export const itemsApi = {
-  list: (params?) => axios.get('/api/items', { params }).then(r => r.data),
-  get: (id: string) => axios.get(`/api/items/${id}`).then(r => r.data),
-  create: (data: ItemCreate) => axios.post('/api/items', data).then(r => r.data),
-  update: (id: string, data: ItemUpdate) => axios.put(`/api/items/${id}`, data).then(r => r.data),
-  delete: (id: string) => axios.delete(`/api/items/${id}`).then(r => r.data),
+// ✅ SIEMPRE agregar métodos aquí — nunca fetch directo
+export const retirosApi = {
+  list: (params?) => axios.get('/api/retiros', { params }).then(r => r.data),
+  get: (id: string) => axios.get(`/api/retiros/${id}`).then(r => r.data),
+  create: (data: RetiroCreate) => axios.post('/api/retiros', data).then(r => r.data),
+  update: (id: string, data: RetiroUpdate) => axios.put(`/api/retiros/${id}`, data).then(r => r.data),
+  cerrarEtapa: (id: string, area: string) =>
+    axios.post(`/api/retiros/${id}/etapas/${area}/cerrar`).then(r => r.data),
+  reabrirEtapa: (id: string, area: string) =>
+    axios.delete(`/api/retiros/${id}/etapas/${area}/cerrar`).then(r => r.data),
 };
 ```
 
@@ -24,20 +27,18 @@ export const itemsApi = {
 
 ```typescript
 // Query básica
-const { data: item, isLoading, error } = useQuery({
-  queryKey: ['item', id],
-  queryFn: () => itemsApi.get(id!),
+const { data: retiro, isLoading, error } = useQuery({
+  queryKey: ['retiro', id],
+  queryFn: () => retirosApi.get(id!),
   enabled: !!id,
 });
 
-// Mutación con invalidación de cache
-const updateItem = useMutation({
-  mutationFn: ({ id, data }: { id: string; data: ItemUpdate }) =>
-    itemsApi.update(id, data),
-  onSuccess: (_, { id }) => {
-    // ✅ Invalidar ANTES de navigate() en mutaciones destructivas
-    queryClient.invalidateQueries({ queryKey: ['item', id] });
-    queryClient.invalidateQueries({ queryKey: ['items'] });
+// Mutación con invalidación
+const toggleTarea = useMutation({
+  mutationFn: ({ tareaId, completada }: { tareaId: string; completada: boolean }) =>
+    tareasApi.toggle(retiroId, tareaId, completada),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['retiro', retiroId] });
   },
 });
 ```
@@ -48,52 +49,54 @@ const updateItem = useMutation({
 // store/auth.ts — patrón de uso
 const { user, token, logout } = useAuthStore();
 
-// ✅ Chequeo de roles
-if (user?.role === 'admin') { /* acceso total */ }
+// ✅ Detección de admin
+if (user?.rol === 'admin') { /* acceso total */ }
 
-// ⛔ NUNCA mezclar role con area/department
+// ⛔ NUNCA
 if (user?.area === 'admin') { /* admin es rol, no área */ }
 
 // Rehydration al cargar la app
 useEffect(() => {
-  useAuthStore.getState().loadUser(); // Valida token existente en localStorage
+  useAuthStore.getState().loadUser(); // Valida token existente
 }, []);
 ```
 
 ## ProtectedRoute Pattern
 
 ```tsx
-// App.tsx — protección por rol y/o área
-<Route path="/admin" element={
-  <ProtectedRoute allowedRoles={['admin']}>
-    <AdminPage />
+// App.tsx
+<Route path="/retiros/nuevo" element={
+  <ProtectedRoute allowedAreas={['rrhh']} allowedRoles={['admin']}>
+    <NuevoRetiroPage />
   </ProtectedRoute>
 } />
 
 // ProtectedRoute — admin SIEMPRE pasa
-const canAccess = user?.role === 'admin' ||
-  allowedAreas?.includes(user?.area) ||
-  allowedRoles?.includes(user?.role);
+const canAccess = user?.rol === 'admin' ||
+  (allowedAreas?.includes(user?.area) || allowedRoles?.includes(user?.rol));
 ```
 
-## Regla clave: invalidar ANTES de navegar
+## Compras — Casos Especiales
 
 ```typescript
-// ❌ MAL — navega antes de que el cache se actualice
-onSuccess: () => {
-  navigate('/items');
-  queryClient.invalidateQueries({ queryKey: ['items'] });
-}
+// Reportes de compras: usar retirosApi.list(), NO reportesApi.porArea()
+// (reportes por área devuelve vacío para compras que no tienen tareas)
+const { data } = useQuery({
+  queryKey: ['reportes-compras'],
+  queryFn: () => retirosApi.list({ con_activos: true }),
+  enabled: user?.area === 'compras',
+});
 
-// ✅ BIEN — primero invalida, luego navega
-onSuccess: () => {
-  queryClient.invalidateQueries({ queryKey: ['items'] });
-  navigate('/items');
-}
+// Dashboard/historial compras: solo retiros con activos_pendientes > 0
+const retirosFiltrados = retiros?.filter(r =>
+  user?.area !== 'compras' || r.activos_pendientes > 0
+);
 ```
+
+## Dependencias
+- Ninguna (skill base frontend)
 
 ## Historial de cambios
 | Versión | Fecha | Cambio |
 |---|---|---|
-| v2.0 | 2026-03-24 | Generalizado — eliminadas referencias a proyecto específico |
-| v1.0 | INIT | Patrones iniciales |
+| v1.0 | INIT | Patrones principales del proyecto |

@@ -574,6 +574,37 @@ PYEOF
 }
 
 # ════════════════════════════════════════════════════════════
+# COMANDO: queue — Encolar aprendizaje para proceso automático (Stop hook)
+# ════════════════════════════════════════════════════════════
+cmd_queue() {
+  local categoria="${1:-funcionalidad}"
+  local aprendizaje="${2:-}"
+  local trigger="${3:-auto-queue}"
+
+  if [[ -z "$aprendizaje" ]]; then
+    err "Uso: bash .claude/evolve.sh queue <categoría> <aprendizaje> [trigger]"
+    exit 1
+  fi
+
+  local queue_file="$GLOBAL_MEMORY_DIR/evolve-queue.jsonl"
+  mkdir -p "$GLOBAL_MEMORY_DIR"
+
+  # Escribir entrada JSON en la cola
+  PYCAT="$categoria" PYLEARN="$aprendizaje" PYTRIGGER="$trigger" python3 - "$queue_file" <<'PYEOF'
+import os, json, sys
+from pathlib import Path
+entry = {
+    "categoria": os.environ["PYCAT"],
+    "aprendizaje": os.environ["PYLEARN"],
+    "trigger": os.environ["PYTRIGGER"],
+}
+with open(sys.argv[1], "a") as f:
+    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+print(f"[QUEUE] Encolado → {entry['categoria']}: {entry['aprendizaje'][:60]}")
+PYEOF
+}
+
+# ════════════════════════════════════════════════════════════
 # DISPATCHER PRINCIPAL
 # ════════════════════════════════════════════════════════════
 COMMAND="${1:-help}"
@@ -581,6 +612,7 @@ shift || true
 
 case "$COMMAND" in
   learn)     cmd_learn "$@" ;;
+  queue)     cmd_queue "$@" ;;
   forget)    cmd_forget "$@" ;;
   validate)  cmd_validate "$@" ;;
   skill)     cmd_skill "$@" ;;
@@ -593,6 +625,7 @@ case "$COMMAND" in
     echo ""
     echo "  Comandos:"
     echo "    learn     <categoría> <aprendizaje> <trigger>"
+    echo "    queue     <categoría> <aprendizaje> [trigger]  ← encola, procesa al Stop hook"
     echo "    forget    <término> <razón>          ← olvidar lo obsoleto"
     echo "    skill     <nombre> <descripción> [contenido]"
     echo "    risk      <archivo> <zona> <ALTO|MEDIO|BAJO> <descripción>"

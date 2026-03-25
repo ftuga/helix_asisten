@@ -1,6 +1,6 @@
 # Skill: fastapi-async
-> Versión v2.0 — Patrones genéricos
-> **Descripción:** Patrones async/await con SQLAlchemy AsyncSession en FastAPI
+> Auto-generada · Versión v1.0
+> **Descripción:** Patrones async/await con SQLAlchemy AsyncSession en FastAPI — específico
 
 ## Cuándo usar esta skill
 - Toda query a la DB en routers FastAPI
@@ -10,16 +10,17 @@
 ## ⚠️ Patrón CRÍTICO: No re-leer ORM tras asignación
 
 ```python
-# ❌ MAL — SQLAlchemy identity map devuelve valor STALE tras flush
-entity.jsonb_field = new_data
+# ❌ MAL — SQLAlchemy identity map devuelve valor STALE
+retiro.etapas_cerradas = nueva_data
 await db.flush()
-if entity.jsonb_field.get("key"):  # <- puede devolver valor viejo
+if retiro.etapas_cerradas.get("compras"):  # <- puede devolver valor viejo
+    ...
 
 # ✅ BIEN — Usar variable local, no re-leer del ORM
-new_data = {**entity.jsonb_field, "key": value}
-entity.jsonb_field = new_data
+nueva_data = {**retiro.etapas_cerradas, "compras": {...}}
+retiro.etapas_cerradas = nueva_data
 await db.flush()
-if new_data.get("key"):  # <- usar la variable local
+if nueva_data.get("compras"):  # <- usar la variable local
     ...
 ```
 
@@ -30,22 +31,22 @@ if new_data.get("key"):  # <- usar la variable local
 from sqlalchemy.orm import selectinload
 
 result = await db.execute(
-    select(Parent)
-    .options(selectinload(Parent.children))
-    .options(selectinload(Parent.attachments))
-    .where(Parent.id == parent_id)
+    select(Retiro)
+    .options(selectinload(Retiro.tareas))
+    .options(selectinload(Retiro.adjuntos))
+    .where(Retiro.id == retiro_id)
 )
-entity = result.scalar_one_or_none()
+retiro = result.scalar_one_or_none()
 ```
 
 ## Patrón: Boolean desde raw SQL
 
 ```python
 # ❌ MAL — raw SQL puede devolver NULL para booleanos
-{"active": row.active}
+{"completada": tarea.completada}
 
 # ✅ BIEN — siempre bool()
-{"active": bool(row.active)}
+{"completada": bool(tarea.completada)}
 ```
 
 ## Patrón: Session en Celery vs FastAPI
@@ -53,19 +54,21 @@ entity = result.scalar_one_or_none()
 ```python
 # FastAPI routers — async
 from app.database import AsyncSession
-async def my_endpoint(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(MyModel))
+async def mi_endpoint(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Retiro))
 
-# Celery tasks — sync (¡distinto pool de conexiones!)
+# Celery tasks — sync (distinto!)
 from app.database import SyncSessionLocal
 @celery_app.task
-def my_task():
+def mi_tarea():
     with SyncSessionLocal() as db:
-        items = db.query(MyModel).all()
+        retiros = db.query(Retiro).all()
 ```
+
+## Dependencias
+- `docker-compose` (para correr el entorno)
 
 ## Historial de cambios
 | Versión | Fecha | Cambio |
 |---|---|---|
-| v2.0 | 2026-03-24 | Generalizado — eliminadas referencias a proyecto específico |
-| v1.0 | INIT | Patrones iniciales |
+| v1.0 | INIT | Creación con patrones críticos del proyecto |
