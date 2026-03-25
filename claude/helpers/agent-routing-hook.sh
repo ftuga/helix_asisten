@@ -1,70 +1,62 @@
 #!/usr/bin/env bash
 # agent-routing-hook.sh — PostToolUse(Agent): captura routing automáticamente
-# Variables de entorno disponibles: CLAUDE_TOOL_INPUT, CLAUDE_TOOL_RESULT
+# Recibe JSON por stdin: { tool_input, tool_response, tool_name, cwd, ... }
 set -uo pipefail
 
 FEEDBACK="$HOME/.claude/memory/routing-feedback.jsonl"
 mkdir -p "$HOME/.claude/memory"
 
-INPUT="${CLAUDE_TOOL_INPUT:-}"
-RESULT="${CLAUDE_TOOL_RESULT:-}"
+# Leer payload de stdin (bash lo consume aquí, se pasa a python via env)
+PAYLOAD=$(cat)
+[[ -z "$PAYLOAD" ]] && exit 0
 
-[[ -z "$INPUT" ]] && exit 0
+HOOK_PAYLOAD="$PAYLOAD" python3 - "$FEEDBACK" <<'PYEOF'
+import sys, json, os
+from datetime import datetime
+from pathlib import Path
 
-# Extraer subagent_type y description del input
-AGENT=$(echo "$INPUT" | python3 -c "
-import sys, json
+payload_str = os.environ.get("HOOK_PAYLOAD", "")
+if not payload_str:
+    sys.exit(0)
+
 try:
-    d = json.loads(sys.stdin.read())
-    print(d.get('subagent_type', 'general-purpose'))
+    data = json.loads(payload_str)
 except:
-    print('unknown')
-" 2>/dev/null || echo "unknown")
+    sys.exit(0)
 
-DESCRIPCION=$(echo "$INPUT" | python3 -c "
-import sys, json
-try:
-    d = json.loads(sys.stdin.read())
-    prompt = d.get('prompt', d.get('description', ''))
-    # Primeras 80 chars como resumen de tarea
-    print(prompt[:80].replace('\n', ' ').strip())
-except:
-    print('')
-" 2>/dev/null || echo "")
+tool_input = data.get("tool_input", {})
+tool_response = data.get("tool_response", "")
+cwd = data.get("cwd", "")
 
-# Inferir resultado: largo/contenido del resultado
-RESULTADO=$(echo "$RESULT" | python3 -c "
-import sys
-r = sys.stdin.read()
-if not r or len(r) < 30:
-    print('failed')
-elif any(w in r.lower()[:200] for w in ['error', 'exception', 'failed', 'traceback']):
-    print('partial')
+agent = tool_input.get("subagent_type", "general-purpose")
+prompt = tool_input.get("prompt", tool_input.get("description", ""))[:80].replace("\n", " ").strip()
+
+# Inferir resultado
+resp_str = str(tool_response)
+if not resp_str or len(resp_str) < 30:
+    resultado = "failed"
+elif any(w in resp_str.lower()[:200] for w in ["error", "exception", "failed", "traceback"]):
+    resultado = "partial"
 else:
-    print('success')
-" 2>/dev/null || echo "unknown")
+    resultado = "success"
 
-# Auto-detectar proyecto
-PROJECT=""
-dir="$PWD"
-while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
-  if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]]; then
-    PROJECT=$(basename "$dir")
-    break
-  fi
-  dir=$(dirname "$dir")
-done
+# Detectar proyecto desde cwd
+project = ""
+p = Path(cwd)
+home = Path.home()
+while p != p.parent and p != home:
+    if (p / "CLAUDE.md").exists():
+        project = p.name
+        break
+    p = p.parent
 
-DATE=$(date '+%Y-%m-%d %H:%M')
-
-python3 -c "
-import json, sys
 entry = {
-    'ts': '$DATE',
-    'agente': '$AGENT',
-    'tarea': '$DESCRIPCION',
-    'resultado': '$RESULTADO',
-    'proyecto': '$PROJECT',
+    "ts": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "agente": agent,
+    "tarea": prompt,
+    "resultado": resultado,
+    "proyecto": project,
 }
-print(json.dumps(entry, ensure_ascii=False))
-" >> "$FEEDBACK" 2>/dev/null || true
+with open(sys.argv[1], "a") as f:
+    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+PYEOF
