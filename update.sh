@@ -39,8 +39,21 @@ echo "→ Sanitizando contexto de proyecto..."
 bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/agents"
 bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/topics"
 
-# Skills (sync completo)
+# Skills (sync completo + sanitize inline)
 rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
+echo "→ Sanitizando skills..."
+PATTERNS_FILE="$REPO_DIR/scripts/private-patterns.txt"
+if [[ -f "$PATTERNS_FILE" ]]; then
+  while IFS= read -r line; do
+    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+    PATTERN="${line%%|*}"
+    # Reemplazar patrón en todos los .md de skills (literal, no regex)
+    grep -rl "$PATTERN" "$REPO_DIR/claude/skills/" 2>/dev/null | while read -r f; do
+      sed -i "s/$PATTERN//g" "$f"
+      echo "  ✓ sanitized: $(basename $f) — '$PATTERN'"
+    done
+  done < "$PATTERNS_FILE"
+fi
 
 # Helpers globales (sync completo)
 rsync -a --delete "$CLAUDE_DIR/helpers/" "$REPO_DIR/claude/helpers/"
