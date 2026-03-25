@@ -1,0 +1,8 @@
+# Patrones que nunca deben llegar al repo público
+# Formato: patrón|descripción
+# Leído por: pre-commit hook, update.sh (sanitize de skills)
+SerSocial|Nombre de cliente/proyecto privado
+registro_retiros|Ruta de proyecto privado
+paz_y_salvo\.py|Archivo de proyecto privado
+evaluador_api|Nombre interno de proyecto privado
+## Contexto del proyecto actual|Sección de contexto sin markers

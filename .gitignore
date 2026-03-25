@@ -21,6 +21,11 @@ mcp-servers/
 # Per-project memory (vive en cada proyecto)
 projects/
 
+# Archivos runtime de memoria global (datos de sesión, no código)
+claude/memory/session-log.txt
+claude/memory/sessions.md
+claude/memory/evolution-log.txt
+
 # Helix engine — runtime (no versionar)
 helix-engine/.claude-flow/data/
 helix-engine/.claude-flow/sessions/
