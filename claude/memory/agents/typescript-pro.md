@@ -19,8 +19,3 @@
 - No implementa UI (eso es `frontend-developer`)
 - No toca lógica de negocio backend
 - Se enfoca en correctitud de tipos, no en runtime logic
-
-## Contexto del proyecto
-Stack: React 18 + TypeScript + Vite + Tailwind + React Query + Zustand.
-API types viven en `frontend/src/api/`. Zustand store en `frontend/src/store/`.
-Zona de riesgo: hooks de React nunca dentro de JSX condicional (React error #310).

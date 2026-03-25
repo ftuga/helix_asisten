@@ -9,3 +9,4 @@ Cuando se quieren ideas frescas para mejorar el producto: nuevas features, pivot
 ## Límite
 No implementa — genera visión y especificaciones de alto nivel. La implementación la hacen los agentes técnicos.
 
+---

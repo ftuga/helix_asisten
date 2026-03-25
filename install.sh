@@ -60,18 +60,13 @@ cp "$REPO_DIR/claude/memory/topics/"*.md   "$CLAUDE_DIR/memory/topics/" 2>/dev/n
 echo "→ Copiando skills..."
 cp -r "$REPO_DIR/claude/skills/." "$CLAUDE_DIR/skills/"
 
-# ── 6b. Helpers globales (statusline + scope-guard + cost-tracker + routing) ──
+# ── 6b. Helpers globales (sync completo desde claude/helpers/) ──
 echo "→ Instalando helpers globales..."
 mkdir -p "$CLAUDE_DIR/helpers"
+rsync -a "$REPO_DIR/claude/helpers/" "$CLAUDE_DIR/helpers/"
+chmod +x "$CLAUDE_DIR/helpers/"*.sh 2>/dev/null || true
+# statusline también en helix-engine
 cp "$REPO_DIR/helix-engine/.claude/helpers/statusline.cjs" "$CLAUDE_DIR/helpers/"
-# Helpers de la base claude/
-for helper in helix-bitacora-hook.sh helix-detect-stack.sh helix-metricas.sh \
-              scope-guard.sh cost-tracker.sh routing-learn.sh helix-swarm-panel.sh; do
-  if [[ -f "$REPO_DIR/claude/helpers/$helper" ]]; then
-    cp "$REPO_DIR/claude/helpers/$helper" "$CLAUDE_DIR/helpers/"
-    chmod +x "$CLAUDE_DIR/helpers/$helper"
-  fi
-done
 
 # ── 6c. Launcher helix + alias ──────────────────────────────
 echo "→ Instalando launcher helix..."

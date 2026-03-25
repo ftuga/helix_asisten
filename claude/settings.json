@@ -2,10 +2,6 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
-  "statusLine": {
-    "type": "command",
-    "command": "node \"$HOME/.claude/helpers/statusline.cjs\""
-  },
   "hooks": {
     "PreToolUse": [
       {
@@ -45,7 +41,30 @@
             "command": "bash \"$HOME/.claude/helpers/helix-bitacora-hook.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/agent-routing-hook.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/evolve-flush.sh\""
+          }
+        ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "node \"$HOME/.claude/helpers/statusline.cjs\""
   }
 }

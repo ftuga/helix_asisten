@@ -42,7 +42,10 @@ bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/topi
 # Skills (sync completo)
 rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
 
-# Statusline global (si fue actualizado en ~/.claude/helpers/)
+# Helpers globales (sync completo)
+rsync -a --delete "$CLAUDE_DIR/helpers/" "$REPO_DIR/claude/helpers/"
+
+# Statusline global (también en helix-engine)
 [[ -f "$CLAUDE_DIR/helpers/statusline.cjs" ]] && \
   cp "$CLAUDE_DIR/helpers/statusline.cjs" "$REPO_DIR/helix-engine/.claude/helpers/"
 
