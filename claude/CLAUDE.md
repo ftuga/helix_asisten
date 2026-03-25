@@ -234,8 +234,18 @@ Si session-start incluye `[HELIX-NECESITAMOS-HABLAR]`:
 **Umbral para subagentes:**
 Un archivo / un dominio → yo solo. Dos dominios en paralelo → 1 subagente máximo. Tres+ dominios con coordinación activa → Capa 2.
 
-**Capa 0 agresiva:**
-Logs, texto largo, salida Docker, CRUDs simples → Ollama primero (`bash ~/helix_asisten/scripts/capa0.sh logs|code "..."`). Escalar solo si respuesta es insuficiente.
+**Capa 0 agresiva — OBLIGATORIO antes de procesar con Claude:**
+
+| Trigger | Comando |
+|---|---|
+| Archivo o contenido > 200 líneas | `bash ~/helix_asisten/scripts/capa0.sh logs "$CONTENIDO"` |
+| `docker compose logs` o salida de contenedor | `bash ~/helix_asisten/scripts/capa0.sh logs "$(docker compose logs --tail=100)"` |
+| Stacktrace / traceback / error largo | `bash ~/helix_asisten/scripts/capa0.sh logs "$ERROR"` |
+| Refactor o explicación de bloque de código | `bash ~/helix_asisten/scripts/capa0.sh code "$CODIGO"` |
+| Transformación de datos o formato | `bash ~/helix_asisten/scripts/capa0.sh transform "$DATA"` |
+
+**Regla de escalado:** Si capa0 responde con "no sé" o la respuesta es insuficiente → escalar a Capa 1. Si capa0 resuelve → fin, no escalar.
+**Modelos disponibles:** `helix-scout` (logs/errores) · `helix-coder` (código/transformaciones)
 
 ---
 
