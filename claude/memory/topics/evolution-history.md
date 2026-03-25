@@ -31,3 +31,11 @@
 | 1 | 2026-03-08 | operatividad | `VAR=$((VAR + 1))` — `((VAR++))` falla con set -euo pipefail cuando VAR=0 |
 | 2 | 2026-03-08 | operatividad | `wc -l` devuelve espacios — siempre limpiar con `tr -d '[:space:]'` |
 | 3 | 2026-03-08 | operatividad | `git diff HEAD` sin filtro captura CLAUDE.md — filtrar con `-- '*.ts' '*.tsx'` |
+
+## Archivado 2026-03-20 12:08 — Historial evoluciones
+| 4 | 2026-03-08 | operatividad | Pasar strings a Python desde bash: usar variables de entorno, no escaping |
+| 5 | 2026-03-14 | arquitectura | CLAUDE.md global = reglas universales. CLAUDE.md proyecto = reglas específicas. No mezclar. |
+| 5 | 2026-03-20 | interfaz | Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento | usuario-solicitud-mejora |
+| 6 | 2026-03-20 | interfaz | Plan visible antes de ejecutar: mostrar A→B→C y esperar OK cuando tarea toca ≥2 archivos | usuario-solicitud-mejora |
+| 7 | 2026-03-20 | interfaz | Umbral de confianza: 'autonomía alta' ejecuta sin preguntar, 'autonomía baja' confirma cada paso | usuario-solicitud-mejora |
+| 8 | 2026-03-20 | interfaz | Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación | usuario-solicitud-mejora |
