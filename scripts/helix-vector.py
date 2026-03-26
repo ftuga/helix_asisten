@@ -211,6 +211,42 @@ def cmd_index_memories(args):
     print(json.dumps({"indexed": indexed, "collection": "helix_memory"}))
 
 
+def _extract_agent_index_text(content: str, max_chars: int = 4000) -> str:
+    """Extrae las partes más semánticamente ricas de un agente para indexar."""
+    import re
+    parts = []
+
+    # 1. Frontmatter completo (description + name + tools)
+    if content.startswith("---"):
+        end = content.find("---", 3)
+        if end > 0:
+            parts.append(content[:end+3])
+
+    body = content[content.find("---", 3)+3:].strip() if content.startswith("---") else content
+
+    # 2. Ejemplos (lo más semánticamente rico para routing)
+    examples = re.findall(r'<example>.*?</example>', body, re.DOTALL)
+    for ex in examples[:3]:  # máx 3 ejemplos
+        parts.append(ex)
+
+    # 3. Sección "Cuándo invocar" / triggers
+    trigger_m = re.search(r'(## (?:Cuándo invocar|When to use|Use when).*?)(?=\n##|\Z)', body, re.DOTALL|re.IGNORECASE)
+    if trigger_m:
+        parts.append(trigger_m.group(1)[:500])
+
+    # 4. Vocabulario de usuario
+    vocab_m = re.search(r'(## (?:Vocabulario|Vocabulary|Extended vocabulary).*?)(?=\n##|\Z)', body, re.DOTALL|re.IGNORECASE)
+    if vocab_m:
+        parts.append(vocab_m.group(1)[:400])
+
+    # Combinar y truncar
+    combined = "\n\n".join(parts)
+    if not combined.strip():
+        combined = content  # fallback al contenido completo
+
+    return combined[:max_chars]
+
+
 def cmd_index_agents(args):
     agents_dir = Path("~/.claude/memory/agents").expanduser()
     agents_index = Path("~/.claude/memory/agents-index.md").expanduser()
@@ -225,8 +261,11 @@ def cmd_index_agents(args):
                 text = fpath.read_text(encoding="utf-8").strip()
                 if not text:
                     continue
+                # Extract semantically rich parts: frontmatter + first body section
+                # nomic-embed-text has ~8k token limit; 4000 chars is safe
+                index_text = _extract_agent_index_text(text)
                 point_id = text_to_id(f"agent:{fpath.stem}")
-                vector = embed(text)
+                vector = embed(index_text)
                 client.upsert(
                     collection_name="helix_agents",
                     points=[PointStruct(
