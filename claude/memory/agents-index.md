@@ -31,3 +31,16 @@
 `backend-developer` `business-analyst` `fullstack-developer` `mcp-security-auditor`
 `metadata-agent` `nextjs-architecture-expert` `product-manager` `project-manager`
 `qa-expert` `scrum-master` `security-engineer` `ui-designer` `ui-ux-designer`
+
+## Agentes Nuevos (2026-03-26)
+
+| Agente | Trigger (5 palabras) | Detalle |
+|---|---|---|
+| `postgres-pro` | PostgreSQL HA, replicación, backup enterprise | [detalle](agents/postgres-pro.md) |
+| `codebase-explorer` | Explorar codebase sin leer archivos | [detalle](agents/codebase-explorer.md) |
+| `context-manager` | Gestión de contexto sesiones largas | [detalle](agents/context-manager.md) |
+| `performance-engineer` | Bottleneck, profiling, load testing | [detalle](agents/performance-engineer.md) |
+| `task-decomposition-expert` | Descomponer tarea compleja en subtareas | [detalle](agents/task-decomposition-expert.md) |
+| `research-coordinator` | Investigación multi-agente coordinada | [detalle](agents/research-coordinator.md) |
+
+> `postgresql-dba` → migrar a `postgres-pro` (más completo). Mantener temporalmente por compatibilidad.
