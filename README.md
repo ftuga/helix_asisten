@@ -298,11 +298,33 @@ hv list --collection learnings
 hv cluster --collection learnings   # group similar memories
 ```
 
-The `--translate` flag translates the query to English before embedding (better recall for multilingual content):
+### How search works
+
+1. Query text → embedded via `nomic-embed-text` → 768-dim vector
+2. Qdrant runs **cosine similarity** against all vectors in the collection
+3. Results filtered by `--threshold` (default: 0.45) and capped at `--top-k` (default: 5)
+4. Returns JSON with `score`, `id`, and `payload` for each match
 
 ```bash
-hv search "umbral de routing frontend" --translate
+# Full options
+hv search "query" --collection learnings --top-k 10 --threshold 0.6
+
+# Multilingual: translate query to English before embedding (better recall)
+hv search "umbral de routing frontend" --collection learnings --translate
 ```
+
+The `--translate` flag is useful when memories were stored in English but queries arrive in Spanish — it reduces embedding drift caused by language mismatch.
+
+### Verifying the setup
+
+```bash
+# Quick smoke test: store → search → check score > 0
+python3 ~/helix_asisten/scripts/helix-vector.py store learnings "test entry" --meta '{"tag":"test"}'
+python3 ~/helix_asisten/scripts/helix-vector.py search learnings "test entry"
+# Expected: score ~0.99 for exact match
+```
+
+No automated test suite yet — verification is done via `scripts/verify-appliance.sh` which checks Qdrant connectivity and basic store/retrieve cycles.
 
 Used by `helix-agent-evolve.py` to persist agent evolution history and by `helix-project-index.sh` to index project knowledge. Falls back gracefully if Qdrant or Ollama is not running.
 
