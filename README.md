@@ -270,7 +270,26 @@ chmod +x ~/helix_asisten/.git/hooks/pre-commit
 
 ## Vector Memory (`hv` CLI)
 
-Helix stores semantic memories in Qdrant via a lightweight CLI:
+Helix stores semantic memories in [Qdrant](https://qdrant.tech/) using Ollama embeddings:
+
+| Component | Details |
+|-----------|---------|
+| **Embedding model** | `nomic-embed-text` (Ollama) — 768 dimensions, ~8k token limit |
+| **Vector store** | Qdrant running in Docker on port 6333 |
+| **Override model** | `HELIX_EMBED_MODEL=<model>` env var |
+
+`install.sh` sets up both automatically. To set them up manually:
+
+```bash
+# Qdrant
+docker run -d --name helix-qdrant --restart unless-stopped \
+  -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant:latest
+
+# Embedding model
+ollama pull nomic-embed-text
+```
+
+`hv` CLI usage:
 
 ```bash
 hv store "agent routing fixed — use threshold 0.45 for frontend" --collection learnings
@@ -279,7 +298,13 @@ hv list --collection learnings
 hv cluster --collection learnings   # group similar memories
 ```
 
-Used by `helix-agent-evolve.py` to persist agent evolution history and by `helix-project-index.sh` to index project knowledge. Falls back gracefully if Qdrant is not running.
+The `--translate` flag translates the query to English before embedding (better recall for multilingual content):
+
+```bash
+hv search "umbral de routing frontend" --translate
+```
+
+Used by `helix-agent-evolve.py` to persist agent evolution history and by `helix-project-index.sh` to index project knowledge. Falls back gracefully if Qdrant or Ollama is not running.
 
 ---
 
@@ -289,6 +314,7 @@ Used by `helix-agent-evolve.py` to persist agent evolution history and by `helix
 # Download base models
 ollama pull qwen2.5-coder:7b   # ~4.7 GB
 ollama pull llama3.2:3b        # ~2.0 GB
+ollama pull nomic-embed-text   # ~274 MB — required for vector memory
 
 # Create Helix models
 ollama create helix-coder -f ~/helix_asisten/ollama/helix-coder.Modelfile
@@ -299,6 +325,7 @@ ollama create helix-scout -f ~/helix_asisten/ollama/helix-scout.Modelfile
 |-------|------|------|-----|
 | `helix-coder` | Qwen2.5-Coder 7B | 4.7 GB | Bugs, refactors, FastAPI+React code |
 | `helix-scout` | Llama 3.2 3B | 2.0 GB | Logs, quick transforms, CRUDs |
+| `nomic-embed-text` | — | 274 MB | Embeddings for vector memory (`hv` CLI) |
 
 ```bash
 # Unified helper
