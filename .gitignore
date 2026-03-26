@@ -41,3 +41,10 @@ helix-engine/.claude/settings.local.json
 # Sistema
 .DS_Store
 Thumbs.db
+
+
+# Helix Vector Memory — datos locales (nunca al repo)
+claude/memory/agents/.meta/
+scripts/__pycache__/
+# Índices de proyectos específicos (viven solo en la máquina local)
+.claude/vector-index.json

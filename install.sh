@@ -84,6 +84,49 @@ for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
   fi
 done
 
+# ── 6d. Vector Memory — helix-vector + hv ───────────────────
+echo "→ Instalando Helix Vector Memory..."
+cp "$REPO_DIR/scripts/helix-vector.py"       "$CLAUDE_DIR/"
+cp "$REPO_DIR/scripts/hv.sh"                 "$CLAUDE_DIR/"
+cp "$REPO_DIR/scripts/helix-agent-evolve.py" "$CLAUDE_DIR/"
+cp "$REPO_DIR/scripts/helix-project-index.sh" "$CLAUDE_DIR/"
+chmod +x "$CLAUDE_DIR/hv.sh" "$CLAUDE_DIR/helix-project-index.sh" "$CLAUDE_DIR/helix-agent-evolve.py"
+
+# Crear symlinks globales
+mkdir -p "$HOME/.local/bin"
+ln -sf "$CLAUDE_DIR/hv.sh" "$HOME/.local/bin/hv" 2>/dev/null || true
+ln -sf "$CLAUDE_DIR/helix-project-index.sh" "$HOME/.local/bin/helix-project-index" 2>/dev/null || true
+
+# Instalar dependencia Python
+pip3 install --quiet qdrant-client 2>/dev/null || echo "  ⚠ pip3 no disponible — instalar manualmente: pip3 install qdrant-client"
+
+# Qdrant vía Docker (no bloquea si Docker no está disponible)
+if command -v docker &>/dev/null; then
+    if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "helix-qdrant"; then
+        echo "  → Iniciando Qdrant..."
+        docker volume create qdrant_storage &>/dev/null || true
+        docker run -d --name helix-qdrant --restart unless-stopped \
+            -p 6333:6333 -v qdrant_storage:/qdrant/storage \
+            qdrant/qdrant:latest &>/dev/null || echo "  ⚠ No se pudo iniciar Qdrant — ejecutar manualmente"
+    else
+        echo "  → Qdrant ya está corriendo"
+    fi
+else
+    echo "  ⚠ Docker no encontrado — Qdrant requiere Docker. Instalar y ejecutar:"
+    echo "     docker run -d --name helix-qdrant --restart unless-stopped \\"
+    echo "       -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant:latest"
+fi
+
+# Embedding model vía Ollama
+if command -v ollama &>/dev/null; then
+    ollama pull nomic-embed-text &>/dev/null &
+    echo "  → nomic-embed-text descargando en background..."
+else
+    echo "  ⚠ Ollama no encontrado — instalar y ejecutar: ollama pull nomic-embed-text"
+fi
+
+echo "  ✓ Vector Memory listo (hv y helix-project-index disponibles)"
+
 # ── 7. Template de nuevo proyecto ───────────────────────────
 echo "→ Copiando template..."
 cp "$REPO_DIR/template/CLAUDE.md"       "$TEMPLATE_DIR/"
