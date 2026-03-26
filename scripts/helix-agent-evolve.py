@@ -70,18 +70,29 @@ def score_agent(content: str) -> dict:
     # 1. Tiene descripción rica (30 pts)
     has_frontmatter = content.startswith("---")
     has_description = "description:" in content
-    desc_len = len(re.findall(r'description:\s*["\'](.+?)["\']', content, re.DOTALL))
+    # Capturar description en cualquier formato: quoted, unquoted, YAML block (|)
+    desc_text = ""
+    m_quoted = re.search(r'description:\s*["\'](.+?)["\']', content, re.DOTALL)
+    m_block  = re.search(r'description:\s*\|\n((?:  .+\n?)+)', content)
+    m_plain  = re.search(r'description:\s*(.+)', content)
+    if m_quoted:
+        desc_text = m_quoted.group(1)
+    elif m_block:
+        desc_text = m_block.group(1)
+    elif m_plain:
+        desc_text = m_plain.group(1)
     if has_frontmatter and has_description:
         score += 10
         details["frontmatter"] = "✓"
-    if desc_len > 0 or len([l for l in content.split('\n') if 'description:' in l and len(l) > 100]):
+    if len(desc_text) > 100:
         score += 20
         details["rich_description"] = "✓"
     else:
         details["rich_description"] = "✗ (muy corta)"
 
     # 2. Tiene ejemplos concretos (25 pts)
-    examples = content.count("<example>") + content.count("## Ejemplo") + content.count("Context:")
+    examples = (content.count("<example>") + content.count("## Ejemplo") +
+                content.count("Context:") + content.count("User:") + content.count("user:"))
     if examples >= 3:
         score += 25
         details["examples"] = f"✓ ({examples})"
@@ -93,7 +104,7 @@ def score_agent(content: str) -> dict:
 
     # 3. Tiene cuándo invocar / triggers (20 pts)
     has_triggers = bool(
-        re.search(r"cuándo invocar|cuando invocar|when to use|trigger|use when", content, re.IGNORECASE)
+        re.search(r"cuándo invocar|cuando invocar|when to use|trigger|use when|use this agent|invoke when|proactively", content, re.IGNORECASE)
     )
     if has_triggers:
         score += 20
@@ -102,7 +113,7 @@ def score_agent(content: str) -> dict:
         details["triggers"] = "✗"
 
     # 4. Tiene limitaciones definidas (10 pts)
-    has_limits = bool(re.search(r"limitacion|limitation|no toca|does not|fuera de scope", content, re.IGNORECASE))
+    has_limits = bool(re.search(r"limitacion|limitation|no toca|does not|fuera de scope|not handle|avoid|don't use|do not use", content, re.IGNORECASE))
     if has_limits:
         score += 10
         details["limitations"] = "✓"
