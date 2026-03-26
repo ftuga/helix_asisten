@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.5.0** — [Changelog](#changelog)
+> **Current version: v3.7.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -69,9 +69,16 @@ claude/              → ~/.claude/ (global config)
   self-check.sh      → Pre-close checklist: blocks if CLAUDE.md exceeds 220 lines
   health-check.sh    → Verifies ecosystem integrity
   compress.sh        → Archives old evolutions to keep CLAUDE.md lean
-  agents/            → 20 active agents + 17 disabled
+  agents/            → 27 evolved agents (avg score 40→81/100)
   memory/            → design-system, agents-index, evolution-log, active-rules, topics
   skills/            → 28 reusable skills across projects
+
+scripts/             → Helix engine scripts
+  helix-vector.py    → Qdrant vector memory engine (store, search, cluster)
+  hv.sh              → CLI wrapper for vector memory (hv store / hv search / hv list)
+  helix-agent-evolve.py → Automated agent scoring and evolution (0→100 rubric)
+  helix-project-index.sh → Project indexing into vector memory
+  capa0.sh           → Layer 0 dispatcher: routes to helix-coder or helix-scout
 
 template/            → ~/.claude-template/ (base for new projects)
   CLAUDE.md          → Project CLAUDE.md template
@@ -261,6 +268,21 @@ chmod +x ~/helix_asisten/.git/hooks/pre-commit
 
 ---
 
+## Vector Memory (`hv` CLI)
+
+Helix stores semantic memories in Qdrant via a lightweight CLI:
+
+```bash
+hv store "agent routing fixed — use threshold 0.45 for frontend" --collection learnings
+hv search "frontend routing threshold" --collection learnings
+hv list --collection learnings
+hv cluster --collection learnings   # group similar memories
+```
+
+Used by `helix-agent-evolve.py` to persist agent evolution history and by `helix-project-index.sh` to index project knowledge. Falls back gracefully if Qdrant is not running.
+
+---
+
 ## Ollama Models (Layer 0)
 
 ```bash
@@ -378,6 +400,24 @@ If the variable is not defined, the helix-engine step is silently skipped.
 ---
 
 ## Changelog
+
+### v3.7.0 — 2026-03-26 · Agent evolution system
+
+- `scripts/helix-agent-evolve.py` — automated agent scoring (0→100 rubric: specificity, tools, examples, triggers)
+- `scripts/helix-project-index.sh` — indexes project files into Qdrant vector memory
+- 27 agents fully evolved: average score 40→81/100
+- `frontend-developer`: threshold 0.55→0.45, enriched vocabulary for better routing
+
+---
+
+### v3.6.0 — 2026-03-26 · Vector memory engine + Capa 0 explicit triggers
+
+- `scripts/helix-vector.py` — Qdrant-backed vector memory: store, search, cluster, export
+- `scripts/hv.sh` — `hv` CLI: `hv store`, `hv search`, `hv list`, `hv cluster`
+- `capa0-guard` hook in `settings.json` — explicit triggers for Layer 0 (logs >200 lines, Docker output, stacktraces)
+- Layer 0 now auto-escalates to Layer 1 when `ollama` is unavailable (exit 2)
+
+---
 
 ### v3.5.0 — 2026-03-24 · Privacy system
 
