@@ -40,7 +40,7 @@ def translate_to_english(text: str) -> str:
         f"{OLLAMA_URL}/api/generate",
         json={
             "model": "llama3.2:3b",
-            "prompt": f"Translate this to English. Respond with ONLY the English translation, no explanation:\n{text}\n\nTranslation:",
+            "prompt": f"You are a software developer. Translate this developer task/question to English. Respond with ONLY the English translation:\n{text}\n\nEnglish:",
             "stream": False,
             "options": {"temperature": 0, "num_predict": 80, "stop": ["\n\n", "Here", "Note"]}
         },
@@ -286,7 +286,7 @@ def main():
     p_search.add_argument("collection")
     p_search.add_argument("query")
     p_search.add_argument("--top-k", type=int, default=5)
-    p_search.add_argument("--threshold", type=float, default=0.55)
+    p_search.add_argument("--threshold", type=float, default=0.45)
     p_search.add_argument("--translate", action="store_true", help="Translate query to English before embedding")
 
     # index-dir
