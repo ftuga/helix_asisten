@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-03-20 12:07<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-03-27<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -46,11 +46,16 @@ Helix evalúa en silencio antes de cada tarea:
 | Señal en la tarea | Acción automática |
 |---|---|
 | Log / texto largo / salida Docker | Capa 0: Ollama primero (gratis). Si detecta problema → escalar |
-| Un artefacto concreto (endpoint, componente, query, bug) | Capa 1: Agent tool — agente especializado correcto |
-| Feature completa que toca ≥2 capas del stack | Capa 2: claude-flow swarm (`swarm_init` + `task_orchestrate`) |
+| Un artefacto concreto (endpoint, componente, query, bug) — un solo dominio | Capa 1: `Agent tool` — agente especializado correcto |
+| **2+ dominios en paralelo** (análisis, validación, investigación simultánea) | **Capa 2: `swarm_init` + `agent_spawn`** — visible en ruflow |
+| Feature completa que toca ≥2 capas del stack con coordinación activa | Capa 2: `swarm_init` + `task_orchestrate` |
 | Feature que requiere colaboración activa frontend+backend+tests | Capa 3: Agent Teams |
 
-**Si hay duda entre Capa 1 y 2:** preferir Capa 1 (más barata). Escalar a Capa 2 solo si la coordinación entre agentes sería manual y compleja.
+**Regla clave — ruflow vs Agent tool:**
+- `Agent tool` en paralelo = subprocesos del CLI. Invisibles en el dashboard de ruflow. Usar solo para 1 dominio.
+- `swarm_init` + `agent_spawn` = agentes de claude-flow. Visibles en ruflow (contador 2/15, 3/15…). Usar cuando haya 2+ dominios.
+
+**Si hay duda entre Capa 1 y 2:** preferir Capa 1 si es 1 dominio. Si son 2+ dominios que se ejecutarían en paralelo → siempre Capa 2 para visibilidad y trazabilidad.
 
 ---
 
@@ -232,7 +237,7 @@ Si session-start incluye `[HELIX-NECESITAMOS-HABLAR]`:
 3. ¿Necesito todo el archivo? → usar `limit` y `offset` en Read
 
 **Umbral para subagentes:**
-Un archivo / un dominio → yo solo. Dos dominios en paralelo → 1 subagente máximo. Tres+ dominios con coordinación activa → Capa 2.
+Un archivo / un dominio → yo solo (sin subagentes). Dos o más dominios en paralelo → **Capa 2: swarm_init + agent_spawn** (visible en ruflow). NUNCA múltiples Agent tool en paralelo para 2+ dominios — son invisibles en ruflow y no aportan coordinación.
 
 **Capa 0 agresiva — OBLIGATORIO antes de procesar con Claude:**
 
@@ -302,6 +307,7 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 13 | 2026-03-20 | performance | helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta | usuario-solicitud |
 | 14 | 2026-03-20 | operatividad | Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea | usuario-solicitud |
 | 15 | 2026-03-20 | arquitectura | Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file) | usuario-solicitud |
+| 16 | 2026-03-27 | arquitectura | 2+ dominios en paralelo → Capa 2 (swarm_init + agent_spawn), NO Agent tool en paralelo. Agent tool = invisible en ruflow. Swarm = visible en dashboard ruflow (contador N/15) | usuario-solicitud |
 <!-- EVOLUTION_LOG_END -->
 
 ---
