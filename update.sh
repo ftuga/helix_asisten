@@ -48,7 +48,7 @@ if [[ -f "$PATTERNS_FILE" ]]; then
     [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
     PATTERN="${line%%|*}"
     # Reemplazar patrón en todos los .md de skills (literal, no regex)
-    grep -rl "$PATTERN" "$REPO_DIR/claude/skills/" 2>/dev/null | while read -r f; do
+    (grep -rl "$PATTERN" "$REPO_DIR/claude/skills/" 2>/dev/null || true) | while read -r f; do
       sed -i "s/$PATTERN//g" "$f"
       echo "  ✓ sanitized: $(basename $f) — '$PATTERN'"
     done
