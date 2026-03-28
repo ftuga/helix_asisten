@@ -236,3 +236,15 @@ fi
 
 echo -e "${GREEN}✅ Contexto cargado. Listo para trabajar.${NC}"
 echo ""
+# ── Vector memory sync (silencioso) ──────────────────────────
+HV_SCRIPT="$HOME/.claude/hv.sh"
+if [[ -f "$HV_SCRIPT" ]]; then
+  if curl -sf "http://localhost:6333/healthz" &>/dev/null; then
+    bash "$HV_SCRIPT" sync &>/dev/null &
+    echo -e "${GREEN}🧠 Vector store sincronizando...${NC}"
+  else
+    (docker start helix-qdrant &>/dev/null && sleep 2 && bash "$HV_SCRIPT" sync &>/dev/null) &
+    echo -e "${YELLOW}⚠️  Vector store offline — intentando iniciar...${NC}"
+  fi
+  echo ""
+fi
