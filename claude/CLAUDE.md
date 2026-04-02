@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-03-27<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-02<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -65,7 +65,9 @@ Helix evalúa en silencio antes de cada tarea:
 |---|---|
 | Nueva feature / endpoint FastAPI | `backend-architect` planifica → `python-pro` implementa |
 | Nuevo componente React/TS | `frontend-developer` + `typescript-pro` |
-| Nueva página con UI compleja | `frontend-developer` (leer design-system.md primero) |
+| Nueva página con UI compleja | `ui-ux-designer` define flujo → `ui-designer` produce visual → `frontend-developer` implementa |
+| Dirección estética / sistema visual | `ui-designer` (estilos, animaciones, tokens) |
+| Flujos UX / arquitectura de información | `ui-ux-designer` (workflow, decisiones de diseño) |
 | Cambio en modelos o schema DB | `database-architect` revisa → `postgresql-dba` optimiza |
 | Query SQL compleja | `sql-pro` |
 | Bug o error inesperado | `error-detective` primero, siempre |
@@ -129,6 +131,7 @@ helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
 
 ---
 
+<!-- SECURITY_START -->
 ## 🔐 SEGURIDAD (Universal)
 
 - Nunca exponer variables de entorno en logs ni en respuestas al usuario.
@@ -136,6 +139,7 @@ helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
 - Nunca hardcodear credenciales, URLs internas ni secrets en el código fuente.
 - Endpoints de test/debug DEBEN eliminarse antes de producción — usar feature flags.
 - Confirmar acciones destructivas antes de ejecutarlas.
+<!-- SECURITY_END -->
 
 ---
 
@@ -145,12 +149,14 @@ helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
 
 ---
 
+<!-- OPERABILITY_START -->
 ## 🔧 BASH GOTCHAS (Universal)
 
 - `VAR=$((VAR + 1))` — nunca `((VAR++))` con `set -euo pipefail` cuando VAR puede ser 0.
 - `wc -l` devuelve espacios — limpiar con `tr -d '[:space:]'` antes de comparar numéricamente.
 - `git diff HEAD -- '*.ts' '*.tsx'` para checks de frontend — sin filtro captura CLAUDE.md y genera falsos positivos.
 - Para pasar strings con caracteres especiales a Python desde bash: usar variables de entorno (`PYVAR=valor python3 -`), evita todo problema de escaping.
+<!-- OPERABILITY_END -->
 
 ---
 
@@ -282,6 +288,7 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 
 ---
 
+<!-- SKILLS_INDEX_START -->
 ## 📚 SKILLS GLOBALES
 
 > Skills reutilizables entre proyectos. Ver detalles en `~/.claude/skills/`
@@ -289,6 +296,31 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | Skill | Descripción |
 |---|---|
 | `design-system` | Paleta, tipografía, breakpoints, patrones responsivos Tailwind v4 |
+<!-- SKILLS_INDEX_END -->
+
+---
+
+<!-- METRICS_START -->
+```json
+{
+  "total_sesiones": 14,
+  "ultima_actualizacion": "2026-04-01"
+}
+```
+<!-- METRICS_END -->
+
+<!-- SESSIONS_START -->
+## 📋 SESIONES
+| # | Fecha | Resumen | Aprendizajes | Skills |
+|---|---|---|---|---|
+<!-- SESSIONS_END -->
+
+<!-- RISK_MAP_START -->
+<!-- RISK_MAP_END -->
+
+<!-- REASONING_START -->
+
+<!-- REASONING_END -->
 
 ---
 
@@ -297,7 +329,6 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- EVOLUTION_LOG_START -->
 | # | Fecha | Categoría | Aprendizaje |
 |---|---|---|---|
-| 9 | 2026-03-20 | interfaz | Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas | usuario-solicitud-mejora |
 | 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
 | 11 | 2026-03-20 | interfaz | Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza | usuario-solicitud |
 | 12 | 2026-03-20 | interfaz | Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso | usuario-solicitud |
@@ -308,6 +339,11 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 14 | 2026-03-20 | operatividad | Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea | usuario-solicitud |
 | 15 | 2026-03-20 | arquitectura | Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file) | usuario-solicitud |
 | 16 | 2026-03-27 | arquitectura | 2+ dominios en paralelo → Capa 2 (swarm_init + agent_spawn), NO Agent tool en paralelo. Agent tool = invisible en ruflow. Swarm = visible en dashboard ruflow (contador N/15) | usuario-solicitud |
+| 17 | 2026-04-02 | arquitectura | ERL (Experiential Reflective Learning): helix-erl.sh analiza routing-feedback.jsonl y genera heurísticas de dominio + pares frecuentes → routing-heuristics.md. Se ejecuta semanal desde retrospectiva | auto-evolución |
+| 18 | 2026-04-02 | arquitectura | Reflexion store: helix-reflexion.sh almacena errores resueltos en Qdrant (helix_reflexions). Search semántico antes de invocar error-detective — threshold 0.76 | auto-evolución |
+| 19 | 2026-04-02 | performance | ACON compress: compress_logic.py ahora usa importance scoring (0-1) para decidir qué archivar. Anchor sections (SECURITY, OPERABILITY, SKILLS_INDEX) nunca se comprimen | auto-evolución |
+| 20 | 2026-04-02 | operatividad | skill-tracker.sh: log de uso real de skills/agentes por sesión → skill-usage.jsonl. report muestra top N + never-used. prune sugiere candidatos sin uso en 30 días | auto-evolución |
+| 21 | 2026-04-02 | operatividad | helix-retrospectiva.sh v2: integra ERL (semanal), gap analysis (heurísticas vs sesión), sugerencia de Reflexion store cuando hay errores resueltos | auto-evolución |
 <!-- EVOLUTION_LOG_END -->
 
 ---
