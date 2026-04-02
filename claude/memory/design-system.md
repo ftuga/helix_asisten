@@ -123,6 +123,39 @@ Definir en el CSS global del proyecto:
   <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl bg-[--surface] p-6">
 ```
 
+## Direcciones Estéticas
+
+| Estilo | Cuándo | Referentes |
+|---|---|---|
+| **Minimalista** | B2B, docs, blogs — espacio negativo, sans fino, sin sombras | Linear, Vercel |
+| **Bold & Vibrant** | Landing, startups, marketing — colores saturados, tipo Black/Bold, mesh gradients | — |
+| **Glassmorphism** | Dashboards premium, overlays — `backdrop-blur`, bordes blancos finos | macOS apps |
+| **Utilitario** | ERPs, CRMs — grid denso, status labels, bordes marcados | — |
+
+### Decision Matrix
+
+| Perfil | Estilo | Match |
+|---|---|---|
+| SaaS Pro (Notion/Linear style) | Minimalista — Blanco/Crema, Satoshi, grids limpios | 98% |
+| Luxury / Boutique | Serif+Sans, high-contrast, shadows sutiles | 85% |
+| High-Tech / Dashboard | Glassmorphism, dark mode, data-viz, mono para números | 92% |
+
+**Regla:** Evitar azul/púrpura default, neon. No estilos genéricos de sistema.
+
+---
+
+## Animaciones — Easing de referencia
+
+| Uso | Easing | Duración |
+|---|---|---|
+| Entrada de elementos a la vista | `cubic-bezier(0.16, 1, 0.3, 1)` | 0.6s |
+| Movimiento UI estándar | `cubic-bezier(0.4, 0, 0.2, 1)` | 0.3s |
+| Micro-interacciones | `cubic-bezier(0.4, 0, 0.2, 1)` | 0.15s |
+
+Stagger en listas: delay escalonado `0.05s` por ítem. Spatial awareness: los elementos se mueven hacia donde van.
+
+---
+
 ## Reglas de Diseño — NO negociables
 - ❌ Nunca usar Inter, Roboto, Arial o fuentes genéricas del sistema
 - ❌ Nunca gradientes púrpura sobre fondo blanco

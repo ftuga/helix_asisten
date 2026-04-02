@@ -25,12 +25,20 @@
 | `monitoring-specialist` | Logs, alertas o observabilidad | [detalle](agents/monitoring-specialist.md) |
 | `architect-reviewer` | Decisión arquitectónica o SOLID | [detalle](agents/architect-reviewer.md) |
 | `fin-saas-advisor` | Precios, márgenes o modelo SaaS | [detalle](agents/fin-saas-advisor.md) |
+| `ui-designer` | Componente visual, dirección estética, HTML prod | [detalle](agents/ui-designer.md) |
+| `ui-ux-designer` | Flujos, arquitectura info, criterio UX | [detalle](agents/ui-ux-designer.md) |
 
-## Deshabilitados (17)
+## Deshabilitados (15)
 `api-architect` `api-designer` `api-documenter` `azure-infra-engineer`
 `backend-developer` `business-analyst` `fullstack-developer` `mcp-security-auditor`
 `metadata-agent` `nextjs-architecture-expert` `product-manager` `project-manager`
-`qa-expert` `scrum-master` `security-engineer` `ui-designer` `ui-ux-designer`
+`qa-expert` `scrum-master` `security-engineer`
+
+## Agentes Nuevos (2026-03-30)
+
+| Agente | Trigger (5 palabras) | Detalle |
+|---|---|---|
+| `prompt-engineer` | Diseñar o auditar system prompt | [detalle](agents/prompt-engineer.md) |
 
 ## Agentes Nuevos (2026-03-26)
 

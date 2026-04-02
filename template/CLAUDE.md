@@ -65,6 +65,7 @@
 <!-- UI_START -->
 > Agregar reglas específicas de UI de este proyecto.
 > Sistema de diseño: ver `.claude/memory/design-system.md`
+> Agentes de diseño: `ui-designer` (visual/estético) · `ui-ux-designer` (flujos/UX)
 <!-- UI_END -->
 
 ---

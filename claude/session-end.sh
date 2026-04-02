@@ -115,6 +115,12 @@ fi
 echo "$DATE — SESION #$SESSION_NUM CERRADA — $RESUMEN" >> "$GLOBAL_MEMORY_DIR/session-log.txt"
 
 echo -e "${GREEN}Sesion #$SESSION_NUM registrada.${NC}"
+
+# ── Retrospectiva automática ──────────────────────────────────
+RETRO_SCRIPT="$HOME/.claude/helpers/helix-retrospectiva.sh"
+if [[ -f "$RETRO_SCRIPT" ]]; then
+  bash "$RETRO_SCRIPT" "$RESUMEN" "${PROJECT_ROOT:-}" 2>/dev/null || true
+fi
 echo "   Resumen: $RESUMEN"
 echo "   Aprendizajes: $SESSION_LEARNS | Skills: $SESSION_SKILLS"
 
