@@ -344,6 +344,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 19 | 2026-04-02 | performance | ACON compress: compress_logic.py ahora usa importance scoring (0-1) para decidir qué archivar. Anchor sections (SECURITY, OPERABILITY, SKILLS_INDEX) nunca se comprimen | auto-evolución |
 | 20 | 2026-04-02 | operatividad | skill-tracker.sh: log de uso real de skills/agentes por sesión → skill-usage.jsonl. report muestra top N + never-used. prune sugiere candidatos sin uso en 30 días | auto-evolución |
 | 21 | 2026-04-02 | operatividad | helix-retrospectiva.sh v2: integra ERL (semanal), gap analysis (heurísticas vs sesión), sugerencia de Reflexion store cuando hay errores resueltos | auto-evolución |
+| 22 | 2026-04-02 | operatividad | skill-tracker-hook.sh: PostToolUse(Skill) wired en settings.json. agent-routing-hook también escribe skill-usage.jsonl. Uso real de skills/agentes ahora se registra automáticamente | auto-evolución |
+| 23 | 2026-04-02 | arquitectura | ExpeL: helix-expel.sh analiza contrastes de trayectorias — detecta dominancia, routing incorrecto, agentes fuera de catálogo, evolución temporal. Corre tras ERL en retrospectiva | auto-evolución |
+| 24 | 2026-04-02 | arquitectura | helix-routing-fix.sh: lee ExpeL+ERL y aplica correcciones a agents-index. Primera corrección real: testing→test-engineer, devops→devops-engineer detectados y marcados | auto-evolución |
 <!-- EVOLUTION_LOG_END -->
 
 ---

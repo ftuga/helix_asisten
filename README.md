@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.8.0** — [Changelog](#changelog)
+> **Current version: v3.9.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -511,6 +511,16 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.9.0 — 2026-04-02 · Closed routing loop
+
+- **`helpers/skill-tracker-hook.sh`** — PostToolUse hook on `Skill`: every skill invocation auto-logs to `skill-usage.jsonl`. `agent-routing-hook.sh` also writes there now. Skill tracker is live from this version.
+- **`helpers/helix-expel.sh`** — ExpeL contrastive analysis: detects dominance patterns, routing mismatches (used ≠ catalog ideal), out-of-catalog agents, temporal routing evolution. Runs after ERL in retrospectiva.
+- **`helpers/helix-routing-fix.sh`** — Auto-correction of `agents-index.md` from ERL+ExpeL output. First real corrections: `testing → test-engineer`, `devops → devops-engineer` flagged in triggers.
+- **`settings.json`** — New PostToolUse hook on `Skill` matcher.
+- **`agents-index.md`** — `★` routing corrections from ExpeL. Note: `researcher`/`general-purpose` are internal Claude Code types, not Helix agents.
+
+---
 
 ### v3.8.0 — 2026-04-02 · Self-learning memory system
 

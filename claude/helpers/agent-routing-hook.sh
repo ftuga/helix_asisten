@@ -59,4 +59,16 @@ entry = {
 }
 with open(sys.argv[1], "a") as f:
     f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+# También registrar en skill-usage.jsonl para análisis de uso
+usage_log = Path.home() / ".claude/memory/skill-usage.jsonl"
+usage_entry = {
+    "ts":      entry["ts"],
+    "date":    entry["ts"][:10],
+    "name":    agent,
+    "tipo":    "agent",
+    "proyecto": project,
+}
+with open(usage_log, "a") as f:
+    f.write(json.dumps(usage_entry, ensure_ascii=False) + "\n")
 PYEOF

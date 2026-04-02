@@ -9,22 +9,24 @@ PROJECT="${2:-}"
 GLOBAL_DIR="$HOME/.claude"
 MEMORY_DIR="$GLOBAL_DIR/memory"
 
-# ── 1. ERL: actualizar heurísticas de routing ────────────────
+# ── 1. ERL + ExpeL: actualizar heurísticas de routing ────────
 ERL_SCRIPT="$GLOBAL_DIR/helpers/helix-erl.sh"
+EXPEL_SCRIPT="$GLOBAL_DIR/helpers/helix-expel.sh"
 if [[ -f "$ERL_SCRIPT" ]]; then
-    # Correr ERL cada 7 días o si el archivo no existe
     HEURISTICS="$MEMORY_DIR/routing-heuristics.md"
     SHOULD_RUN=false
     if [[ ! -f "$HEURISTICS" ]]; then
         SHOULD_RUN=true
     else
         LAST_MOD=$(date -r "$HEURISTICS" '+%s' 2>/dev/null || echo 0)
-        NOW=$(date '+%s')
-        DAYS_OLD=$(( (NOW - LAST_MOD) / 86400 ))
+        NOW_TS=$(date '+%s')
+        DAYS_OLD=$(( (NOW_TS - LAST_MOD) / 86400 ))
         [[ "$DAYS_OLD" -ge 7 ]] && SHOULD_RUN=true
     fi
     if [[ "$SHOULD_RUN" == "true" ]]; then
         bash "$ERL_SCRIPT" 2>/dev/null || true
+        # ExpeL siempre corre después de ERL para agregar reglas contrastivas
+        [[ -f "$EXPEL_SCRIPT" ]] && bash "$EXPEL_SCRIPT" 2>/dev/null || true
     fi
 fi
 

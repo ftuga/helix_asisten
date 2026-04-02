@@ -17,10 +17,10 @@
 | `code-reviewer` | Pre-cierre de tarea OBLIGATORIO | [detalle](agents/code-reviewer.md) |
 | `security-auditor` | Auditoría de seguridad o compliance | [detalle](agents/security-auditor.md) |
 | `api-security-audit` | Endpoint nuevo o cambio auth | [detalle](agents/api-security-audit.md) |
-| `devops-engineer` | Docker, CI/CD o infra | [detalle](agents/devops-engineer.md) |
+| `devops-engineer` | Docker, CI/CD, infra ★ devops (no frontend-developer) | [detalle](agents/devops-engineer.md) |
 | `deployment-engineer` | Deploy, rollback o zero-downtime | [detalle](agents/deployment-engineer.md) |
 | `data-analyst` | Análisis de reportes o métricas | [detalle](agents/data-analyst.md) |
-| `test-engineer` | Estrategia de testing o cobertura | [detalle](agents/test-engineer.md) |
+| `test-engineer` | Tests, pytest, cobertura ★ testing (no researcher) | [detalle](agents/test-engineer.md) |
 | `test-automator` | Implementar tests automatizados CI | [detalle](agents/test-automator.md) |
 | `monitoring-specialist` | Logs, alertas o observabilidad | [detalle](agents/monitoring-specialist.md) |
 | `architect-reviewer` | Decisión arquitectónica o SOLID | [detalle](agents/architect-reviewer.md) |
@@ -52,3 +52,6 @@
 | `research-coordinator` | Investigación multi-agente coordinada | [detalle](agents/research-coordinator.md) |
 
 > `postgresql-dba` → migrar a `postgres-pro` (más completo). Mantener temporalmente por compatibilidad.
+> ExpeL 2026-04-02: `researcher` y `general-purpose` son tipos internos de Claude Code (no agentes Helix). `researcher` = general-purpose con instrucción de investigación. Para research → usar `research-coordinator` o `backend-architect` según dominio.
+
+> Última corrección ERL+ExpeL: 2026-04-02
