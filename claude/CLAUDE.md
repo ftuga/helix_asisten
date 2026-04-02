@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-02<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-02 (v3.10)<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -347,6 +347,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 22 | 2026-04-02 | operatividad | skill-tracker-hook.sh: PostToolUse(Skill) wired en settings.json. agent-routing-hook también escribe skill-usage.jsonl. Uso real de skills/agentes ahora se registra automáticamente | auto-evolución |
 | 23 | 2026-04-02 | arquitectura | ExpeL: helix-expel.sh analiza contrastes de trayectorias — detecta dominancia, routing incorrecto, agentes fuera de catálogo, evolución temporal. Corre tras ERL en retrospectiva | auto-evolución |
 | 24 | 2026-04-02 | arquitectura | helix-routing-fix.sh: lee ExpeL+ERL y aplica correcciones a agents-index. Primera corrección real: testing→test-engineer, devops→devops-engineer detectados y marcados | auto-evolución |
+| 25 | 2026-04-02 | operatividad | helix-decay.sh: confidence decay para evolution-log. Score 0-100 = recencia×0.4 + importancia×0.6 × multiplicador categoría. Patrones PERENNIAL nunca decaen. Se ejecuta en session-end | auto-evolución |
+| 26 | 2026-04-02 | arquitectura | helix-knowledge-map.sh: mapa cross-dominio learnings×heurísticas×reflexiones×decay. Identifica gaps críticos (dominio de alto peso con cobertura <30%). Corre en session-end --gaps | auto-evolución |
+| 27 | 2026-04-02 | operatividad | session-start recuperación proactiva Qdrant: detecta stack del proyecto (Python/React/Docker) y consulta helix_reflexions por errores relevantes. Memorias activas al inicio de sesión | auto-evolución |
 <!-- EVOLUTION_LOG_END -->
 
 ---

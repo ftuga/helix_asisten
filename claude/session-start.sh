@@ -234,6 +234,27 @@ if hits:
   fi
 fi
 
+# ── Recuperación proactiva de Qdrant ─────────────────────────
+if [[ -n "$PROJECT_ROOT" ]]; then
+  REFLEXION_SCRIPT="$HOME/.claude/helpers/helix-reflexion.sh"
+  if [[ -f "$REFLEXION_SCRIPT" ]] && curl -sf "http://localhost:6333/healthz" &>/dev/null; then
+    # Construir query desde nombre del proyecto + stack detectado
+    PROJECT_NAME=$(basename "$PROJECT_ROOT")
+    STACK_HINT=""
+    [[ -f "$PROJECT_ROOT/requirements.txt" || -f "$PROJECT_ROOT/pyproject.toml" ]] && STACK_HINT="python fastapi"
+    [[ -f "$PROJECT_ROOT/package.json" ]] && STACK_HINT="$STACK_HINT react typescript"
+    [[ -f "$PROJECT_ROOT/docker-compose.yml" || -f "$PROJECT_ROOT/docker-compose.yaml" ]] && STACK_HINT="$STACK_HINT docker"
+    QUERY="errores resueltos $PROJECT_NAME $STACK_HINT"
+
+    MEMORIES=$(bash "$REFLEXION_SCRIPT" search "$QUERY" 2>/dev/null | grep -v '^$' | head -6 || true)
+    if [[ -n "$MEMORIES" ]]; then
+      echo -e "${BLUE}🧠 Memorias relevantes para este proyecto:${NC}"
+      echo "$MEMORIES" | sed 's/^/   /'
+      echo ""
+    fi
+  fi
+fi
+
 echo -e "${GREEN}✅ Contexto cargado. Listo para trabajar.${NC}"
 echo ""
 # ── Vector memory sync (silencioso) ──────────────────────────

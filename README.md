@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.9.0** — [Changelog](#changelog)
+> **Current version: v3.10.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -511,6 +511,15 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.10.0 — 2026-04-02 · Confidence decay + knowledge map + proactive memory
+
+- **`helpers/helix-decay.sh`** — Confidence decay for evolution-log entries. Score 0-100 = recency×0.4 + importance×0.6 × category multiplier. PERENNIAL patterns (HELIX_MODE, ERL, swarm_init, set -euo pipefail…) never decay. Three modes: `--report`, `--stale`, `--prune` (writes `obsolete.md`). Runs in `session-end`.
+- **`helpers/helix-knowledge-map.sh`** — Cross-domain coverage matrix: learnings × heuristics × reflexions × decay score per domain. Criticality weights (seguridad=1.0, arquitectura=0.9…) amplify gap urgency. Critical gap = high-weight domain with coverage <30%. Runs in `session-end --gaps`.
+- **`session-start.sh`** — Proactive Qdrant retrieval at session start: auto-detects project stack (Python/React/Docker), queries `helix_reflexions` for relevant resolved errors, surfaces them as "🧠 Memorias relevantes para este proyecto" before first task.
+- **`session-end.sh`** — Integrated decay + knowledge map into session close pipeline.
+
+---
 
 ### v3.9.0 — 2026-04-02 · Closed routing loop
 

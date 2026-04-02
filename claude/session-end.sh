@@ -148,6 +148,18 @@ print(f'   💰 Tool calls: {n} · Costo estimado: ~\${cost:.2f} USD (±50%)')
 fi
 echo ""
 
+# ── Decay scoring — actualizar vigencia de evolution-log ─────
+DECAY_SCRIPT="$HOME/.claude/helpers/helix-decay.sh"
+if [[ -f "$DECAY_SCRIPT" ]]; then
+  bash "$DECAY_SCRIPT" --stale 2>/dev/null || true
+fi
+
+# ── Knowledge map — actualizar mapa de cobertura ─────────────
+MAP_SCRIPT="$HOME/.claude/helpers/helix-knowledge-map.sh"
+if [[ -f "$MAP_SCRIPT" ]]; then
+  bash "$MAP_SCRIPT" --gaps 2>/dev/null || true
+fi
+
 # ── Auto-compresion si CLAUDE.md supera 200 lineas ───────────
 LINES=$(wc -l < "$GLOBAL_CLAUDE_MD")
 if [[ "$LINES" -gt 200 ]]; then
