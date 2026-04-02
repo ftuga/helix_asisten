@@ -59,6 +59,15 @@
             "command": "bash \"$HOME/.claude/helpers/agent-routing-hook.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/skill-tracker-hook.sh\""
+          }
+        ]
       }
     ],
     "Stop": [

@@ -26,3 +26,27 @@
 
 ---
 *Actualizar con: `bash ~/.claude/helpers/helix-erl.sh`*
+
+## Reglas ExpeL (Contrastivas)
+> Generado: 2026-04-02 00:19 | Basado en 22 trayectorias
+
+### Dominancia observada
+- [devops] `frontend-developer` (2x, 40%) supera a `fin-saas-advisor` (1x) — usar `frontend-developer` como primera opción
+- [frontend] `frontend-developer` (4x, 44%) supera a `architect-reviewer` (2x) — usar `frontend-developer` como primera opción
+- [research] `researcher` (4x, 80%) supera a `Explore` (1x) — usar `researcher` como primera opción
+- [analysis] `frontend-developer` (2x, 66%) supera a `data-analyst` (1x) — usar `frontend-developer` como primera opción
+
+### Routing incorrecto detectado
+- [devops] se usa `frontend-developer` (2x) pero `devops-engineer` existe en catálogo y nunca se ha invocado — posible routing incorrecto
+- [research] se usa `researcher` (4x) pero `backend-architect` existe en catálogo y nunca se ha invocado — posible routing incorrecto
+- [testing] se usa `researcher` (3x) pero `test-engineer` existe en catálogo y nunca se ha invocado — posible routing incorrecto
+
+### Agentes fuera de catálogo
+- `researcher` usado 4x pero no está en catálogo activo — considerar añadir a agents-index.md
+- `general-purpose` usado 2x pero no está en catálogo activo — considerar añadir a agents-index.md
+
+### Evolución temporal
+- [devops] routing evolucionó: `fin-saas-advisor` → `researcher` — `researcher` es la estrategia aprendida más reciente
+- [backend] routing evolucionó: `security-auditor` → `api-security-audit` — `api-security-audit` es la estrategia aprendida más reciente
+- [frontend] routing evolucionó: `architect-reviewer` → `frontend-developer` — `frontend-developer` es la estrategia aprendida más reciente
+
