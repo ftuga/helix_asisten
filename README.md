@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.7.0** — [Changelog](#changelog)
+> **Current version: v3.8.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -71,7 +71,13 @@ claude/              → ~/.claude/ (global config)
   compress.sh        → Archives old evolutions to keep CLAUDE.md lean
   agents/            → 27 evolved agents (avg score 40→81/100)
   memory/            → design-system, agents-index, evolution-log, active-rules, topics
+  memory/routing-heuristics.md  → ERL-generated routing rules (auto-updated weekly)
+  memory/reflexions.jsonl       → Semantic error memory backup
   skills/            → 28 reusable skills across projects
+  helpers/helix-erl.sh          → ERL heuristic extractor
+  helpers/helix-reflexion.sh    → Semantic error memory (Qdrant store + search)
+  helpers/helix-retrospectiva.sh → Auto-analysis at session close
+  helpers/skill-tracker.sh      → Tracks real skill/agent usage
 
 scripts/             → Helix engine scripts
   helix-vector.py    → Qdrant vector memory engine (store, search, cluster)
@@ -121,6 +127,10 @@ helix-engine/        → Injectable Helix engine for your own projects
    session-end.sh runs automatically (SessionEnd hook)
    → Evaluates health metrics
    → Reports estimated session cost
+   → **Retrospectiva**: detects unregistered learnings from session summary
+   → **ERL**: updates routing heuristics weekly from feedback data
+   → **Gap analysis**: flags domains used but not yet in heuristics
+   → If errors resolved → suggests storing in Reflexion memory
    → If problems detected → writes helix-alerta.md for next session
 ```
 
@@ -328,6 +338,27 @@ No automated test suite yet — verification is done via `scripts/verify-applian
 
 Used by `helix-agent-evolve.py` to persist agent evolution history and by `helix-project-index.sh` to index project knowledge. Falls back gracefully if Qdrant or Ollama is not running.
 
+### Reflexion Memory (`helix-reflexion.sh`)
+
+Stores resolved errors as semantic memories in Qdrant (`helix_reflexions` collection). Before invoking `error-detective`, Helix searches for similar past resolutions:
+
+```bash
+# Store a resolved error pattern
+bash ~/.claude/helpers/helix-reflexion.sh store \
+  "SQLAlchemy scalar_one_or_none returns None — AttributeError on .id" \
+  "Use .first() when result can be None, add explicit None check" \
+  "funcionalidad" "my-project"
+
+# Search before debugging
+bash ~/.claude/helpers/helix-reflexion.sh search \
+  "SQLAlchemy query returns None and crashes"
+# → [1] confianza media (0.72) | funcionalidad | 2026-04-02
+#      Patrón: SQLAlchemy scalar_one_or_none returns None...
+#      Resolución: Use .first() when result can be None...
+```
+
+Threshold: 0.65 default. Confidence labels: alta (>0.85) · media (>0.72) · baja (≥0.65).
+
 ---
 
 ## Ollama Models (Layer 0)
@@ -448,7 +479,50 @@ If the variable is not defined, the helix-engine step is silently skipped.
 
 ---
 
+## ERL — Experiential Reflective Learning
+
+Helix analyzes its own routing history and extracts reusable heuristics:
+
+```bash
+# Run manually (also runs automatically every 7 days at session close)
+bash ~/.claude/helpers/helix-erl.sh
+
+# Output: ~/.claude/memory/routing-heuristics.md
+# → Domain rules:     "domain 'testing' → researcher (3/3 uses, 100%)"
+# → Frequent pairs:   "frontend-developer → frontend-developer (6x)"
+# → Project patterns: "proyecto_privado uses frontend-developer as dominant agent (6x)"
+# → Gaps:             "24 agents in catalog never used"
+```
+
+The gap report is particularly useful — it surfaces agents that exist but are never actually invoked, candidates for pruning or better routing rules.
+
+### Skill Usage Tracker
+
+```bash
+# Report: top skills/agents + never-used list
+bash ~/.claude/helpers/skill-tracker.sh report
+
+# Suggest skills unused for 30+ days (dry run)
+bash ~/.claude/helpers/skill-tracker.sh prune --dry-run
+```
+
+Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag overhead.
+
+---
+
 ## Changelog
+
+### v3.8.0 — 2026-04-02 · Self-learning memory system
+
+- **`helpers/helix-erl.sh`** — ERL (Experiential Reflective Learning): analyzes `routing-feedback.jsonl`, extracts domain heuristics + frequent agent pairs + project patterns + catalog gaps → `routing-heuristics.md`. Auto-runs weekly from retrospectiva.
+- **`helpers/helix-reflexion.sh`** — Semantic error memory: stores resolved errors in Qdrant (`helix_reflexions`), retrieves by cosine similarity. Store + search + list. Backup in `reflexions.jsonl`.
+- **`helpers/skill-tracker.sh`** — Real usage log for skills and agents: `skill-usage.jsonl`. `report` shows top-N with bars + never-used. `prune --dry-run` suggests archive candidates.
+- **`helpers/helix-retrospectiva.sh` v2** — Now integrates: ERL trigger (weekly), gap analysis (session domains vs documented heuristics), reflexion suggestion (when resolved errors detected in summary).
+- **`compress_logic.py` v2** — ACON-style importance scoring (0–1) for archiving decisions. Anchor sections (SECURITY, OPERABILITY, SKILLS_INDEX) are immune to compression. High-value patterns (`set -euo pipefail`, `swarm_init`, `HELIX_MODE`) score >0.8 and are never archived.
+- **CLAUDE.md markers** — Added 7 missing structural markers: METRICS, SESSIONS, SECURITY, OPERABILITY, SKILLS_INDEX, RISK_MAP, REASONING. `health-check.sh` now passes 100% integrity.
+- **21 cross-project evolutions** registered (up from 16).
+
+---
 
 ### v3.7.0 — 2026-03-26 · Agent evolution system
 
