@@ -20,6 +20,7 @@ export HELIX_FEEDBACK="$FEEDBACK_FILE"
 export HELIX_MIN_SAMPLES="$MIN_SAMPLES"
 export HELIX_OUTPUT="$HEURISTICS_FILE"
 export HELIX_TOPICS="$TOPICS_DIR"
+export HELIX_GLOBAL="$GLOBAL_DIR"
 
 python3 - <<'PYEOF'
 import os, json, re
@@ -193,6 +194,47 @@ if rarely_used:
     lines.append(f"- **Usados 1 vez**: {', '.join(sorted(rarely_used)[:8])}")
 if not never_used and not rarely_used:
     lines.append("- Sin gaps significativos detectados")
+
+# ── Integrar quality scores de skill-quality.jsonl ──────────
+quality_file = Path(os.environ.get('HELIX_GLOBAL', str(Path.home() / '.claude'))) / 'memory' / 'skill-quality.jsonl'
+if quality_file.exists():
+    from collections import defaultdict
+    quality_scores = defaultdict(list)
+    for line in quality_file.read_text().splitlines():
+        line = line.strip()
+        if not line: continue
+        try:
+            e = json.loads(line)
+            quality_scores[e['name']].append(e['score'])
+        except: pass
+
+    if quality_scores:
+        lines += ["", "## Calidad por Agente (skill-quality.jsonl)", ""]
+        problematic = []
+        partial = []
+        reliable = []
+        for name, scores in quality_scores.items():
+            avg = sum(scores) / len(scores)
+            n = len(scores)
+            if avg < 1.5:
+                problematic.append((name, avg, n))
+            elif avg < 2.5:
+                partial.append((name, avg, n))
+            else:
+                reliable.append((name, avg, n))
+
+        if problematic:
+            lines.append("### ⚠️ Agentes problemáticos (avg < 1.5) — revisar o reemplazar")
+            for name, avg, n in sorted(problematic, key=lambda x: x[1]):
+                lines.append(f"- **{name}** avg={avg:.1f} ({n} usos) — considerar skill alternativa o mejorar prompt")
+        if partial:
+            lines.append("### Agentes con correcciones frecuentes (avg 1.5–2.4)")
+            for name, avg, n in sorted(partial, key=lambda x: x[1]):
+                lines.append(f"- {name} avg={avg:.1f} ({n} usos)")
+        if reliable:
+            lines.append("### ✅ Agentes confiables (avg ≥ 2.5)")
+            for name, avg, n in sorted(reliable, key=lambda x: -x[1]):
+                lines.append(f"- {name} avg={avg:.1f} ({n} usos)")
 
 lines += [
     "",

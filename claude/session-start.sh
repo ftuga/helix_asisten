@@ -177,6 +177,28 @@ for line in lines[:6]:
   echo ""
 fi
 
+# ── Roadmap — milestone activo ───────────────────────────────
+if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-roadmap.md" ]]; then
+  MILESTONE=$(python3 -c "
+from pathlib import Path
+content = Path('$PROJECT_ROOT/.claude/memory/helix-roadmap.md').read_text()
+lines = content.splitlines()
+in_progress = False
+for line in lines:
+    if '## 🔵 En Progreso' in line: in_progress = True
+    elif line.startswith('## '): in_progress = False
+    elif in_progress and line.strip().startswith('|') and not line.strip().startswith('|--') and 'Milestone' not in line:
+        cols = [c.strip() for c in line.split('|') if c.strip()]
+        if cols and cols[0] != '—' and len(cols) >= 2:
+            print(f'{cols[0]} — {cols[1][:60]}')
+            break
+" 2>/dev/null || true)
+  if [[ -n "$MILESTONE" ]]; then
+    echo -e "${BLUE}🗺️  Milestone activo:${NC} $MILESTONE"
+    echo ""
+  fi
+fi
+
 # ── Backlog del proyecto (en progreso + bloqueados) ──────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-backlog.md" ]]; then
   BACKLOG_ITEMS=$(python3 -c "

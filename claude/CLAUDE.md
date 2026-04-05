@@ -116,11 +116,11 @@ Topología activa: `hierarchical-mesh`, máx 15 agentes. agentic-flow (Attention
    - Si score ≤ 0.82 → generar plan nuevo
 3. **Descomponer** en tasks: ¿qué dominios toca? (backend, frontend, DB, tests, infra…)
 4. **Preguntar** máx 2 dudas agrupadas si hay ambigüedad real — si está claro, proceder directo
-5. **Si toca ≥3 dominios o tiene dependencias no obvias** → generar `helix-plan.md` y mostrarlo:
+5. **Si toca ≥3 dominios o tiene dependencias no obvias** → generar `helix-plan-{REQ-NNN}.md` y mostrarlo:
 
 ```markdown
 # Helix Plan — {nombre corto del req}
-> Generado: {fecha} | Req: {resumen 1 línea}
+> Generado: {fecha} | Req: {REQ-NNN} — {resumen 1 línea}
 
 ## Tasks
 | # | Task | Dominio | Agente | Input esperado | Output contract | Depende de |
@@ -132,11 +132,17 @@ Topología activa: `hierarchical-mesh`, máx 15 agentes. agentic-flow (Attention
 {paralelo si no hay dependencias, secuencial si las hay}
 ```
 
+> Naming obligatorio: `helix-plan-REQ-NNN.md` — nunca solo `helix-plan.md`. Cada req tiene su plan único. self-check.sh los limpia cuando el req pasa a Completado en el backlog.
+
 6. **Despachar** según output contracts de helix-team.md:
    - 1 dominio → Capa 1 directo
    - 2+ dominios sin dependencias de contrato → Capa 2 paralelo (swarm_init + agent_spawn)
    - 2+ dominios con dependencias de contrato → Capa 1 secuencial (output A → input B)
 7. **Almacenar plan completado** en Qdrant: `helix/{project}/plans/{req_id}` para reuso futuro
+8. **Registrar calidad** (silencioso, tras completar el req):
+   - Por cada agente principal usado → `bash ~/.claude/helpers/skill-tracker.sh quality <agente> <score>`
+   - Score: `3` = correcto al primer intento · `2` = requirió corrección · `1` = falló/enfoque incorrecto
+   - Criterio: si el agente produjo exactamente el output contract esperado sin iteración → 3
 
 ### Backlog — actualización automática
 

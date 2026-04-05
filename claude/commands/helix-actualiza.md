@@ -75,6 +75,17 @@ Si el Paso D detectó nuevos componentes en el stack:
 
 Si no hubo cambios en el stack → skip, reportar "Equipo sin cambios".
 
+### Paso F2 — Actualizar helix-roadmap.md si el stack o la arquitectura cambió
+
+Si existe `{PROJECT_ROOT}/.claude/memory/helix-roadmap.md`:
+
+1. Si el stack cambió → actualizar sección "🗺️ Arquitectura de Alto Nivel" con los nuevos componentes
+2. Si hay nuevas zonas de riesgo detectadas → agregar fila en "🔴 Riesgos Conocidos"
+3. Si hay decisión arquitectónica nueva (agente nuevo, patrón nuevo) → agregar fila en "📌 Decisiones Arquitectónicas" con fecha de hoy
+4. **Nunca eliminar filas** — el roadmap es un registro acumulativo
+
+Si no hubo cambios relevantes → skip silencioso.
+
 ### Paso G — Reportar al usuario
 
 Resumen compacto de todo lo que se hizo:
@@ -83,5 +94,6 @@ Resumen compacto de todo lo que se hizo:
 ✅ Bitácora: 12 entradas antiguas archivadas
 ✅ Stack: sin cambios / +Redis detectado
 ✅ Equipo: sin cambios / +monitoring-specialist (Redis), +context7 MCP
+✅ Roadmap: arquitectura actualizada / sin cambios
 ✅ Análisis: actualizado (agregado Redis, 1 zona de riesgo nueva)
 ```
