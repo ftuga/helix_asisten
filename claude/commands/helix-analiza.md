@@ -55,6 +55,124 @@ Indicar si falta alguna skill crítica para este tipo de proyecto.
 
 ---
 
+## Paso 4b — MCPs recomendados por stack
+
+Basado en el stack detectado, recomendar MCPs activos:
+
+| Componente detectado | MCPs recomendados |
+|---|---|
+| Cualquier proyecto | `context7` (docs de libs), `sequential-thinking` (arquitectura compleja) |
+| Frontend React / Next.js / Vue | `context7`, `puppeteer` (verificación visual UI) |
+| Backend Python / FastAPI / Django | `context7` |
+| Backend Node / Express / NestJS | `context7` |
+| PostgreSQL / MySQL / MongoDB | `context7` |
+| Docker / docker-compose | `context7` |
+| 2+ dominios / features complejas | `claude-flow` (swarm orquestación) |
+| Email / Calendar integrado | Gmail MCP, Google Calendar MCP |
+| Skills largas (>150 líneas), PDFs externos, docs masivos | `pageindex` (ver razonamiento abajo) |
+
+Indicar cuáles ya están en `.mcp.json` del proyecto y cuáles faltan.
+Si falta `context7` en un proyecto con dependencias externas → recomendarlo siempre.
+
+### Cuándo recomendar PageIndex — y cómo razonarlo al usuario
+
+Detectar si aplica alguna de estas condiciones en el proyecto:
+- Hay skills con más de 150 líneas
+- Existen PDFs, manuales o documentación externa descargada
+- `helix-analysis-full.md` supera 500 líneas
+- El proyecto tiene documentación técnica interna extensa (wikis, ADRs, specs)
+
+Si aplica **al menos una condición** → explicar al usuario con este razonamiento:
+
+> **Por qué PageIndex en este proyecto:**
+> Los sistemas RAG tradicionales (incluido Qdrant) fragmentan los documentos en chunks y buscan por similitud semántica. Esto funciona bien para snippets cortos, pero falla en documentos largos porque:
+> - Los chunks rompen el contexto jerárquico del documento
+> - "Similitud ≠ relevancia" — un chunk similar semánticamente puede no ser el relevante
+> - Se pierde la estructura natural (secciones, subsecciones, dependencias entre partes)
+>
+> PageIndex construye un índice en árbol que preserva la jerarquía original del documento. El LLM razona sobre ese árbol para encontrar exactamente la sección correcta — como un experto humano que navega un manual.
+>
+> **Beneficio concreto para este proyecto:** [adaptar según condición detectada]
+> - Si hay skills largas → "Helix podrá recuperar el patrón exacto de una skill de 200 líneas sin traer el documento completo al contexto."
+> - Si hay PDFs/manuales → "Helix podrá responder preguntas sobre documentación técnica con referencias exactas a páginas y secciones."
+> - Si helix-analysis-full.md es grande → "Las búsquedas de contexto del proyecto serán más precisas y baratas en tokens."
+>
+> **Costo:** requiere una llamada LLM por búsqueda (más caro que Qdrant). Ideal para documentos que se consultan con profundidad, no para búsquedas frecuentes de snippets.
+> Instalación: MCP disponible en https://github.com/VectifyAI/PageIndex
+
+**Regla interna Qdrant vs PageIndex (no mostrar al usuario):**
+- Qdrant → snippets cortos, búsqueda fuzzy, historial de reflexiones, planes reutilizables
+- PageIndex → documentos largos estructurados donde la jerarquía importa
+
+---
+
+## Paso 4c — Generar helix-team.md
+
+Basado en el stack (Paso 1) y los agentes mapeados (Paso 3), generar el roster del equipo para este proyecto.
+
+Escribir `{PROJECT_ROOT}/.claude/memory/helix-team.md`:
+
+```markdown
+# Helix Team — {nombre del proyecto}
+> Generado: {fecha} por /helix-analiza | Actualizar con: /helix-actualiza
+
+## Equipo Activo
+
+| Rol | Agente | Dominio | Archivos típicos |
+|---|---|---|---|
+{filas según stack detectado — ejemplos:}
+| Backend Lead | python-pro | API, endpoints, servicios | app/api/*, app/services/* |
+| Frontend Lead | frontend-developer | React, componentes, páginas | frontend/src/*, src/components/* |
+| DB | postgresql-dba | Schema, queries, migraciones | migrations/*, models/*, alembic/* |
+| QA | test-engineer | Tests, cobertura | tests/*, **/*.test.ts |
+| Seguridad | security-auditor | Auth, permisos, endpoints | app/auth/*, middleware/* |
+| Design | ui-designer | Componentes visuales, tokens | src/components/ui/*, styles/* |
+| Infra | devops-engineer | Docker, CI/CD, deploy | docker-compose*, .github/workflows/* |
+
+## MCPs Activos para este proyecto
+
+| MCP | Para qué | Estado |
+|---|---|---|
+{filas según Paso 4b — indicar disponible/falta}
+
+## Output Contracts
+
+> Define qué produce cada agente y quién lo consume.
+> Sin esto, el paralelismo en Capa 2 se rompe en el handoff.
+> Completar basado en el stack real detectado — eliminar filas que no apliquen.
+
+| Agente productor | Produce | Lo consume |
+|---|---|---|
+| backend-architect | OpenAPI spec, endpoint types, schema | frontend-developer, test-engineer |
+| database-architect | Schema migrations, model definitions | python-pro, postgresql-dba, frontend-developer |
+| python-pro | Endpoint implementado, response models | test-engineer, frontend-developer |
+| ui-designer | Tokens, componentes visuales, specs | frontend-developer |
+| frontend-developer | Componentes, pages, types | test-engineer |
+
+## Definition of Done
+
+- [ ] Tests escritos y pasando para el cambio
+- [ ] code-reviewer aprobó antes de cerrar
+- [ ] Sin secrets ni variables hardcodeadas
+- [ ] helix-bitacora.md actualizado
+- [ ] Si UI → verificado con puppeteer en 375px, 768px, 1280px
+- [ ] Si endpoint nuevo → registrado en router principal
+
+## Protocolo de Despacho
+
+Cuando el requerimiento toca ≥2 dominios:
+1. Identificar dominios afectados (leer tabla Equipo Activo)
+2. Verificar output contracts: ¿hay dependencias entre agentes?
+3. Si 1 dominio → Capa 1: Agent tool directo
+4. Si 2+ dominios sin dependencias de contrato → Capa 2: swarm paralelo
+5. Si 2+ dominios con dependencias → Capa 1 secuencial (output A → input B)
+6. Al terminar: almacenar plan en Qdrant + actualizar helix-backlog.md
+```
+
+Si ya existe `helix-team.md` → enriquecerlo, NO sobreescribir desde cero.
+
+---
+
 ## Paso 5 — Pre-identificar zonas de riesgo
 
 Basado en el stack y los patrones conocidos, identificar archivos/módulos que típicamente
@@ -85,6 +203,9 @@ Backend: {x} | Frontend: {x} | DB: {x} | Auth: {x} | Infra: {x}
 ## Skills críticas
 {lista: skill → disponible/falta}
 
+## MCPs recomendados
+{lista: mcp → disponible/falta}
+
 ## Zonas de riesgo iniciales
 {lista: archivo → nivel → razón}
 ```
@@ -95,7 +216,10 @@ Almacenar en vector memory con namespace `helix/{project_name}/`:
 - `helix/{name}/stack` → JSON completo del stack detectado
 - `helix/{name}/agents` → mapeo detallado de agentes
 - `helix/{name}/skills` → skills completas con razones
+- `helix/{name}/mcps` → MCPs recomendados con estado
+- `helix/{name}/team` → roster del equipo con output contracts
 - `helix/{name}/risks` → zonas de riesgo con contexto
+- `helix/{name}/plans/` → namespace reservado para planes de ejecución (se llena automáticamente al completar reqs)
 
 ### Modo FILE (fallback):
 
@@ -103,7 +227,9 @@ Escribir `{PROJECT_ROOT}/.claude/memory/helix-analysis-full.md` con todos los de
 
 ---
 
-## Paso 7 — Inicializar bitácora
+## Paso 7 — Inicializar bitácora y backlog
+
+### Bitácora
 
 Si `helix-bitacora.md` NO existe → crearlo:
 
@@ -131,13 +257,41 @@ Si `helix-bitacora.md` NO existe → crearlo:
 
 Si ya existe → NO sobreescribir. Informar que existe.
 
+### Backlog
+
+Si `helix-backlog.md` NO existe → crearlo:
+
+```markdown
+# Helix Backlog — {nombre del proyecto}
+> Iniciado: {fecha} | Helix actualiza automáticamente al completar requerimientos.
+
+## 🔵 En Progreso
+| ID | Requerimiento | Agentes | Inicio |
+|----|--------------|---------|--------|
+
+## 🟡 Pendiente
+| ID | Requerimiento | Prioridad | Notas |
+|----|--------------|-----------|-------|
+
+## 🟢 Completado
+| ID | Requerimiento | Fecha | Resultado |
+|----|--------------|-------|-----------|
+
+## 🔴 Bloqueado
+| ID | Requerimiento | Bloqueado por | Desde |
+|----|--------------|---------------|-------|
+```
+
+Si ya existe → NO sobreescribir.
+
 ---
 
 ## Paso 8 — Reportar al usuario
 
 Mostrar resumen breve:
 - Stack detectado (1 línea)
-- Agentes recomendados (lista)
+- Equipo definido (tabla compacta de helix-team.md)
+- MCPs recomendados: disponibles vs faltantes
 - Skills faltantes (si hay)
 - Zonas de riesgo iniciales
 - Modo usado (vector/file) y qué se guardó

@@ -177,6 +177,34 @@ for line in lines[:6]:
   echo ""
 fi
 
+# ── Backlog del proyecto (en progreso + bloqueados) ──────────
+if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-backlog.md" ]]; then
+  BACKLOG_ITEMS=$(python3 -c "
+from pathlib import Path
+content = Path('$PROJECT_ROOT/.claude/memory/helix-backlog.md').read_text()
+lines = content.splitlines()
+section = ''
+items = []
+for line in lines:
+    if '## 🔵 En Progreso' in line: section = 'progreso'
+    elif '## 🔴 Bloqueado' in line: section = 'bloqueado'
+    elif line.startswith('## '): section = ''
+    elif section and line.strip().startswith('|') and not line.strip().startswith('|--') and 'ID' not in line and line.strip() != '|':
+        cols = [c.strip() for c in line.split('|') if c.strip()]
+        if len(cols) >= 2 and cols[0] != '—':
+            emoji = '🔵' if section == 'progreso' else '🔴'
+            items.append(f'   {emoji} {cols[0]}: {cols[1][:60]}')
+for item in items[:5]:
+    print(item)
+" 2>/dev/null || true)
+
+  if [[ -n "$BACKLOG_ITEMS" ]]; then
+    echo -e "${BLUE}📋 Backlog activo:${NC}"
+    echo "$BACKLOG_ITEMS"
+    echo ""
+  fi
+fi
+
 # ── Bitácora reciente del proyecto ───────────────────────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-bitacora.md" ]]; then
   BITACORA_ROWS=$(python3 -c "
