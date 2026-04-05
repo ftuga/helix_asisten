@@ -173,6 +173,103 @@ Si ya existe `helix-team.md` → enriquecerlo, NO sobreescribir desde cero.
 
 ---
 
+## Paso 4d — Generar skill de design system del proyecto
+
+Si el stack detectado incluye cualquier framework UI (React, Next.js, Vue, Svelte, Flutter, React Native, SwiftUI):
+
+1. Verificar si existe `{PROJECT_ROOT}/.claude/memory/design-system.md` → si existe, leerlo para extraer tokens reales
+2. Crear `{PROJECT_ROOT}/.claude/skills/{project-slug}-design-system/SKILL.md` con el contenido adaptado al stack
+
+El skill generado debe seguir este formato — auto-poblar lo que se puede detectar, dejar placeholders claros para lo que el usuario debe completar:
+
+```markdown
+---
+name: {project-slug}-design-system
+description: "Design system de {nombre del proyecto}. Stack: {stack UI detectado}. Usar cuando: construyas componentes, pages o estilos en este proyecto. Complementa ui-ux-pro-max con las reglas y tokens específicos de esta app."
+---
+
+# {Nombre del Proyecto} — Design System
+
+> Skill específico de este proyecto. Generado por /helix-analiza.
+> Complementos activos: ui-ux-pro-max (estilos generales) · emilkowalski/skill (animaciones)
+> ⚠️ Completar las secciones marcadas con [COMPLETAR] antes de usar.
+
+## Stack UI
+{stack detectado: ej. React 18 + TypeScript + Tailwind CSS v4 + shadcn/ui}
+
+## Cuándo aplicar este skill
+- Al construir cualquier componente nuevo en este proyecto
+- Al revisar consistencia visual
+- Al elegir entre variantes de un componente
+- Al definir espaciado, color o tipografía
+
+---
+
+## Tokens de Color
+
+{Si design-system.md existe → extraer paleta real. Si no → placeholder}
+
+```css
+:root {
+  /* [COMPLETAR con los valores reales del proyecto] */
+  --bg:        #0a0a0f;    /* Fondo principal */
+  --surface:   #111118;    /* Cards, paneles */
+  --accent:    #6c63ff;    /* Color de acción — usar con disciplina */
+  --text-1:    #f0f0f5;    /* Texto principal */
+  --text-2:    #8888aa;    /* Texto secundario */
+  --border:    #ffffff10;  /* Bordes sutiles */
+}
+```
+
+## Tipografía
+
+{Si detectado en design-system.md → extraer. Si no → placeholder}
+
+| Uso | Fuente | Tamaño | Peso |
+|---|---|---|---|
+| Headings | [COMPLETAR] | — | — |
+| Body | [COMPLETAR] | 16px mínimo móvil | 400 |
+| Código/mono | [COMPLETAR] | — | — |
+
+## Componentes del Proyecto
+
+{Detectar componentes existentes en src/components/ o similar → listar los principales}
+
+| Componente | Ubicación | Cuándo usar | Variantes |
+|---|---|---|---|
+| [COMPLETAR] | [COMPLETAR] | [COMPLETAR] | [COMPLETAR] |
+
+## Reglas de Este Proyecto
+
+{Extraer de design-system.md si existe, si no generar reglas base según stack}
+
+- Mobile-first siempre — base → sm: → md: → lg:
+- Touch targets mínimo 44×44px
+- font-size ≥ 16px en inputs móvil (evita zoom iOS)
+- Nunca información accesible solo por hover
+- {[COMPLETAR] reglas específicas del proyecto}
+
+## ❌ Anti-patrones Detectados / Prohibidos
+
+{Detectar de errores en bitácora si existe. Si no → listar los más comunes del stack}
+
+- No usar colores hardcodeados — siempre var(--token)
+- No crear componentes custom si ya existe uno en el proyecto
+- {[COMPLETAR] anti-patrones propios del proyecto}
+
+## Recursos
+
+- ui-ux-pro-max: estilos, paletas, patrones generales → activar para decisiones de diseño
+- emilkowalski/skill: animaciones y motion design → activar al implementar transiciones
+- {[COMPLETAR] links a Figma, Storybook u otros recursos del equipo}
+```
+
+Si ya existe `.claude/skills/{project-slug}-design-system/SKILL.md` → NO sobreescribir. Reportar "skill de design system ya existe".
+Si existe `design-system.md` en el proyecto → reportar cuántos tokens/secciones se extrajeron automáticamente.
+Si no hay stack UI detectado (proyecto backend puro) → skip este paso.
+
+---
+
 ## Paso 5 — Pre-identificar zonas de riesgo
 
 Basado en el stack y los patrones conocidos, identificar archivos/módulos que típicamente
@@ -293,6 +390,8 @@ Mostrar resumen breve:
 - Equipo definido (tabla compacta de helix-team.md)
 - MCPs recomendados: disponibles vs faltantes
 - Skills faltantes (si hay)
+- Design system skill: creado / ya existía / skipped (backend puro)
+  - Si creado → indicar qué se auto-pobló y qué secciones requieren completar manualmente
 - Zonas de riesgo iniciales
 - Modo usado (vector/file) y qué se guardó
 - Confirmar que no volverá a preguntar automáticamente
