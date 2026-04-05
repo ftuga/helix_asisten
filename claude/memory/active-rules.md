@@ -1,5 +1,7 @@
 # Active Rules — Reglas activas instaladas de evoluciones
 
+- [2026-04-05] [arquitectura] 4 gaps v3.11: output contracts en helix-team.md definen handoffs entre agentes. helix-actualiza Paso F+G refresca equipo cuando cambia el stack. self-check sección DoD verifica checklist automáticamente. plan reuse via Qdrant helix/{proj}/plans/ con threshold 0.82
+- [2026-04-05] [arquitectura] Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster equipo+MCPs+DoD) y helix-backlog.md. Team Dispatch Protocol descompone reqs en dominios y despacha en paralelo según equipo. helix-plan.md para reqs >= 3 dominios.
 - [2026-03-20] [arquitectura] Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file)
 - [2026-03-20] [operatividad] Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea
 - [2026-03-20] [performance] helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta

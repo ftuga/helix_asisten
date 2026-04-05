@@ -42,3 +42,28 @@
 
 ## Archivado 2026-04-01 00:12 — Historial evoluciones
 | 9 | 2026-03-20 | interfaz | Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas | usuario-solicitud-mejora |
+
+## Archivado 2026-04-05 — Pre-v3.11 (sesiones 2026-03-20 y 2026-03-27)
+| 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
+| 11 | 2026-03-20 | interfaz | Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza | usuario-solicitud |
+| 12 | 2026-03-20 | interfaz | Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso | usuario-solicitud |
+| 10b | 2026-03-20 | performance | Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia | usuario-solicitud |
+| 11b | 2026-03-20 | performance | Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo | usuario-solicitud |
+| 12b | 2026-03-20 | performance | Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2 | usuario-solicitud |
+| 13 | 2026-03-20 | performance | helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta | usuario-solicitud |
+| 14 | 2026-03-20 | operatividad | Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea | usuario-solicitud |
+| 15 | 2026-03-20 | arquitectura | Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file) | usuario-solicitud |
+| 16 | 2026-03-27 | arquitectura | 2+ dominios en paralelo → Capa 2 (swarm_init + agent_spawn), NO Agent tool en paralelo. Agent tool = invisible en ruflow. Swarm = visible en dashboard ruflow (contador N/15) | usuario-solicitud |
+
+## Archivado 2026-04-05 — v3.10.x (auto-evolución 2026-04-02)
+| 17 | 2026-04-02 | arquitectura | ERL: helix-erl.sh analiza routing-feedback.jsonl → routing-heuristics.md. Semanal en retrospectiva |
+| 18 | 2026-04-02 | arquitectura | Reflexion store: helix-reflexion.sh → Qdrant helix_reflexions. Search semántico antes de error-detective, threshold 0.76 |
+| 19 | 2026-04-02 | performance | ACON compress: importance scoring 0-1, anchor sections (SECURITY, OPERABILITY, SKILLS_INDEX) nunca comprimir |
+| 20 | 2026-04-02 | operatividad | skill-tracker.sh log/report/prune → skill-usage.jsonl |
+| 21 | 2026-04-02 | operatividad | helix-retrospectiva.sh v2: ERL semanal + gap analysis + Reflexion store sugerido |
+| 22 | 2026-04-02 | operatividad | skill-tracker-hook + agent-routing-hook auto-registran uso en skill-usage.jsonl |
+| 23 | 2026-04-02 | arquitectura | ExpeL: helix-expel.sh detecta dominancia, routing incorrecto, agentes fuera de catálogo |
+| 24 | 2026-04-02 | arquitectura | helix-routing-fix.sh: aplica correcciones ExpeL+ERL a agents-index |
+| 25 | 2026-04-02 | operatividad | helix-decay.sh: confidence decay evolution-log. Score = recencia×0.4 + importancia×0.6. PERENNIAL nunca decae |
+| 26 | 2026-04-02 | arquitectura | helix-knowledge-map.sh: mapa learnings×heurísticas×reflexiones×decay. Gaps críticos = cobertura <30% |
+| 27 | 2026-04-02 | operatividad | session-start recupera Qdrant helix_reflexions con stack del proyecto como query |

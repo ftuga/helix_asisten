@@ -381,6 +381,55 @@ Si `helix-backlog.md` NO existe → crearlo:
 
 Si ya existe → NO sobreescribir.
 
+### Roadmap
+
+Si `helix-roadmap.md` NO existe → crearlo como documento persistente del equipo técnico:
+
+```markdown
+# Helix Roadmap — {nombre del proyecto}
+> Creado: {fecha} por /helix-analiza | Actualizar: manualmente o con /helix-actualiza
+> ⚠️ Este archivo NO se borra automáticamente. Es el mapa de ruta del equipo técnico.
+> Propósito: visión panorámica — milestones, qué se hizo, a dónde va.
+
+## 🎯 Visión del Proyecto
+{Completar: qué problema resuelve, para quién, objetivo final}
+
+## ✅ Completado
+| Milestone | Descripción | Fecha |
+|-----------|-------------|-------|
+| Inicialización | Proyecto configurado con Helix, stack analizado, equipo definido | {fecha} |
+
+## 🔵 En Progreso
+| Milestone | Descripción | Inicio | Avance |
+|-----------|-------------|--------|--------|
+
+## 🟡 Próximos Milestones
+| Milestone | Descripción | Prioridad | Notas |
+|-----------|-------------|-----------|-------|
+
+## 🗺️ Arquitectura de Alto Nivel
+{Diagrama textual del stack detectado — componentes y sus relaciones}
+
+## 📌 Decisiones Arquitectónicas
+| Fecha | Decisión | Alternativa rechazada | Por qué |
+|-------|----------|-----------------------|---------|
+
+## 🔴 Riesgos Conocidos
+{Extraído de las zonas de riesgo del Paso 5}
+| Área | Riesgo | Mitigación | Estado |
+|------|--------|------------|--------|
+
+## 📋 Notas del Equipo
+```
+
+**Reglas del roadmap:**
+- Nunca se borra automáticamente (ni self-check, ni ningún script)
+- Granularidad: milestones de 1-4 semanas, NO requerimientos individuales (eso es backlog)
+- Cuando un milestone se completa → mover fila a "✅ Completado" con fecha
+- Las decisiones arquitectónicas son acumulativas — nunca borrar filas, solo agregar
+
+Si ya existe → NO sobreescribir. Enriquecer con arquitectura detectada y riesgos del Paso 5.
+
 ---
 
 ## Paso 8 — Reportar al usuario
@@ -393,6 +442,8 @@ Mostrar resumen breve:
 - Design system skill: creado / ya existía / skipped (backend puro)
   - Si creado → indicar qué se auto-pobló y qué secciones requieren completar manualmente
 - Zonas de riesgo iniciales
+- Archivos generados: helix-team.md / helix-backlog.md / helix-roadmap.md (creados / ya existían)
+  - Nota sobre helix-roadmap.md: "Es el mapa persistente del equipo — nunca se borra automáticamente. Completar sección Visión y Próximos Milestones."
 - Modo usado (vector/file) y qué se guardó
 - Confirmar que no volverá a preguntar automáticamente
 

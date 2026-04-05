@@ -2,7 +2,7 @@
 > Solo este índice se carga al inicio. Descripción completa en `~/.claude/memory/agents/<nombre>.md`.
 > Actualizar cuando se habilita/deshabilita un agente.
 
-## Agentes Activos (19)
+## Agentes Activos (20)
 
 | Agente | Trigger (5 palabras) | Detalle |
 |---|---|---|
@@ -25,6 +25,7 @@
 | `monitoring-specialist` | Logs, alertas o observabilidad | [detalle](agents/monitoring-specialist.md) |
 | `architect-reviewer` | Decisión arquitectónica o SOLID | [detalle](agents/architect-reviewer.md) |
 | `fin-saas-advisor` | Precios, márgenes o modelo SaaS | [detalle](agents/fin-saas-advisor.md) |
+| `investment-expert` | Invertir en bolsa, cripto, trading, portafolio | [detalle](agents/investment-expert.md) |
 | `ui-designer` | Componente visual, dirección estética, HTML prod | [detalle](agents/ui-designer.md) |
 | `ui-ux-designer` | Flujos, arquitectura info, criterio UX | [detalle](agents/ui-ux-designer.md) |
 

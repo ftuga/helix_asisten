@@ -1,6 +1,15 @@
 # Sistema de Diseño UI — CLIENTE_PRIVADO
 > Extraído de CLAUDE.md. Cargar cuando se trabaje en componentes frontend o páginas.
 
+## 🔗 Recursos Externos de Referencia
+
+| Recurso | URL | Cuándo usar |
+|---|---|---|
+| **UI UX Pro Max Skill** | https://ui-ux-pro-max-skill.nextlevelbuilder.io/ | Consultar para decisiones de diseño UI/UX avanzadas, sistemas de diseño, patrones visuales |
+| **Emil Kowalski — Animations Skill** | https://emilkowal.ski/skill | Referencia para motion design, animaciones CSS/JS, micro-interacciones, performance de animaciones |
+
+> Emil recomienda usarlo selectivamente (no siempre activo) — invocarlo cuando se trabaje animaciones o transiciones específicas.
+
 ## Filosofía: "Precision Craft"
 Diseño refinado y editorial — espacios con propósito, sin componentes genéricos.
 Referentes: Linear.app, Vercel Dashboard, Raycast.
