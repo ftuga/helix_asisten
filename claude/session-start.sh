@@ -252,6 +252,30 @@ for row in rows[-5:]:
   fi
 fi
 
+# ── Alerta de calidad — agentes problemáticos ─────────────────
+QUALITY_LOG="$GLOBAL_MEMORY_DIR/skill-quality.jsonl"
+if [[ -f "$QUALITY_LOG" ]]; then
+  PROBLEMATIC=$(python3 -c "
+import json
+from collections import defaultdict
+scores = defaultdict(list)
+for line in open('$QUALITY_LOG'):
+    try:
+        e = json.loads(line.strip())
+        scores[e['name']].append(e['score'])
+    except: pass
+bad = [(n, sum(s)/len(s), len(s)) for n, s in scores.items() if sum(s)/len(s) < 1.5 and len(s) >= 2]
+for name, avg, n in sorted(bad, key=lambda x: x[1]):
+    print(f'   ⚠️  {name}: avg={avg:.1f} ({n} usos) — revisar o reemplazar')
+" 2>/dev/null || true)
+  if [[ -n "$PROBLEMATIC" ]]; then
+    echo -e "${YELLOW}🔴 Agentes con calidad baja (avg < 1.5):${NC}"
+    echo "$PROBLEMATIC"
+    echo "   → Ver detalle: bash ~/.claude/helpers/skill-tracker.sh quality-report"
+    echo ""
+  fi
+fi
+
 # ── Routing feedback — agentes más efectivos del proyecto ─────
 FEEDBACK_FILE="$GLOBAL_MEMORY_DIR/routing-feedback.jsonl"
 if [[ -f "$FEEDBACK_FILE" ]]; then
