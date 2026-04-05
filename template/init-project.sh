@@ -81,6 +81,24 @@ if [[ ! -f "$TARGET_DIR/.claude/memory/pending.md" ]]; then
   echo -e "${GREEN}✅ .claude/memory/pending.md${NC} creado"
 fi
 
+# helix-team.md — se rellena con /helix-analiza, solo se crea el placeholder
+if [[ ! -f "$TARGET_DIR/.claude/memory/helix-team.md" ]]; then
+  if [[ -f "$TEMPLATE_DIR/.claude/memory/helix-team.md" ]]; then
+    sed "s/\[NOMBRE DEL PROYECTO\]/$(basename "$TARGET_DIR")/g; s/\[FECHA\]/$DATE/g" \
+      "$TEMPLATE_DIR/.claude/memory/helix-team.md" > "$TARGET_DIR/.claude/memory/helix-team.md"
+    echo -e "${GREEN}✅ .claude/memory/helix-team.md${NC} creado (completar con /helix-analiza)"
+  fi
+fi
+
+# helix-backlog.md
+if [[ ! -f "$TARGET_DIR/.claude/memory/helix-backlog.md" ]]; then
+  if [[ -f "$TEMPLATE_DIR/.claude/memory/helix-backlog.md" ]]; then
+    sed "s/\[NOMBRE DEL PROYECTO\]/$(basename "$TARGET_DIR")/g; s/\[FECHA\]/$DATE/g" \
+      "$TEMPLATE_DIR/.claude/memory/helix-backlog.md" > "$TARGET_DIR/.claude/memory/helix-backlog.md"
+    echo -e "${GREEN}✅ .claude/memory/helix-backlog.md${NC} creado"
+  fi
+fi
+
 # evolution-log.txt
 if [[ ! -f "$TARGET_DIR/.claude/evolution-log.txt" ]]; then
   echo "[$DATE] Proyecto inicializado con Helix template" > "$TARGET_DIR/.claude/evolution-log.txt"

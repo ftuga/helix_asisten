@@ -198,6 +198,56 @@ else
 fi
 
 # ════════════════════════════════════════════════════════════
+section "DEFINITION OF DONE (helix-team.md)"
+# ════════════════════════════════════════════════════════════
+
+TEAM_FILE="${PROJECT_ROOT:+$PROJECT_ROOT/.claude/memory/helix-team.md}"
+if [[ -n "$TEAM_FILE" && -f "$TEAM_FILE" ]]; then
+  CHANGED=$(git -C "$PROJECT_ROOT" diff --name-only HEAD 2>/dev/null || true)
+  GIT_DIFF_TS=$(git -C "$PROJECT_ROOT" diff HEAD -- "*.ts" "*.tsx" "*.js" "*.py" 2>/dev/null || true)
+
+  # ¿Tests escritos para el cambio?
+  if echo "$CHANGED" | grep -qE "\.(test|spec)\.(ts|tsx|py|js)$"; then
+    check "Tests modificados para el cambio"
+  elif [[ -n "$CHANGED" ]]; then
+    warn "Sin tests para este cambio — DoD: tests escritos y pasando"
+  fi
+
+  # ¿Secrets hardcodeados? (ya cubierto en SEGURIDAD — solo recordatorio)
+  if echo "$GIT_DIFF_TS" | grep -qiE "password\s*=\s*['\"][^'\"]{3,}|secret\s*=\s*['\"]|api_key\s*=\s*['\"]"; then
+    fail "DoD: credencial hardcodeada detectada"
+  else
+    check "DoD: sin secrets hardcodeados"
+  fi
+
+  # ¿UI modificada? → recordar puppeteer
+  if echo "$CHANGED" | grep -qE "\.(tsx|jsx|css|html)$"; then
+    warn "DoD: UI modificada — verificar con puppeteer en 375px, 768px, 1280px"
+  fi
+
+  # ¿Bitácora actualizada? (modificada en las últimas 2 horas)
+  BITACORA="$PROJECT_ROOT/.claude/memory/helix-bitacora.md"
+  if [[ -f "$BITACORA" ]]; then
+    BITACORA_AGE=$(python3 -c "
+import os, time
+age = (time.time() - os.path.getmtime('$BITACORA')) / 3600
+print('ok' if age < 2 else 'stale')
+" 2>/dev/null || echo "unknown")
+    if [[ "$BITACORA_AGE" == "ok" ]]; then
+      check "DoD: bitácora actualizada recientemente"
+    else
+      warn "DoD: bitácora no actualizada hoy — agregar entrada"
+    fi
+  fi
+
+  # Recordatorio no automatizable
+  warn "DoD (manual): ¿code-reviewer aprobó antes de cerrar?"
+
+else
+  skip "DoD check (sin helix-team.md en el proyecto)"
+fi
+
+# ════════════════════════════════════════════════════════════
 # RESULTADO FINAL
 # ════════════════════════════════════════════════════════════
 echo ""

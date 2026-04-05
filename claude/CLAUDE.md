@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-02 (v3.10)<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-05 12:13<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -99,6 +99,52 @@ Topología activa: `hierarchical-mesh`, máx 15 agentes. agentic-flow (Attention
 ---
 
 **Principio absoluto:** Máximo paralelismo. El usuario solo ve el resultado. Si un agente falla → Helix corrige y registra. Si el routing de claude-flow es incorrecto → ignorarlo, usar juicio propio.
+
+---
+
+## 🗂️ TEAM DISPATCH & REQUIREMENT INTAKE
+
+> Aplica cuando el proyecto tiene `helix-team.md` (generado por /helix-analiza).
+> Si no existe → routing normal según catálogo de agentes.
+
+### Al recibir un requerimiento
+
+1. **Leer** `{PROJECT_ROOT}/.claude/memory/helix-team.md` si existe
+2. **Buscar plan reutilizable** (si Qdrant disponible):
+   - `mcp__claude-flow__memory_search` con el texto del req en namespace `helix/{project}/plans/`
+   - Si score > 0.82 → mostrar plan anterior y preguntar "¿aplica este plan?" → adaptar si sí
+   - Si score ≤ 0.82 → generar plan nuevo
+3. **Descomponer** en tasks: ¿qué dominios toca? (backend, frontend, DB, tests, infra…)
+4. **Preguntar** máx 2 dudas agrupadas si hay ambigüedad real — si está claro, proceder directo
+5. **Si toca ≥3 dominios o tiene dependencias no obvias** → generar `helix-plan.md` y mostrarlo:
+
+```markdown
+# Helix Plan — {nombre corto del req}
+> Generado: {fecha} | Req: {resumen 1 línea}
+
+## Tasks
+| # | Task | Dominio | Agente | Input esperado | Output contract | Depende de |
+|---|------|---------|--------|----------------|-----------------|------------|
+| 1 | {descripción} | {dominio} | {agente} | {qué recibe} | {qué produce} | — |
+| 2 | {descripción} | {dominio} | {agente} | output task 1 | {qué produce} | task 1 |
+
+## Orden de ejecución
+{paralelo si no hay dependencias, secuencial si las hay}
+```
+
+6. **Despachar** según output contracts de helix-team.md:
+   - 1 dominio → Capa 1 directo
+   - 2+ dominios sin dependencias de contrato → Capa 2 paralelo (swarm_init + agent_spawn)
+   - 2+ dominios con dependencias de contrato → Capa 1 secuencial (output A → input B)
+7. **Almacenar plan completado** en Qdrant: `helix/{project}/plans/{req_id}` para reuso futuro
+
+### Backlog — actualización automática
+
+Cuando existe `{PROJECT_ROOT}/.claude/memory/helix-backlog.md`:
+- Al iniciar un req → agregar fila en "🔵 En Progreso" con ID REQ-NNN
+- Al completarlo → mover a "🟢 Completado" con fecha y resultado
+- Si hay bloqueador → mover a "🔴 Bloqueado" con razón
+No pedir permiso para actualizar el backlog — es mantenimiento silencioso.
 
 ---
 
@@ -226,6 +272,9 @@ Si session-start incluye `[HELIX-NECESITAMOS-HABLAR]`:
 - Si el usuario dice "sí" → ejecutar `/helix-actualiza`.
 - Si el usuario dice "no" o quiere continuar → respetar y borrar el archivo: `rm helix-alerta.md`.
 
+**10. Requirement Intake con plan visible**
+Cuando el req toca ≥3 dominios o tiene dependencias no triviales → generar `helix-plan.md` y mostrar el plan antes de ejecutar. Para 1-2 dominios sin dependencias → ejecutar directo (mostrar el plan sería overhead innecesario).
+
 ---
 
 ## 💰 CONTROL DE COSTOS (Universal)
@@ -303,8 +352,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 14,
-  "ultima_actualizacion": "2026-04-01"
+  "total_sesiones": 16,
+  "ultima_actualizacion": "2026-04-01",
+  "total_aprendizajes": 2
 }
 ```
 <!-- METRICS_END -->
@@ -312,7 +362,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- SESSIONS_START -->
 ## 📋 SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
-|---|---|---|---|---|
+| #6 | 2026-04-03 | Rediseño completo herramienta priorización React+TS+Tailwind: dashboard ejecutivo con hero #1, stats strip, tabla paginada, panel de pesos. Análisis scrollable en 4 secciones (matriz, heatmap, radar, simulador). Modal InitiativeModal con 4 tabs y notas editables. Datos estáticos CLIENTE_PRIVADO 23 iniciativas. Modal conectado a todas las vistas incluyendo Analysis. | 0
+0 | 0
+0 |
 <!-- SESSIONS_END -->
 
 <!-- RISK_MAP_START -->
@@ -350,6 +402,8 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | 25 | 2026-04-02 | operatividad | helix-decay.sh: confidence decay para evolution-log. Score 0-100 = recencia×0.4 + importancia×0.6 × multiplicador categoría. Patrones PERENNIAL nunca decaen. Se ejecuta en session-end | auto-evolución |
 | 26 | 2026-04-02 | arquitectura | helix-knowledge-map.sh: mapa cross-dominio learnings×heurísticas×reflexiones×decay. Identifica gaps críticos (dominio de alto peso con cobertura <30%). Corre en session-end --gaps | auto-evolución |
 | 27 | 2026-04-02 | operatividad | session-start recuperación proactiva Qdrant: detecta stack del proyecto (Python/React/Docker) y consulta helix_reflexions por errores relevantes. Memorias activas al inicio de sesión | auto-evolución |
+| 23 | 2026-04-05 | arquitectura | Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster equipo+MCPs+DoD) y helix-backlog.md. Team Dispatch Protocol descompone reqs en dominios y despacha en paralelo según equipo. helix-plan.md para reqs >= 3 dominios. | usuario-solicitud-evolucion |
+| 24 | 2026-04-05 | arquitectura | 4 gaps v3.11: output contracts en helix-team.md definen handoffs entre agentes. helix-actualiza Paso F+G refresca equipo cuando cambia el stack. self-check sección DoD verifica checklist automáticamente. plan reuse via Qdrant helix/{proj}/plans/ con threshold 0.82 | usuario-solicitud-evolucion |
 <!-- EVOLUTION_LOG_END -->
 
 ---
@@ -363,3 +417,12 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | Descripciones completas de agentes | `~/.claude/memory/agents/` |
 | Scripts de evolución | `~/.claude/{evolve,session-start,session-end,self-check}.sh` |
 | Template nuevo proyecto | `~/.claude-template/` |
+
+**MCPs disponibles — cuándo usar cada uno:**
+| MCP | Cuándo | Alternativa |
+|---|---|---|
+| `context7` | Docs de cualquier lib/framework | — siempre disponible |
+| `claude-flow` | 2+ dominios en paralelo (swarm) | Agent tool si 1 dominio |
+| `sequential-thinking` | Arquitectura compleja, decisiones con múltiples trade-offs | — |
+| `puppeteer` | Verificar UI renderizada antes de entregar | — |
+| `pageindex` | Skills >150 líneas, PDFs externos, docs masivos, helix-analysis-full >500 líneas | Qdrant para snippets cortos |

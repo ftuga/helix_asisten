@@ -62,12 +62,26 @@ Reescribir SOLO las secciones que cambiaron en `helix-analysis.md`.
 Actualizar fecha de generación.
 Si modo vector disponible → actualizar namespaces afectados en vector memory.
 
-### Paso F — Reportar al usuario
+### Paso F — Actualizar helix-team.md si el stack cambió
+
+Si el Paso D detectó nuevos componentes en el stack:
+
+1. Leer `{PROJECT_ROOT}/.claude/memory/helix-team.md`
+2. Para cada componente nuevo → verificar si ya hay agente mapeado para ese dominio
+3. Si falta agente → agregar fila en "Equipo Activo"
+4. Si hay nuevo MCP que aplica → agregarlo en "MCPs Activos"
+5. Si hay nuevas dependencias entre agentes → actualizar "Output Contracts"
+6. Guardar helix-team.md actualizado
+
+Si no hubo cambios en el stack → skip, reportar "Equipo sin cambios".
+
+### Paso G — Reportar al usuario
 
 Resumen compacto de todo lo que se hizo:
 ```
 ✅ CLAUDE.md: 268 → 165 líneas
 ✅ Bitácora: 12 entradas antiguas archivadas
-✅ Stack: sin cambios
+✅ Stack: sin cambios / +Redis detectado
+✅ Equipo: sin cambios / +monitoring-specialist (Redis), +context7 MCP
 ✅ Análisis: actualizado (agregado Redis, 1 zona de riesgo nueva)
 ```
