@@ -68,6 +68,15 @@
             "command": "bash \"$HOME/.claude/helpers/skill-tracker-hook.sh\""
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/mcp-tracker-hook.sh\""
+          }
+        ]
       }
     ],
     "Stop": [
