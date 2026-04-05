@@ -99,6 +99,15 @@ if [[ ! -f "$TARGET_DIR/.claude/memory/helix-backlog.md" ]]; then
   fi
 fi
 
+# helix-roadmap.md — persistente, jamás se borra automáticamente
+if [[ ! -f "$TARGET_DIR/.claude/memory/helix-roadmap.md" ]]; then
+  if [[ -f "$TEMPLATE_DIR/.claude/memory/helix-roadmap.md" ]]; then
+    sed "s/\[NOMBRE DEL PROYECTO\]/$(basename "$TARGET_DIR")/g; s/\[FECHA\]/$DATE/g" \
+      "$TEMPLATE_DIR/.claude/memory/helix-roadmap.md" > "$TARGET_DIR/.claude/memory/helix-roadmap.md"
+    echo -e "${GREEN}✅ .claude/memory/helix-roadmap.md${NC} creado (roadmap persistente del equipo)"
+  fi
+fi
+
 # evolution-log.txt
 if [[ ! -f "$TARGET_DIR/.claude/evolution-log.txt" ]]; then
   echo "[$DATE] Proyecto inicializado con Helix template" > "$TARGET_DIR/.claude/evolution-log.txt"

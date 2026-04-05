@@ -247,10 +247,65 @@ PYEOF
     ;;
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+quality)
+    # Registrar feedback de calidad sobre un skill/agente usado
+    # Uso: skill-tracker.sh quality <nombre> <1|2|3> [razón]
+    # 1=falló/incorrecto  2=parcial/requirió corrección  3=correcto al primer intento
+    NAME="${1:-}"
+    SCORE="${2:-}"
+    REASON="${3:-}"
+    [[ -z "$NAME" || -z "$SCORE" ]] && { echo "Uso: quality <nombre> <1|2|3> [razón]"; exit 1; }
+
+    QUALITY_LOG="$GLOBAL_DIR/memory/skill-quality.jsonl"
+    DATE=$(date '+%Y-%m-%d %H:%M')
+
+    python3 -c "
+import json, sys
+entry = {'ts': sys.argv[1], 'name': sys.argv[2], 'score': int(sys.argv[3]), 'reason': sys.argv[4]}
+with open('$QUALITY_LOG', 'a') as f:
+    f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+print(f'Quality registrado: {sys.argv[2]} → score {sys.argv[3]}')
+" "$DATE" "$NAME" "$SCORE" "$REASON"
+    ;;
+
+# ─────────────────────────────────────────────────────────────────────────────
+quality-report)
+    QUALITY_LOG="$GLOBAL_DIR/memory/skill-quality.jsonl"
+    [[ ! -f "$QUALITY_LOG" ]] && echo "Sin datos de calidad aún." && exit 0
+
+    echo -e "${BLUE}⬡ Quality Report${NC}"
+    echo ""
+
+    python3 - "$QUALITY_LOG" <<'PYEOF'
+import json, sys
+from pathlib import Path
+from collections import defaultdict
+
+log = Path(sys.argv[1])
+entries = [json.loads(l) for l in log.read_text().splitlines() if l.strip()]
+
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; BLUE='\033[0;34m'; NC='\033[0m'
+
+scores = defaultdict(list)
+for e in entries:
+    scores[e['name']].append(e['score'])
+
+print(f"{'Nombre':<38} {'Avg':>5}  {'Usos':>5}  Indicador")
+print("─" * 65)
+for name, s in sorted(scores.items(), key=lambda x: sum(x[1])/len(x[1])):
+    avg = sum(s) / len(s)
+    indicator = f"{GREEN}✅ Correcto{NC}" if avg >= 2.5 else f"{YELLOW}⚠️  Parcial{NC}" if avg >= 1.5 else f"{RED}❌ Problemático{NC}"
+    print(f"  {name:<36} {avg:>5.1f}  {len(s):>5}  {indicator}")
+PYEOF
+    ;;
+
 *)
-    echo "Uso: skill-tracker.sh [log|report|prune] [opciones]"
+    echo "Uso: skill-tracker.sh [log|report|prune|quality|quality-report] [opciones]"
     echo "  log <nombre> <skill|agent|mcp> [proyecto]"
     echo "  report [--limit N]"
     echo "  prune --dry-run | --execute"
+    echo "  quality <nombre> <1|2|3> [razón]   — 1=falló 2=parcial 3=correcto"
+    echo "  quality-report                      — resumen de calidad"
     ;;
 esac

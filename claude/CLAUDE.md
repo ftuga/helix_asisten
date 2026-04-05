@@ -379,31 +379,15 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 ## 📈 EVOLUCIONES CROSS-PROYECTO
 
 <!-- EVOLUTION_LOG_START -->
+> Historial pre-v3.11 archivado en `~/.claude/memory/topics/evolution-history.md`
+
 | # | Fecha | Categoría | Aprendizaje |
 |---|---|---|---|
-| 10 | 2026-03-20 | interfaz | Registro proactivo de decisiones de diseño no triviales en DECISIONES DE DISEÑO del CLAUDE.md del proyecto | usuario-solicitud-mejora |
-| 11 | 2026-03-20 | interfaz | Análisis inicial de proyecto: si [HELIX-SUGGEST-ANALYSIS] en session-start → preguntar una vez, ejecutar /helix-analiza si acepta, crear .analysis-declined si rechaza | usuario-solicitud |
-| 12 | 2026-03-20 | interfaz | Bitácora de proyecto: mantener helix-bitacora.md con cambios/recomendaciones/errores — actualización silenciosa sin pedir permiso | usuario-solicitud |
-| 10 | 2026-03-20 | performance | Modo economía: sin subagentes, sin swarm, Grep antes que Read — activar con 'modo economía' o /economia | usuario-solicitud |
-| 11 | 2026-03-20 | performance | Checklist pre-Read: verificar si ya está en contexto, usar Grep primero, usar limit/offset — siempre activo | usuario-solicitud |
-| 12 | 2026-03-20 | performance | Umbral subagentes: 1 dominio → yo solo. 2 dominios → 1 subagente. 3+ dominios con coordinación → Capa 2 | usuario-solicitud |
-| 13 | 2026-03-20 | performance | helix-metricas.sh: 3 dimensiones observables (contexto/calidad/overhead) para auto-evaluar salud de Helix — score <60 dispara alerta | usuario-solicitud |
-| 14 | 2026-03-20 | operatividad | Pipeline salud: session-end evalúa métricas → escribe helix-alerta.md → session-start emite [HELIX-NECESITAMOS-HABLAR] → Helix reporta antes de cualquier tarea | usuario-solicitud |
-| 15 | 2026-03-20 | arquitectura | Memoria híbrida para análisis de proyecto: resumen ≤150 palabras en archivo + detalles en vector memory (MCP) o helix-analysis-full.md (fallback file) | usuario-solicitud |
-| 16 | 2026-03-27 | arquitectura | 2+ dominios en paralelo → Capa 2 (swarm_init + agent_spawn), NO Agent tool en paralelo. Agent tool = invisible en ruflow. Swarm = visible en dashboard ruflow (contador N/15) | usuario-solicitud |
-| 17 | 2026-04-02 | arquitectura | ERL (Experiential Reflective Learning): helix-erl.sh analiza routing-feedback.jsonl y genera heurísticas de dominio + pares frecuentes → routing-heuristics.md. Se ejecuta semanal desde retrospectiva | auto-evolución |
-| 18 | 2026-04-02 | arquitectura | Reflexion store: helix-reflexion.sh almacena errores resueltos en Qdrant (helix_reflexions). Search semántico antes de invocar error-detective — threshold 0.76 | auto-evolución |
-| 19 | 2026-04-02 | performance | ACON compress: compress_logic.py ahora usa importance scoring (0-1) para decidir qué archivar. Anchor sections (SECURITY, OPERABILITY, SKILLS_INDEX) nunca se comprimen | auto-evolución |
-| 20 | 2026-04-02 | operatividad | skill-tracker.sh: log de uso real de skills/agentes por sesión → skill-usage.jsonl. report muestra top N + never-used. prune sugiere candidatos sin uso en 30 días | auto-evolución |
-| 21 | 2026-04-02 | operatividad | helix-retrospectiva.sh v2: integra ERL (semanal), gap analysis (heurísticas vs sesión), sugerencia de Reflexion store cuando hay errores resueltos | auto-evolución |
-| 22 | 2026-04-02 | operatividad | skill-tracker-hook.sh: PostToolUse(Skill) wired en settings.json. agent-routing-hook también escribe skill-usage.jsonl. Uso real de skills/agentes ahora se registra automáticamente | auto-evolución |
-| 23 | 2026-04-02 | arquitectura | ExpeL: helix-expel.sh analiza contrastes de trayectorias — detecta dominancia, routing incorrecto, agentes fuera de catálogo, evolución temporal. Corre tras ERL en retrospectiva | auto-evolución |
-| 24 | 2026-04-02 | arquitectura | helix-routing-fix.sh: lee ExpeL+ERL y aplica correcciones a agents-index. Primera corrección real: testing→test-engineer, devops→devops-engineer detectados y marcados | auto-evolución |
-| 25 | 2026-04-02 | operatividad | helix-decay.sh: confidence decay para evolution-log. Score 0-100 = recencia×0.4 + importancia×0.6 × multiplicador categoría. Patrones PERENNIAL nunca decaen. Se ejecuta en session-end | auto-evolución |
-| 26 | 2026-04-02 | arquitectura | helix-knowledge-map.sh: mapa cross-dominio learnings×heurísticas×reflexiones×decay. Identifica gaps críticos (dominio de alto peso con cobertura <30%). Corre en session-end --gaps | auto-evolución |
-| 27 | 2026-04-02 | operatividad | session-start recuperación proactiva Qdrant: detecta stack del proyecto (Python/React/Docker) y consulta helix_reflexions por errores relevantes. Memorias activas al inicio de sesión | auto-evolución |
-| 23 | 2026-04-05 | arquitectura | Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster equipo+MCPs+DoD) y helix-backlog.md. Team Dispatch Protocol descompone reqs en dominios y despacha en paralelo según equipo. helix-plan.md para reqs >= 3 dominios. | usuario-solicitud-evolucion |
-| 24 | 2026-04-05 | arquitectura | 4 gaps v3.11: output contracts en helix-team.md definen handoffs entre agentes. helix-actualiza Paso F+G refresca equipo cuando cambia el stack. self-check sección DoD verifica checklist automáticamente. plan reuse via Qdrant helix/{proj}/plans/ con threshold 0.82 | usuario-solicitud-evolucion |
+| 28 | 2026-04-05 | arquitectura | Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster+output contracts+DoD+dispatch), helix-backlog.md y helix-roadmap.md. Team Dispatch descompone reqs por dominio y despacha en paralelo. | usuario-solicitud-evolucion |
+| 29 | 2026-04-05 | arquitectura | helix-roadmap.md: documento persistente del equipo técnico — milestones de 1-4 semanas, arquitectura de alto nivel, decisiones arquitectónicas acumulativas. NUNCA se borra automáticamente (ni self-check ni scripts). | usuario-solicitud-evolucion |
+| 30 | 2026-04-05 | operatividad | skill-tracker.sh: quality/quality-report — scores 1-3 por skill/agente → skill-quality.jsonl. report integrado con uso (30d/7d). prune --execute archiva con confirmación interactiva. | auto-evolución |
+| 31 | 2026-04-05 | operatividad | mcp-tracker-hook.sh: PostToolUse(mcp__.*) extrae servicio de tool_name y registra tipo=mcp en skill-usage.jsonl. Tracking real de MCPs sin intervención manual. | auto-evolución |
+| 32 | 2026-04-05 | operatividad | self-check.sh stack-aware: HAS_DOCKER/FASTAPI/CELERY/FRONTEND/TS/PYTHON detectados desde pyproject.toml, package.json, etc. Checks solo activos cuando el stack los requiere. PLANES COMPLETADOS solo elimina helix-plan-REQ-*.md. | auto-evolución |
 <!-- EVOLUTION_LOG_END -->
 
 ---

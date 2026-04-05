@@ -41,3 +41,8 @@
 | #5 | 2026-03-16 | Production-readiness: TEST_MODE=False, CORS env, JWKS Redis cache, indexes FK, selectinload solicitudes, non-root Dockerfile, CSP nginx, compose.prod.yml, theme.ts, LoginPage test creds dev-only, loading states, race condition fix api.ts. Refactor SolicitudDetallePage 1809→445 líneas (8 archivos). |
 | #6 | 2026-03-16 | Nuevas features negocio: Una solicitud por área/período (upsert en POST /solicitudes), ENVIADA editable mientras ABIERTO, homologaciones (nuevo modelo+tabla+endpoints), costeo muestra stock_disponible+homologaciones+observaciones_compras, Dashboard fix botones duplicados, NuevaSolicitudPage flujo área, CosteoPage UI mejorada. |
 | #7 | 2026-03-29 | Argos: fix DNS (host.docker.internal → IP bridge), `_direct_response()` bypass para qwen2.5-coder:7b (consultas estructuradas 100% confiables), seed histórico 3 períodos, verificación JWT alg:none (seguro). ComitePage: card sesión activa + historial colapsable. SesionDetallePage: filtros artículo/estado/área, botón volver mejorado, animaciones, header tabla. Seed completo: solicitudes período actual + 52 movimientos bodega. |
+
+## Archivado 2026-04-03 22:21 — Historial sesiones
+|---|---|---|---|---|
+| #5 | 2026-04-02 | Creación del agente investment-expert con DeepSearch 10 rondas. Consulta al experto sobre estrategias con capital de prueba en COP. Usuario interesado en: DCA cripto, trading algorítmico con bot, plataformas Alpaca+Binance, sistema de monitoreo en Python+Telegram. Rango de capital definido: 500K-1.1M COP. Próximos pasos: configurar Alpaca paper trading + Binance testnet + bot Telegram de alertas. | 10 | 0
+0 |
