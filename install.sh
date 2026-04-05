@@ -56,6 +56,14 @@ cp "$REPO_DIR/claude/memory/"*.txt      "$CLAUDE_DIR/memory/" 2>/dev/null || tru
 cp "$REPO_DIR/claude/memory/agents/"*.md   "$CLAUDE_DIR/memory/agents/" 2>/dev/null || true
 cp "$REPO_DIR/claude/memory/topics/"*.md   "$CLAUDE_DIR/memory/topics/" 2>/dev/null || true
 
+# user-profile.md — crear desde template si no existe (contenido local, nunca en repo)
+if [[ ! -f "$CLAUDE_DIR/memory/user-profile.md" ]]; then
+  if [[ -f "$REPO_DIR/claude/memory/user-profile.template.md" ]]; then
+    cp "$REPO_DIR/claude/memory/user-profile.template.md" "$CLAUDE_DIR/memory/user-profile.md"
+    echo "  ✅ user-profile.md creado desde template — completar para personalizar Helix"
+  fi
+fi
+
 # ── 6. Skills ───────────────────────────────────────────────
 echo "→ Copiando skills..."
 cp -r "$REPO_DIR/claude/skills/." "$CLAUDE_DIR/skills/"

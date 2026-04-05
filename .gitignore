@@ -48,3 +48,4 @@ claude/memory/agents/.meta/
 scripts/__pycache__/
 # Índices de proyectos específicos (viven solo en la máquina local)
 .claude/vector-index.json
+claude/memory/user-profile.md
