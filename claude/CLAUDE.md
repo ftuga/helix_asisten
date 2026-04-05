@@ -407,6 +407,7 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | Descripciones completas de agentes | `~/.claude/memory/agents/` |
 | Scripts de evolución | `~/.claude/{evolve,session-start,session-end,self-check}.sh` |
 | Template nuevo proyecto | `~/.claude-template/` |
+| Perfil de usuario (local, nunca al repo) | `~/.claude/memory/user-profile.md` |
 
 **MCPs disponibles — cuándo usar cada uno:**
 | MCP | Cuándo | Alternativa |

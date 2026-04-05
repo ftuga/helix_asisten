@@ -34,6 +34,11 @@ cp "$CLAUDE_DIR/memory/"*.txt          "$REPO_DIR/claude/memory/" 2>/dev/null ||
 cp "$CLAUDE_DIR/memory/agents/"*.md    "$REPO_DIR/claude/memory/agents/" 2>/dev/null || true
 cp "$CLAUDE_DIR/memory/topics/"*.md    "$REPO_DIR/claude/memory/topics/" 2>/dev/null || true
 
+# user-profile.md es SIEMPRE el template vacío en el repo — nunca el contenido local
+if [[ -f "$REPO_DIR/claude/memory/user-profile.md" ]]; then
+  git -C "$REPO_DIR" checkout -- claude/memory/user-profile.md 2>/dev/null || true
+fi
+
 # Sanitize: eliminar contexto de proyecto privado de memory/agents y topics
 echo "→ Sanitizando contexto de proyecto..."
 bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/agents"

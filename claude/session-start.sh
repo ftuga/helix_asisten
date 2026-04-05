@@ -116,6 +116,27 @@ if [[ -f "$ALERTA_FILE" ]]; then
   echo ""
 fi
 
+# ── User profile — contexto de quién trabaja con Helix ───────
+USER_PROFILE="$GLOBAL_MEMORY_DIR/user-profile.md"
+if [[ -f "$USER_PROFILE" ]]; then
+  PROFILE_CONTENT=$(python3 -c "
+from pathlib import Path
+content = Path('$USER_PROFILE').read_text()
+lines = content.splitlines()
+filled = [l for l in lines if l.strip() and not l.startswith('#') and not l.startswith('>') and '<!--' not in l]
+for l in filled[:6]:
+    print('   ' + l.strip()[:100])
+" 2>/dev/null || true)
+  if [[ -n "\$PROFILE_CONTENT" ]]; then
+    echo -e "\${GREEN}👤 Perfil de usuario cargado:\${NC}"
+    echo "\$PROFILE_CONTENT"
+    echo ""
+  else
+    echo -e "\${YELLOW}👤 user-profile.md existe pero está vacío — completar para personalizar Helix.\${NC}"
+    echo ""
+  fi
+fi
+
 # ── Detectar modo economía persistente ───────────────────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/.helix-economia" ]]; then
   echo -e "${YELLOW}💰 [HELIX-ECONOMIA-ACTIVO] Modo economía persistente.${NC}"
