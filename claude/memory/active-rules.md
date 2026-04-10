@@ -16,8 +16,6 @@
 - [2026-03-20] [interfaz] Umbral de confianza: 'autonomía alta' ejecuta sin preguntar, 'autonomía baja' confirma cada paso
 - [2026-03-20] [interfaz] Plan visible antes de ejecutar: mostrar A→B→C y esperar OK cuando tarea toca ≥2 archivos
 - [2026-03-20] [interfaz] Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento
-- [2026-03-08] [arquitectura] Modelos adicionales no documentados: Colaborador (directorio empleados para búsqueda en nuevo retiro) y PlazoConfig (días hábiles por área, configurable desde AdminPage)
-- [2026-03-08] [arquitectura] El proyecto tiene 9 routers (no 5): auth, users, retiros, tareas, activos, adjuntos, reportes, colaboradores, config, modulo_privado — CLAUDE.md code map estaba desactualizado
 - [2026-03-08] [arquitectura] health-check.sh verifica integridad del ecosistema: scripts, markers, JSON, tamaño y peso de tokens — ejecutar si algo se comporta raro
 - [2026-03-08] [arquitectura] Documentación estática del proyecto (Stack, Commands, Env Vars, Roles) no debe vivir en CLAUDE.md — extraer a .claude/memory/project.md, cargar bajo demanda
 - [2026-03-08] [arquitectura] Memoria por capas: CLAUDE.md=índice liviano (~200 líneas), topics/=historial por categoría, evolution-log.txt=log completo. compress.sh archiva automáticamente al cerrar sesión si >200 líneas

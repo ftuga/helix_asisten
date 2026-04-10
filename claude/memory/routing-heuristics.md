@@ -17,7 +17,6 @@
 
 ## Patrones por Proyecto
 
-- proyecto `proyecto_privado` usa `frontend-developer` como agente dominante (6x)
 
 ## Gaps Detectados
 

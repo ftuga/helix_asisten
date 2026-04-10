@@ -490,7 +490,7 @@ bash ~/.claude/helpers/helix-erl.sh
 # Output: ~/.claude/memory/routing-heuristics.md
 # → Domain rules:     "domain 'testing' → researcher (3/3 uses, 100%)"
 # → Frequent pairs:   "frontend-developer → frontend-developer (6x)"
-# → Project patterns: "proyecto_privado uses frontend-developer as dominant agent (6x)"
+# → Project patterns: "project-name uses frontend-developer as dominant agent (6x)"
 # → Gaps:             "24 agents in catalog never used"
 ```
 
