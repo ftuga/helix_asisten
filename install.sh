@@ -171,6 +171,14 @@ echo "  # 4. Diagnóstico y verificación"
 echo "  ruflo doctor --fix"
 echo "  sh \$REPO_DIR/scripts/verify-appliance.sh --quick"
 echo ""
+# ── 9. HELIX-COMPRESS — generar slices frescos ──────────────
+echo "→ Generando slices HELIX-DISTILL..."
+if bash "$CLAUDE_DIR/helpers/helix-distill.sh" run &>/dev/null; then
+  echo "  ✓ Slices generados (78-96% ahorro por agente)"
+else
+  echo "  ⚠ helix-distill.sh falló — ejecutar manualmente: bash ~/.claude/helpers/helix-distill.sh run"
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ Helix instalado correctamente en $HOME"
 echo "   Reinicia Claude Code para aplicar los cambios."

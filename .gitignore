@@ -49,3 +49,10 @@ scripts/__pycache__/
 # Índices de proyectos específicos (viven solo en la máquina local)
 .claude/vector-index.json
 claude/memory/user-profile.md
+
+# HELIX-COMPRESS — slices auto-generados (se regeneran en install.sh)
+# No versionar: se vuelven stale con cada cambio de CLAUDE.md
+claude/skills/_distilled/
+claude/data/distill-meta.json
+claude/data/helix-lang.jsonl
+claude/data/helix-states/

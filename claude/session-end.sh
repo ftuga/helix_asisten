@@ -167,6 +167,15 @@ if [[ "$LINES" -gt 200 ]]; then
   bash "$HOME/.claude/compress.sh"
 fi
 
+# ── Auto-compress bitácora si supera 100 filas de tabla ──────
+BITACORA_FILE="${PROJECT_ROOT:-}/.claude/memory/helix-bitacora.md"
+if [[ -f "$BITACORA_FILE" ]]; then
+  BITA_ROWS=$(grep -c "^|" "$BITACORA_FILE" 2>/dev/null | tr -d '[:space:]' || echo "0")
+  if [[ "$BITA_ROWS" -gt 100 ]]; then
+    bash "$HOME/.claude/helpers/helix-distill.sh" compress-bitacora "$BITACORA_FILE" 2>/dev/null || true
+  fi
+fi
+
 # ── Evaluar salud de Helix — escribir alerta si hay problemas ─
 ALERTA_FILE="${PROJECT_MEMORY_DIR:-$GLOBAL_MEMORY_DIR}/helix-alerta.md"
 METRICS=$(bash "$HOME/.claude/helpers/helix-metricas.sh" "${PROJECT_ROOT:-}" 2>/dev/null || echo "")

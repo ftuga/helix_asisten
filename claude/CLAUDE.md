@@ -69,6 +69,13 @@ Helix evalúa en silencio antes de cada tarea:
 - Limitación conocida: sin session resumption con in-process teammates
 - Tamaño óptimo: 3-5 teammates, 5-6 tasks por teammate
 
+**HELIX-LANG — mensajes inter-agente (Capa 2 y 3):**
+- Usar para status updates, handoffs y bloqueos entre agentes. No para comunicación con el usuario.
+- Iniciar sesión: `S:v=$(bash ~/.claude/helpers/helix-lang-state.sh vocab "A:{...}" "D:{...}")`
+- Mensajes: `FROM->TO verb:object.domain | D:{AGENT:STATE} @temporal`
+- Estado compartido: `S:hash` — 2 tokens en lugar de reenviar contexto completo (~97% ahorro)
+- Skill completa: `~/.claude/skills/helix-lang/SKILL.md`
+
 ---
 
 ### Catálogo de agentes por dominio (Capa 1)
