@@ -50,3 +50,37 @@
 ## Archivado 2026-04-05 13:01 — Historial sesiones
 | #6 | 2026-04-03 | Rediseño completo herramienta priorización React+TS+Tailwind: dashboard ejecutivo con hero #1, stats strip, tabla paginada, panel de pesos. Análisis scrollable en 4 secciones (matriz, heatmap, radar, simulador). Modal InitiativeModal con 4 tabs y notas editables. | 0
 0 | 0
+
+## Archivado 2026-04-05 15:22 — Historial sesiones
+0 |
+| #6 | 2026-04-05 | v3.11.1: helix-roadmap.md persistente + quality→ERL feedback loop + plan naming fix (REQ-NNN) + roadmap en session-start + helix-actualiza Paso F2 + CLAUDE.md comprimido (428→416 líneas) | 2 | 0
+
+## Archivado 2026-04-05 15:22 — Historial sesiones
+| #4 | 2026-04-01 | Suite de tests completa: 127 passed, 15 skipped, 0 fallos. PyJWT migration, 4 bugs scalar_one_or_none corregidos, fixtures auto-healing en test_comite y test_solicitudes, rate limit test login 5→100. | 0
+0 | 0
+
+## Archivado 2026-04-05 19:39 — Historial sesiones
+0 |
+| #7 | 2026-04-05 | Sesión UI: paginación BodegaPage (despachos+movimientos), fix JSX ComitePage fragment, rediseño completo ComiteDashboard (hero sesión activa+stepper fases+4 KPIs+progress bars), fix bug inventario redirigía a dashboard (COMITE faltaba en allowedRoles), búsqueda inventario migrada a server-side con paginación numerada, fix AdminPage Períodos columnas desalineadas (auto→210px fijo) + badge Estado estiraba celda grid (justifySelf:start) + botones Acciones distintos tamaños (height fijo+border-box) | 2 | 0
+
+## Archivado 2026-04-05 19:39 — Historial sesiones
+0 |
+| #7 | 2026-04-05 | Sesión UI: paginación BodegaPage (despachos+movimientos), fix JSX ComitePage fragment, rediseño completo ComiteDashboard (hero sesión activa+stepper fases+4 KPIs+progress bars), fix bug inventario redirigía a dashboard (COMITE faltaba en allowedRoles), búsqueda inventario migrada a server-side con paginación numerada, fix AdminPage Períodos columnas desalineadas (auto→210px fijo) + badge Estado estiraba celda grid (justifySelf:start) + botones Acciones distintos tamaños (height fijo+border-box) | 2 | 0
+
+## Archivado 2026-04-10 16:45 — Historial sesiones
+0 |
+| #7 | 2026-04-05 | Sesión #8: eliminación tab Snapshots AdminPage; mejoras acta PDF (logo membrete, headers tabla visibles, firmas nombre+cargo); campo cargo en usuarios; registro de asistencia por sesión (asistentes JSONB); modal firmantes con plantilla admin-only (GET/PUT /comite/config/firmantes → JSON file); encabezado PDF blanco con borde oscuro; pestaña Firmantes del Acta en AdminPage | 3 | 0
+0 |
+
+## Archivado 2026-04-10 16:45 — Historial sesiones
+> Historial completo en `.claude/memory/sessions.md`
+| #4 | 2026-03-20 | Sesión #6: fixes de producción — password_must_change (migración DB + rebuild imágenes), 504 nginx (serve 0.0.0.0), validación FRONTEND_URL en deploy.sh, diagnóstico columnas faltantes en BD | 14 | 0
+0 |
+
+## Archivado 2026-04-10 17:13 — Historial sesiones
+| #7 | 2026-04-10 | Fix acceso rápido modo test: creados 8 usuarios de test (admin@test.com..administrativa@test.com) con password test1234. Agregado seed_test_users() en seed.py, test_mode en config.py, llamada en main.py, TEST_MODE en compose.test.yml. BD sersocial_test creada manualmente en postgres. | 0
+0 | 0
+
+## Archivado 2026-04-11 01:51 — Historial sesiones
+0 |
+| #7 | 2026-04-10 | auditoría de seguridad repo público: limpieza de 5 archivos con nombres de cliente/proyecto privados + reescritura completa del historial git con git-filter-repo + force push a develop y main | 1 | 0

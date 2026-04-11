@@ -41,7 +41,7 @@ docker compose top                     # Procesos corriendo
 # Cambiarlas REQUIERE rebuild del frontend
 docker compose up -d --build frontend
 
-# NUNCA hardcodear el nombre del usuario DB — leer del .env
+# NUNCA hardcodear 'sersocial' — leer del .env
 PG_USER=$(grep POSTGRES_USER .env | cut -d'=' -f2)
 ```
 

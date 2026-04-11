@@ -67,3 +67,6 @@
 | 25 | 2026-04-02 | operatividad | helix-decay.sh: confidence decay evolution-log. Score = recencia×0.4 + importancia×0.6. PERENNIAL nunca decae |
 | 26 | 2026-04-02 | arquitectura | helix-knowledge-map.sh: mapa learnings×heurísticas×reflexiones×decay. Gaps críticos = cobertura <30% |
 | 27 | 2026-04-02 | operatividad | session-start recupera Qdrant helix_reflexions con stack del proyecto como query |
+
+## Archivado 2026-04-11 01:51 — Historial evoluciones
+|---|---|---|---|
