@@ -1,4 +1,4 @@
-# Sistema de Diseño UI — CLIENTE_PRIVADO
+# Sistema de Diseño UI — ‹entidad› IPS
 > Extraído de CLAUDE.md. Cargar cuando se trabaje en componentes frontend o páginas.
 
 ## 🔗 Recursos Externos de Referencia

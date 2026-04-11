@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.10.0** — [Changelog](#changelog)
+> **Current version: v3.11.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -78,6 +78,12 @@ claude/              → ~/.claude/ (global config)
   helpers/helix-reflexion.sh    → Semantic error memory (Qdrant store + search)
   helpers/helix-retrospectiva.sh → Auto-analysis at session close
   helpers/skill-tracker.sh      → Tracks real skill/agent usage
+  helpers/helix-distill.sh      → HELIX-COMPRESS: agent-specific CLAUDE.md slices + project compression
+  helpers/helix-lang-state.sh   → S:hash state manager (snapshot, delta, get, gc)
+  helpers/helix-lang-bench.sh   → HELIX-LANG compression benchmark
+  skills/helix-lang/            → HELIX-LANG v2: universal inter-agent protocol
+  skills/helix-speak/           → HELIX-SPEAK: situational output compression
+  skills/_distilled/            → 15 auto-generated agent slices (78-96% savings each)
 
 scripts/             → Helix engine scripts
   helix-vector.py    → Qdrant vector memory engine (store, search, cluster)
@@ -490,7 +496,7 @@ bash ~/.claude/helpers/helix-erl.sh
 # Output: ~/.claude/memory/routing-heuristics.md
 # → Domain rules:     "domain 'testing' → researcher (3/3 uses, 100%)"
 # → Frequent pairs:   "frontend-developer → frontend-developer (6x)"
-# → Project patterns: "proyecto_privado uses frontend-developer as dominant agent (6x)"
+# → Project patterns: "project-name uses frontend-developer as dominant agent (6x)"
 # → Gaps:             "24 agents in catalog never used"
 ```
 
@@ -511,6 +517,30 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.11.0 — 2026-04-11 · HELIX-COMPRESS — three-layer token compression system
+
+Three independent compression layers, each targeting a different cost:
+
+**DISTILL — initialization cost** (`helpers/helix-distill.sh`)
+- `run`: generates agent-specific slices of CLAUDE.md — only the sections each agent actually needs. Savings: 78–96% per agent, **93% for a 15-agent Layer 2 session** (92,940 → 6,124 tok).
+- `compress-project [DIR]`: compresses `helix-*.md` project files (analysis, bitácora, team, backlog, roadmap) with `.original.md` backup.
+- `compress-file FILE [task]`: semantic extraction from code files — splits by function/class for `.py/.ts/.js`, by header for `.md`, by keyword ±10 lines for other formats.
+- `compress-bitacora FILE [--keep N]`: truncates changelog tables to last N entries with condensation notice. Prevents unbounded growth.
+- **4 bugs fixed** in this version: HTML comment markers bleeding into slices (`<!--...-->`), `pipe | python3 <<'HEREDOC'` stdin conflict (heredoc wins → always 0 agents in report), double Python computation with divergent logic (fake 99% savings), `--keep 5` argument parsing (only worked with `--keep=5`).
+
+**S:hash — coordination cost** (`helpers/helix-lang-state.sh` + `skills/helix-lang/`)
+- HELIX-LANG v2: universal inter-agent grammar (fixed) + vocabulary declared per session via `vocab` command. Works for any domain: software, research, marketing, support, finance.
+- Agents reference shared context as `S:xxxx` (2 tokens) instead of re-sending full state. Measured savings: **~97%** on shared context, ~59% on individual messages.
+- Commands: `vocab A:{} D:{}`, `snapshot`, `get`, `delta`, `diff`, `gc`.
+
+**SPEAK — output cost** (`skills/helix-speak/`)
+- Situational output compression: AUTO mode selects level by message type. BRIEF for status reports, TERSE for fragments, ULTRA for inter-agent. Never compresses code, security warnings, or destructive confirmations.
+
+**Agent Teams (Layer 3)**
+- Peer-to-peer mailbox between agents (Claude Code native, ≥v2.1.32). Already enabled in `settings.json`. Key difference from Layer 2: agents communicate directly, not just report to the lead. Hooks: `TeammateIdle`, `TaskCreated`, `TaskCompleted`.
+
+---
 
 ### v3.10.0 — 2026-04-02 · Confidence decay + knowledge map + proactive memory
 
