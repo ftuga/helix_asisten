@@ -257,39 +257,149 @@ elif [[ "$cmd" == "compress-project" ]]; then
     original_tokens=$(( original_chars / 4 ))
     total_before=$(( total_before + original_tokens ))
 
-    compressed=$(_compress_linguistic "$(cat "$filepath")")
-
-    # Para bitácora: preservar solo últimas N entradas completas
-    if [[ "$filename" == "helix-bitacora.md" ]]; then
-      compressed=$(PYVAR_CONTENT="$compressed" python3 - <<'PYEOF'
+    # Estrategia por archivo
+    if [[ "$filename" == "helix-analysis.md" ]]; then
+      # Extracción por sección: mantener solo Stack + Agentes + Riesgo + primera línea del Resumen
+      file_lines=$(wc -l < "$filepath" | tr -d '[:space:]')
+      if [[ "$file_lines" -gt 150 ]]; then
+        compressed=$(PYVAR_CONTENT="$(cat "$filepath")" python3 - <<'PYEOF'
 import os, re
 
 content = os.environ.get('PYVAR_CONTENT', '')
 lines = content.split('\n')
 
-# Encontrar filas de tabla (entradas de bitácora)
-table_rows = [i for i, l in enumerate(lines) if re.match(r'^\s*\|.*\|', l) and '---' not in l and 'Fecha' not in l and 'Date' not in l]
+KEEP_HEADERS = ['stack', 'agentes', 'riesgo', 'risk', 'agents', 'skills', 'mcp']
+SUMMARY_HEADERS = ['resumen', 'summary', 'ejecutivo']
 
-# Preservar últimas 30 entradas + header completo
+result = []
+current_section = None
+current_keep = False
+current_summary = False
+summary_lines = 0
+
+for line in lines:
+    # Líneas de encabezado del documento (antes del primer ##)
+    if not any(l.startswith('##') for l in result) and not line.startswith('##'):
+        result.append(line)
+        continue
+
+    if line.startswith('## '):
+        header_lower = line.lower()
+        current_keep = any(kw in header_lower for kw in KEEP_HEADERS)
+        current_summary = any(kw in header_lower for kw in SUMMARY_HEADERS)
+        summary_lines = 0
+        current_section = line
+        if current_keep or current_summary:
+            result.append(line)
+        continue
+
+    if current_keep:
+        result.append(line)
+    elif current_summary:
+        # Del resumen: solo primer párrafo no vacío (1 línea)
+        if summary_lines == 0 and line.strip():
+            # Truncar a 200 chars si es muy largo
+            result.append(line[:200] + ('...' if len(line) > 200 else ''))
+            summary_lines += 1
+
+print('\n'.join(result))
+PYEOF
+        )
+      else
+        compressed=$(_compress_linguistic "$(cat "$filepath")")
+      fi
+
+    elif [[ "$filename" == "helix-roadmap.md" ]]; then
+      # Archivar milestones completados cuando superan 10 entradas
+      compressed=$(PYVAR_CONTENT="$(cat "$filepath")" python3 - <<'PYEOF'
+import os, re
+
+content = os.environ.get('PYVAR_CONTENT', '')
+lines = content.split('\n')
+
+COMPLETED_HEADERS = ['✅ completado', '✅ done', '✅ cerrado', 'completado']
+KEEP = 10  # máx filas en sección Completado
+
+in_completed = False
+completed_rows = []
+completed_header_idx = None
+result_lines = []
+
+for i, line in enumerate(lines):
+    if line.startswith('## ') and any(h in line.lower() for h in COMPLETED_HEADERS):
+        in_completed = True
+        completed_header_idx = len(result_lines)
+        result_lines.append(line)
+        continue
+    if line.startswith('## ') and in_completed:
+        in_completed = False
+
+    if in_completed and re.match(r'^\s*\|.*\|', line) and '---' not in line:
+        if not any(kw in line.lower() for kw in ['milestone', 'descripción', 'description', 'fecha', 'date']):
+            completed_rows.append(line)
+            continue
+
+    result_lines.append(line)
+
+# Si hay más de KEEP completados, insertar resumen + últimos KEEP
+if len(completed_rows) > KEEP and completed_header_idx is not None:
+    omitted = len(completed_rows) - KEEP
+    # Insertar nota de condensación tras el header de la sección
+    insert_at = completed_header_idx + 1
+    # Encontrar la línea separadora de tabla (---) y el header de tabla
+    for j in range(insert_at, min(insert_at + 5, len(result_lines))):
+        if '---' in result_lines[j]:
+            insert_at = j + 1
+            break
+    result_lines.insert(insert_at,
+        f'| *(archivados)* | {omitted} milestones completados anteriores archivados | — |')
+    # Reinyectar solo los últimos KEEP
+    for row in completed_rows[-KEEP:]:
+        result_lines.insert(insert_at + 1, row)
+else:
+    # No hay suficientes para archivar — reinyectar todos
+    if completed_header_idx is not None:
+        insert_at = completed_header_idx + 1
+        for j in range(insert_at, min(insert_at + 5, len(result_lines))):
+            if '---' in result_lines[j]:
+                insert_at = j + 1
+                break
+        for row in completed_rows:
+            result_lines.insert(insert_at, row)
+            insert_at += 1
+
+print('\n'.join(result_lines))
+PYEOF
+      )
+
+    elif [[ "$filename" == "helix-bitacora.md" ]]; then
+      # Preservar solo últimas N entradas de tabla
+      compressed=$(PYVAR_CONTENT="$(cat "$filepath")" python3 - <<'PYEOF'
+import os, re
+
+content = os.environ.get('PYVAR_CONTENT', '')
+lines = content.split('\n')
+table_rows = [i for i, l in enumerate(lines) if re.match(r'^\s*\|.*\|', l) and '---' not in l and 'Fecha' not in l and 'Date' not in l]
 KEEP = 30
 if len(table_rows) > KEEP:
     cut_at = table_rows[-KEEP]
-    # Encontrar el header de la tabla más cercano arriba
     header_lines = []
     for i in range(cut_at - 1, max(cut_at - 5, 0), -1):
         if '---' in lines[i] or 'Fecha' in lines[i]:
-            header_lines = [i - 1, i]  # header + separator
+            header_lines = [i - 1, i]
             break
-    kept = lines[:10]  # primeras 10 líneas (título del doc)
+    kept = lines[:10]
     kept.append(f"\n> *(Entradas anteriores a la #{len(table_rows)-KEEP} condensadas. {len(table_rows)-KEEP} entradas históricas omitidas.)*\n")
     if header_lines:
         kept.extend(lines[header_lines[0]:header_lines[1]+1])
     kept.extend(lines[cut_at:])
     content = '\n'.join(kept)
-
 print(content)
 PYEOF
       )
+
+    else
+      compressed=$(_compress_linguistic "$(cat "$filepath")")
     fi
 
     compressed_chars=${#compressed}

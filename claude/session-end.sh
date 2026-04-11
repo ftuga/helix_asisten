@@ -167,12 +167,26 @@ if [[ "$LINES" -gt 200 ]]; then
   bash "$HOME/.claude/compress.sh"
 fi
 
-# ── Auto-compress bitácora si supera 100 filas de tabla ──────
-BITACORA_FILE="${PROJECT_ROOT:-}/.claude/memory/helix-bitacora.md"
-if [[ -f "$BITACORA_FILE" ]]; then
-  BITA_ROWS=$(grep -c "^|" "$BITACORA_FILE" 2>/dev/null | tr -d '[:space:]' || echo "0")
-  if [[ "$BITA_ROWS" -gt 100 ]]; then
-    bash "$HOME/.claude/helpers/helix-distill.sh" compress-bitacora "$BITACORA_FILE" 2>/dev/null || true
+# ── Auto-compress archivos de proyecto cuando superan umbral ──
+if [[ -n "${PROJECT_ROOT:-}" && -d "${PROJECT_ROOT}/.claude/memory" ]]; then
+  MEMORY_DIR="${PROJECT_ROOT}/.claude/memory"
+
+  # Bitácora: > 100 filas de tabla
+  BITACORA_FILE="${MEMORY_DIR}/helix-bitacora.md"
+  if [[ -f "$BITACORA_FILE" ]]; then
+    BITA_ROWS=$(grep -c "^|" "$BITACORA_FILE" 2>/dev/null | tr -d '[:space:]' || echo "0")
+    if [[ "$BITA_ROWS" -gt 100 ]]; then
+      bash "$HOME/.claude/helpers/helix-distill.sh" compress-bitacora "$BITACORA_FILE" 2>/dev/null || true
+    fi
+  fi
+
+  # Analysis: > 150 líneas → extraer solo secciones activas
+  ANALYSIS_FILE="${MEMORY_DIR}/helix-analysis.md"
+  if [[ -f "$ANALYSIS_FILE" ]]; then
+    ANALYSIS_LINES=$(wc -l < "$ANALYSIS_FILE" | tr -d '[:space:]')
+    if [[ "$ANALYSIS_LINES" -gt 150 ]]; then
+      bash "$HOME/.claude/helpers/helix-distill.sh" compress-project "${PROJECT_ROOT}" 2>/dev/null || true
+    fi
   fi
 fi
 
