@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-05 12:13<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-11 01:51<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -49,13 +49,25 @@ Helix evalúa en silencio antes de cada tarea:
 | Un artefacto concreto (endpoint, componente, query, bug) — un solo dominio | Capa 1: `Agent tool` — agente especializado correcto |
 | **2+ dominios en paralelo** (análisis, validación, investigación simultánea) | **Capa 2: `swarm_init` + `agent_spawn`** — visible en ruflow |
 | Feature completa que toca ≥2 capas del stack con coordinación activa | Capa 2: `swarm_init` + `task_orchestrate` |
-| Feature que requiere colaboración activa frontend+backend+tests | Capa 3: Agent Teams |
+| **Agentes que necesitan hablarse entre sí** (no solo reportar al lead) | **Capa 3: Agent Teams nativo** — mailbox peer-to-peer, task list compartida |
 
-**Regla clave — ruflow vs Agent tool:**
-- `Agent tool` en paralelo = subprocesos del CLI. Invisibles en el dashboard de ruflow. Usar solo para 1 dominio.
-- `swarm_init` + `agent_spawn` = agentes de claude-flow. Visibles en ruflow (contador 2/15, 3/15…). Usar cuando haya 2+ dominios.
+**Regla clave — cuándo usar cada capa:**
+- `Agent tool` en paralelo = subprocesos del CLI. Invisibles en ruflow. Solo para 1 dominio.
+- `swarm_init` + `agent_spawn` = claude-flow. Visibles en ruflow. Para 2+ dominios sin necesidad de que los agentes se hablen entre sí.
+- **Agent Teams nativo** = cuando los agentes necesitan comunicarse directamente (peer-to-peer). Ej: frontend le avisa al backend sobre un cambio de contrato, o investigadores se desafían mutuamente sus hipótesis.
 
-**Si hay duda entre Capa 1 y 2:** preferir Capa 1 si es 1 dominio. Si son 2+ dominios que se ejecutarían en paralelo → siempre Capa 2 para visibilidad y trazabilidad.
+**Diferencia clave Capa 2 vs Capa 3:**
+- Capa 2 (claude-flow): paralelismo con coordinación desde el lead. Los agentes no se hablan entre sí.
+- Capa 3 (Agent Teams): los agentes se envían mensajes directamente vía mailbox. El lead no es intermediario.
+
+**Si hay duda entre Capa 1 y 2:** preferir Capa 1 si es 1 dominio. Si son 2+ dominios → Capa 2. Si los agentes necesitan debatir/coordinarse entre sí → Capa 3.
+
+**Agent Teams — configuración:**
+- Ya habilitado en `settings.json` (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"`)
+- Requiere Claude Code ≥ v2.1.32 (actual: 2.1.101 ✓)
+- Hooks disponibles: `TeammateIdle`, `TaskCreated`, `TaskCompleted`
+- Limitación conocida: sin session resumption con in-process teammates
+- Tamaño óptimo: 3-5 teammates, 5-6 tasks por teammate
 
 ---
 
@@ -208,6 +220,7 @@ helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
 - `wc -l` devuelve espacios — limpiar con `tr -d '[:space:]'` antes de comparar numéricamente.
 - `git diff HEAD -- '*.ts' '*.tsx'` para checks de frontend — sin filtro captura CLAUDE.md y genera falsos positivos.
 - Para pasar strings con caracteres especiales a Python desde bash: usar variables de entorno (`PYVAR=valor python3 -`), evita todo problema de escaping.
+- [2026-04-11] HELIX-COMPRESS v2 — helix-distill.sh pulido y testeado. Tres comandos: (1) run: slices CLAUDE.md por agente — 78-96% ahorro por agente, 93% en sesión 15 agentes. (2) compress-project [DIR]: comprime helix-*.md del proyecto con backup. (3) compress-file FILE [task]: extrae bloques relevantes de código (.py/.ts/.js por función, .md por sección, otros por keywords ±10 líneas). Fixes: HTML comment stripping, doble-run Python eliminado, --keep arg parsing, pipe-vs-heredoc stdin bug.
 <!-- OPERABILITY_END -->
 
 ---
@@ -358,9 +371,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 17,
+  "total_sesiones": 22,
   "ultima_actualizacion": "2026-04-01",
-  "total_aprendizajes": 2
+  "total_aprendizajes": 8
 }
 ```
 <!-- METRICS_END -->
@@ -369,7 +382,7 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 ## 📋 SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
 0 |
-| #6 | 2026-04-05 | v3.11.1: helix-roadmap.md persistente + quality→ERL feedback loop + plan naming fix (REQ-NNN) + roadmap en session-start + helix-actualiza Paso F2 + CLAUDE.md comprimido (428→416 líneas) | 2 | 0
+| #8 | 2026-04-11 | HELIX-COMPRESS pulido y testeado: 4 bugs corregidos (HTML comments, pipe-vs-heredoc stdin, double Python run, --keep arg parsing), 93% ahorro en sesión 15 agentes medido. Tres comandos operativos: run/compress-project/compress-file/compress-bitacora. | 6 | 0
 0 |
 <!-- SESSIONS_END -->
 
@@ -386,14 +399,18 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 
 <!-- EVOLUTION_LOG_START -->
 > Historial pre-v3.11 archivado en `~/.claude/memory/topics/evolution-history.md`
-
 | # | Fecha | Categoría | Aprendizaje |
-|---|---|---|---|
 | 28 | 2026-04-05 | arquitectura | Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster+output contracts+DoD+dispatch), helix-backlog.md y helix-roadmap.md. Team Dispatch descompone reqs por dominio y despacha en paralelo. | usuario-solicitud-evolucion |
 | 29 | 2026-04-05 | arquitectura | helix-roadmap.md: documento persistente del equipo técnico — milestones de 1-4 semanas, arquitectura de alto nivel, decisiones arquitectónicas acumulativas. NUNCA se borra automáticamente (ni self-check ni scripts). | usuario-solicitud-evolucion |
 | 30 | 2026-04-05 | operatividad | skill-tracker.sh: quality/quality-report — scores 1-3 por skill/agente → skill-quality.jsonl. report integrado con uso (30d/7d). prune --execute archiva con confirmación interactiva. | auto-evolución |
 | 31 | 2026-04-05 | operatividad | mcp-tracker-hook.sh: PostToolUse(mcp__.*) extrae servicio de tool_name y registra tipo=mcp en skill-usage.jsonl. Tracking real de MCPs sin intervención manual. | auto-evolución |
 | 32 | 2026-04-05 | operatividad | self-check.sh stack-aware: HAS_DOCKER/FASTAPI/CELERY/FRONTEND/TS/PYTHON detectados desde pyproject.toml, package.json, etc. Checks solo activos cuando el stack los requiere. PLANES COMPLETADOS solo elimina helix-plan-REQ-*.md. | auto-evolución |
+| 7 | 2026-04-11 | arquitectura | Agent Teams nativo (Claude Code ≥v2.1.32): Capa 3 real. Peer-to-peer mailbox entre agentes. Diferencia clave vs Capa 2 (claude-flow): en Capa 2 los agentes no se hablan entre sí — solo reportan al lead. En Capa 3 los agentes se envían mensajes directamente. Usar Capa 3 cuando agentes necesiten debatir/coordinar entre sí (ej: frontend avisa a backend sobre cambio de contrato, investigadores se desafían hipótesis). Hooks nativos: TeammateIdle, TaskCreated, TaskCompleted. Limitación: sin session resumption. Ya habilitado en settings.json. | investigacion-tecnologias-2026 |
+| 8 | 2026-04-11 | arquitectura | SuperLocalMemory V3.3: sistema de memoria local-first con MCP, sin cloud. Olvido adaptativo basado en curvas Ebbinghaus (memorias poco accedidas se degradan gradualmente, no se borran). 6 canales de retrieval. AGPL v3. npm install superlocalmemory. Alternativa/complemento a Qdrant. Pendiente de evaluar: instalar MCP server y comparar retrieval vs Qdrant para memoria de Helix. | investigacion-tecnologias-2026 |
+| 9 | 2026-04-11 | performance | HELIX-LANG v1.1: benchmark real muestra ~57% compresión de tokens en mensajes individuales (no 75%). El gap existe porque operadores ASCII (:, ., ->, |) son cada uno 1 token BPE, igual que una palabra NL corta. La compresión de chars es ~62%. El 75%+ real vendrá del mecanismo S:hash (estado compartido por ID, reemplaza cientos de tokens de historial por 2 tokens). Skill instalada en ~/.claude/skills/helix-lang/. Benchmark en ~/.claude/helpers/helix-lang-bench.sh + data en ~/.claude/data/helix-lang.jsonl. | helix-lang-benchmark-v1 |
+| 10 | 2026-04-11 | performance | HELIX-LANG v1.1 benchmark final: mensajes individuales 58.7% compresión de tokens (64% chars). S:hash 96.7% de ahorro en contexto compartido. Combinado: 64.8% ahorro total (objetivo 75%). Gap restante: ~10%. Causa: contratos de API detallados comprimen poco (46%) — son los peores casos. Mejor caso con S:hash integrado: 80%. Próximo ajuste: vocabulario de contratos más compacto para endpoints. Artefactos: ~/.claude/skills/helix-lang/SKILL.md + ~/.claude/helpers/helix-lang-bench.sh + ~/.claude/helpers/helix-lang-state.sh + ~/.claude/data/helix-lang.jsonl | helix-lang-test-final |
+| 11 | 2026-04-11 | performance | HELIX-DISTILL v1.0: sistema de compresión de contexto adaptativa por agente. Genera slices de CLAUDE.md específicos por tipo de agente. Ahorro medido: 63-93% por agente vs CLAUDE.md completo (6,047 tok). Proyección sesión Capa 2 (13 agentes): 83% menos tokens de inicialización (78,611→12,977 tok). Tres capas del sistema completo — DISTILL (input, 83%), S:hash (estado, 97%), HELIX-SPEAK (output, TBD). Script: ~/.claude/helpers/helix-distill.sh. Slices: ~/.claude/skills/_distilled/. Nombre del sistema: HELIX-COMPRESS. | helix-distill-benchmark |
+| 12 | 2026-04-11 | operatividad | HELIX-COMPRESS v2 — helix-distill.sh pulido y testeado. Tres comandos: (1) run: slices CLAUDE.md por agente — 78-96% ahorro por agente, 93% en sesión 15 agentes. (2) compress-project [DIR]: comprime helix-*.md del proyecto con backup. (3) compress-file FILE [task]: extrae bloques relevantes de código (.py/.ts/.js por función, .md por sección, otros por keywords ±10 líneas). Fixes: HTML comment stripping, doble-run Python eliminado, --keep arg parsing, pipe-vs-heredoc stdin bug. | helix-compress-test |
 <!-- EVOLUTION_LOG_END -->
 
 ---
