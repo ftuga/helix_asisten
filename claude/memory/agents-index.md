@@ -55,4 +55,4 @@
 > `postgresql-dba` → migrar a `postgres-pro` (más completo). Mantener temporalmente por compatibilidad.
 > ExpeL 2026-04-02: `researcher` y `general-purpose` son tipos internos de Claude Code (no agentes Helix). `researcher` = general-purpose con instrucción de investigación. Para research → usar `research-coordinator` o `backend-architect` según dominio.
 
-> Última corrección ERL+ExpeL: 2026-04-02
+> Última corrección ERL+ExpeL: 2026-04-12

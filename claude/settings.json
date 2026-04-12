@@ -108,6 +108,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/session-exit-hook.sh\""
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

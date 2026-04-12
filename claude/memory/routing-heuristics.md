@@ -1,5 +1,5 @@
 # Routing Heuristics — Helix ERL
-> Generado: 2026-04-12 13:07 | Entradas analizadas: 56
+> Generado: 2026-04-12 13:11 | Entradas analizadas: 56
 > Umbral mínimo: 2 muestras
 
 ## Reglas por Dominio
@@ -33,7 +33,7 @@
 *Actualizar con: `bash ~/.claude/helpers/helix-erl.sh`*
 
 ## Reglas ExpeL (Contrastivas)
-> Generado: 2026-04-12 13:07 | Basado en 56 trayectorias
+> Generado: 2026-04-12 13:11 | Basado en 56 trayectorias
 
 ### Dominancia observada
 - [devops] `frontend-developer` (3x, 37%) supera a `general-purpose` (2x) — usar `frontend-developer` como primera opción
