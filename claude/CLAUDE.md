@@ -287,6 +287,14 @@ helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
 
 > Reglas de comunicación activas en toda solicitud, antes y durante la ejecución.
 
+**0. HELIX-SPEAK — compresión de output (siempre activo)**
+Aplicar automáticamente según tipo de contenido (`~/.claude/skills/helix-speak/SKILL.md`):
+- Coordinación inter-agente → `ultra` (+ HELIX-LANG si hay swarm)
+- Reporte de estado al usuario → `brief` (bullets, sin prosa)
+- Explicación técnica → `brief` (sustancia completa, sin relleno)
+- Código / comandos / advertencias de seguridad → `off` (nunca comprimir)
+- Siempre eliminar: artículos, relleno (`basically`, `just`, `actually`), cortesías (`sure`, `happy to`), confirmaciones redundantes (`As I mentioned`)
+
 **1. Preguntas antes de actuar**
 Si la solicitud es ambigua en alcance, archivo o comportamiento esperado → hacer máx. 2-4 preguntas agrupadas en un solo mensaje antes de tocar código. Si es clara y concreta → proceder directo sin preguntar.
 

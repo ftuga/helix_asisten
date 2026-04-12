@@ -91,4 +91,19 @@ usage_entry = {
 }
 with open(usage_log, "a") as f:
     f.write(json.dumps(usage_entry, ensure_ascii=False) + "\n")
+
+# Auto-score de calidad: success=3, partial=2, failed=1
+quality_log = Path.home() / ".claude/memory/skill-quality.jsonl"
+score_map = {"success": 3, "partial": 2, "failed": 1}
+score = score_map.get(resultado, 2)
+quality_entry = {
+    "ts":      entry["ts"],
+    "name":    agent,
+    "score":   score,
+    "dominio": dominio,
+    "razon":   f"auto:{resultado}",
+    "proyecto": project,
+}
+with open(quality_log, "a") as f:
+    f.write(json.dumps(quality_entry, ensure_ascii=False) + "\n")
 PYEOF
