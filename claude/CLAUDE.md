@@ -69,12 +69,19 @@ Helix evalúa en silencio antes de cada tarea:
 - Limitación conocida: sin session resumption con in-process teammates
 - Tamaño óptimo: 3-5 teammates, 5-6 tasks por teammate
 
-**HELIX-LANG — mensajes inter-agente (Capa 2 y 3):**
-- Usar para status updates, handoffs y bloqueos entre agentes. No para comunicación con el usuario.
-- Iniciar sesión: `S:v=$(bash ~/.claude/helpers/helix-lang-state.sh vocab "A:{...}" "D:{...}")`
+**HELIX-LANG — mensajes inter-agente (Capa 2 y 3) — OBLIGATORIO:**
+- **Usar siempre** para status updates, handoffs y bloqueos entre agentes. No para comunicación con el usuario.
+- Al iniciar swarm (≥2 agentes): `S:v=$(bash ~/.claude/helpers/helix-lang-state.sh vocab "A:{...}" "D:{...}")`
 - Mensajes: `FROM->TO verb:object.domain | D:{AGENT:STATE} @temporal`
 - Estado compartido: `S:hash` — 2 tokens en lugar de reenviar contexto completo (~97% ahorro)
 - Skill completa: `~/.claude/skills/helix-lang/SKILL.md`
+
+**HELIX-DISTILL — slices por agente — OBLIGATORIO al usar Agent tool:**
+- Antes de invocar un agente especializado, verificar si existe `~/.claude/skills/_distilled/<subagent_type>.md`
+- Si existe → incluir su contenido en el campo `prompt` del Agent tool (reemplaza instrucciones manuales redundantes)
+- Si no existe → continuar normalmente
+- Slices disponibles: architect-reviewer, backend-architect, code-reviewer, data-analyst, database-architect, devops-engineer, error-detective, frontend-developer, monitoring-specialist, python-pro, security-auditor, sql-pro, test-engineer, typescript-pro, ui-designer
+- Ejemplo: `Read ~/.claude/skills/_distilled/python-pro.md` → pegar contenido en el prompt del agente
 
 ---
 
@@ -378,7 +385,7 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 22,
+  "total_sesiones": 24,
   "ultima_actualizacion": "2026-04-01",
   "total_aprendizajes": 8
 }
@@ -389,7 +396,7 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 ## 📋 SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
 0 |
-| #8 | 2026-04-11 | HELIX-COMPRESS pulido y testeado: 4 bugs corregidos (HTML comments, pipe-vs-heredoc stdin, double Python run, --keep arg parsing), 93% ahorro en sesión 15 agentes medido. Tres comandos operativos: run/compress-project/compress-file/compress-bitacora. | 6 | 0
+| #9 | 2026-04-12 | Lab Turbaco — Rediseño panel detalle bioquímica con QGroupBox por categoría clínica (Glucemia, Perfil Lipídico, Función Renal, etc.), tarjetas _BioParamCard con valor/unidad/rango ref, font-size rangos a 14px. PDF rediseñado con membrete ‹entidad› (logo base64), tablas por grupo con colores, flags coloreados. Actualización pantallazos README. Todo pusheado a main. | 1 | 0
 0 |
 <!-- SESSIONS_END -->
 

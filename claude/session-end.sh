@@ -124,6 +124,19 @@ fi
 echo "   Resumen: $RESUMEN"
 echo "   Aprendizajes: $SESSION_LEARNS | Skills: $SESSION_SKILLS"
 
+# ── ERL + ExpeL — aprendizaje de routing ─────────────────────
+ERL_SCRIPT="$HOME/.claude/helpers/helix-erl.sh"
+EXPEL_SCRIPT="$HOME/.claude/helpers/helix-expel.sh"
+FIX_SCRIPT="$HOME/.claude/helpers/helix-routing-fix.sh"
+
+if [[ -f "$ERL_SCRIPT" && -f "$EXPEL_SCRIPT" ]]; then
+  bash "$ERL_SCRIPT" 2>/dev/null || true
+  bash "$EXPEL_SCRIPT" 2>/dev/null || true
+  if [[ -f "$FIX_SCRIPT" ]]; then
+    bash "$FIX_SCRIPT" --apply 2>/dev/null || true
+  fi
+fi
+
 # ── Costo estimado de sesión ──────────────────────────────────
 SESSION_ID="${CLAUDE_SESSION_ID:-}"
 COST_FILE=""
