@@ -31,6 +31,25 @@ cwd = data.get("cwd", "")
 agent = tool_input.get("subagent_type", "general-purpose")
 prompt = tool_input.get("prompt", tool_input.get("description", ""))[:80].replace("\n", " ").strip()
 
+# Inferir dominio desde keywords del prompt
+DOMAIN_KEYWORDS = {
+    "frontend":     ["component", "componente", "react", "ui", "css", "tailwind", "página", "page", "form", "formulario", "tsx", "jsx"],
+    "backend":      ["endpoint", "api", "fastapi", "route", "ruta", "handler", "service", "servicio"],
+    "database":     ["schema", "migración", "migration", "tabla", "table", "index", "índice", "query", "sql", "model", "modelo"],
+    "devops":       ["docker", "deploy", "ci/cd", "nginx", "pipeline", "contenedor", "container", "infra", "kubernetes"],
+    "testing":      ["test", "cobertura", "coverage", "pytest", "jest", "e2e", "unitario", "unit"],
+    "architecture": ["arquitectura", "architecture", "diseño", "solid", "capas", "layers", "dependencias"],
+    "security":     ["auth", "jwt", "permisos", "permission", "rbac", "vulnerabilidad", "vulnerability"],
+    "analysis":     ["métrica", "metric", "reporte", "report", "kpi", "dashboard", "tendencia", "trend", "datos"],
+    "bug":          ["error", "bug", "excepción", "exception", "crash", "falla", "traceback", "no funciona"],
+}
+prompt_lower = prompt.lower()
+dominio = "general"
+for dom, kws in DOMAIN_KEYWORDS.items():
+    if any(kw in prompt_lower for kw in kws):
+        dominio = dom
+        break
+
 # Inferir resultado
 resp_str = str(tool_response)
 if not resp_str or len(resp_str) < 30:
@@ -53,6 +72,7 @@ while p != p.parent and p != home:
 entry = {
     "ts": datetime.now().strftime("%Y-%m-%d %H:%M"),
     "agente": agent,
+    "dominio": dominio,
     "tarea": prompt,
     "resultado": resultado,
     "proyecto": project,

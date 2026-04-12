@@ -85,6 +85,30 @@ Helix evalúa en silencio antes de cada tarea:
 
 ---
 
+### Routing check — OBLIGATORIO antes de invocar cualquier agente
+
+Antes de elegir un agente, identificar el dominio de la tarea y verificar en la tabla:
+
+| Dominio | Keywords de la tarea | Agente correcto | ❌ NO usar |
+|---|---|---|---|
+| **frontend** | componente, UI, React, página, CSS, Tailwind, formulario | `frontend-developer` | — |
+| **backend** | endpoint, API, FastAPI, servicio, ruta, handler | `backend-architect` → `python-pro` | `frontend-developer` |
+| **database** | schema, migración, modelo, tabla, índice, query lenta | `database-architect` → `sql-pro` | `python-pro` |
+| **devops** | Docker, deploy, CI/CD, infra, contenedor, Nginx, pipeline | `devops-engineer` | `frontend-developer` |
+| **testing** | test, cobertura, pytest, jest, e2e, unitario | `test-engineer` | `frontend-developer`, `python-pro` |
+| **architecture** | diseño, estructura, capas, dependencias, SOLID, decisión técnica | `architect-reviewer` | `frontend-developer` |
+| **security** | auth, JWT, permisos, RBAC, vulnerabilidad, endpoint nuevo | `security-auditor` + `api-security-audit` | — |
+| **analysis** | métricas, reporte, datos, tendencias, KPI, dashboard de datos | `data-analyst` | `frontend-developer` |
+| **bug** | error, excepción, falla, crash, traceback, no funciona | `error-detective` SIEMPRE PRIMERO | cualquier otro |
+| **review** | revisar, calidad, pre-cierre, checklist | `code-reviewer` | — |
+
+**Regla de verificación (3 segundos antes de invocar):**
+1. ¿El dominio es frontend/UI? → `frontend-developer`. Si no → NO usar `frontend-developer`.
+2. ¿El dominio está en la tabla? → usar el agente mapeado.
+3. ¿Es un bug? → `error-detective` antes que cualquier otro.
+
+---
+
 ### Catálogo de agentes por dominio (Capa 1)
 
 | Dominio | Agente(s) |

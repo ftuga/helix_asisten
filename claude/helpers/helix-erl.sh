@@ -64,8 +64,11 @@ DOMAIN_KEYWORDS = {
     'research':    ['investig', 'busca', 'search', 'best practice', 'documentación', 'herramienta'],
 }
 
-def detect_domain(tarea: str) -> list[str]:
-    tarea_lower = tarea.lower()
+def detect_domain(entry: dict) -> list[str]:
+    # Preferir campo dominio explícito (registrado por hook v2)
+    if entry.get('dominio') and entry['dominio'] != 'general':
+        return [entry['dominio']]
+    tarea_lower = entry.get('tarea', '').lower()
     found = []
     for domain, keywords in DOMAIN_KEYWORDS.items():
         if any(kw in tarea_lower for kw in keywords):
@@ -76,7 +79,7 @@ def detect_domain(tarea: str) -> list[str]:
 domain_agent: dict[str, list[str]] = defaultdict(list)
 for e in entries:
     if e.get('resultado') in ('success', 'partial', None, ''):
-        domains = detect_domain(e.get('tarea', ''))
+        domains = detect_domain(e)
         for d in domains:
             domain_agent[d].append(e['agente'])
 
