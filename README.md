@@ -18,13 +18,20 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 
 ## Prerequisites
 
-| Requirement | Notes |
-|-------------|-------|
-| [Claude Code CLI](https://docs.anthropic.com/claude-code) | Required |
-| Node.js ≥ 18 | For helix-engine and MCPs |
-| Python ≥ 3.9 | For self-evolution scripts |
-| git | For versioning and syncing |
-| [Ollama](https://ollama.com/download) | Optional — Layer 0 (free local models) |
+| Requirement | Type | Notes |
+|-------------|------|-------|
+| [Claude Code CLI](https://docs.anthropic.com/claude-code) | Required | `npm install -g @anthropic-ai/claude-code` |
+| Node.js ≥ 18 **native Linux** | Required | MCPs fail if Node points to a Windows path in WSL — install via NodeSource, not Windows |
+| Python ≥ 3.9 + pip3 | Required | `sudo apt-get install -y python3 python3-pip` |
+| git, curl, rsync | Required | `sudo apt-get install -y git curl rsync` |
+| zstd | Required by Ollama | `sudo apt-get install -y zstd` |
+| Docker | Optional | Qdrant vector memory. `sudo service docker start` in WSL |
+| chromium-browser | Optional | Required by puppeteer MCP — without it, MCP shows "Failed to connect" |
+| [Ollama](https://ollama.com/download) | Optional | Layer 0 (free local models) |
+
+> **WSL users:** run `which node` before installing — if it points to `/mnt/c/...`, install native Linux Node first.
+
+> **Ubuntu 24.04+ users:** `install.sh` handles PEP 668 automatically (`--user --break-system-packages`).
 
 ---
 
@@ -35,7 +42,17 @@ git clone git@github.com:ftuga/helix_asisten.git ~/helix_asisten
 bash ~/helix_asisten/install.sh
 ```
 
-The script copies files to `~/.claude/`, installs the privacy pre-commit hook, and shows the MCPs you need to add manually.
+`install.sh` verifies all prerequisites, copies files to `~/.claude/`, and auto-installs MCPs if the Claude CLI is in PATH. Run `scripts/check-prereqs.sh` standalone to diagnose missing dependencies before installing.
+
+```bash
+# Reinstall without overwriting customizations
+bash ~/helix_asisten/install.sh
+
+# Force overwrite everything (memory/agents, memory/topics)
+HELIX_FORCE=1 bash ~/helix_asisten/install.sh
+```
+
+> **update.sh** keeps your `~/.claude/` in sync with the repo after the initial install — run it after pulling changes.
 
 ---
 
