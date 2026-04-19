@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-18 21:20<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-18 21:41<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -119,6 +119,8 @@ Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público 
 - Nunca hardcodear credenciales, URLs internas ni secrets en el código fuente.
 - Endpoints de test/debug DEBEN eliminarse antes de producción — usar feature flags.
 - Confirmar acciones destructivas antes de ejecutarlas.
+- [2026-04-18] Helix Security Layer v1: 6 capas activas (injection, egress, secrets, integrity, evolve-guard, reflexion-quarantine)
+- [2026-04-18] Helix Security Layer v1 — 6 capas: L1 injection-detector-hook (PostToolUse WebFetch/Read, patrones jailbreak/exec/hidden), L2 network-egress-hook (PreToolUse Bash, allowlist ~/.claude/config/network-allowlist.txt), L3 secrets-scanner-hook (PreToolUse Write/Edit/Bash, AWS/GCP/GH/OpenAI/Anthropic/Slack/SSH/JWT), L4 integrity-check.sh (manifest SHA256 de 29 ficheros críticos), L5 evolve-guard en evolve.sh (rechaza jailbreak/pipe-to-shell/eval-b64 antes de persistir), L6 reflexion-quarantine (trusted=false default, created_at/hits/useful_hits, filtra untrusted en search, feedback useful|stale, prune). Tests adversariales OK.
 <!-- SECURITY_END -->
 
 ---
@@ -136,6 +138,8 @@ Bash gotchas y patrones de scripts → `~/.claude/memory/topics/bash-gotchas.md`
 - [2026-04-18] DISCOVERY-FIRST agregado como pre-flight obligatorio (stack detect, conflict check, context request).
 - [2026-04-18] CLAUDE.md podado 482→305 líneas; detalles movibles en `memory/topics/`.
 - [2026-04-18] HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración
+- [2026-04-18] helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. Crea worktrees aislados bajo .helix-worktrees/ y dispara claude -p por tarea. Spec.md: '- [ ] ID:X | branch:Y | prompt:"..."'. Complementado con helix-longmemeval.sh (build/run/compare) que mide Precision@1, P@k, MRR vs benchmarks LongMemEval ICLR 2025 (OMEGA 95.4, Mastra 94.9, Zep 71.2). Baseline actual P@1=100% / MRR=1.000 en 8 queries sintéticas (dataset pequeño — ampliar con reflexiones reales para medición robusta).
+- [2026-04-18] .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita que Claude Code cargue secretos (.env, *.pem, *_rsa, credentials.json), binarios, node_modules/venv, data/raw, media, helix internals (.claude/memory/*.jsonl, decay-scores.json). Reduce ruido de tool search y superficie de exposición.
 <!-- OPERABILITY_END -->
 
 ---
@@ -247,7 +251,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 {
   "total_sesiones": 31,
   "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 15
+  "total_aprendizajes": 20
 }
 ```
 <!-- METRICS_END -->
@@ -287,6 +291,11 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 12 | 2026-04-18 | operatividad | HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración | deprecation-helix-lang |
 | 13 | 2026-04-18 | arquitectura | routing-check-hook PreToolUse(Agent): bloquea mismatches dominio↔agente detectados por ExpeL. exit 2 fuerza reconsiderar. Latencia 29ms | expel-routing-drift |
 | 14 | 2026-04-18 | arquitectura | ERL pondera por skill-quality avg y filtra por catálogo DOMAIN_CATALOG; drift explícito en routing-heuristics.md. Reflexion: hits/useful_hits/created_at + feedback/prune commands | erl-reflexion-feedback |
+| 15 | 2026-04-18 | seguridad | Helix Security Layer v1: 6 capas activas (injection, egress, secrets, integrity, evolve-guard, reflexion-quarantine) | hsl-v1 |
+| 16 | 2026-04-18 | seguridad | Helix Security Layer v1 — 6 capas: L1 injection-detector-hook (PostToolUse WebFetch/Read, patrones jailbreak/exec/hidden), L2 network-egress-hook (PreToolUse Bash, allowlist ~/.claude/config/network-allowlist.txt), L3 secrets-scanner-hook (PreToolUse Write/Edit/Bash, AWS/GCP/GH/OpenAI/Anthropic/Slack/SSH/JWT), L4 integrity-check.sh (manifest SHA256 de 29 ficheros críticos), L5 evolve-guard en evolve.sh (rechaza jailbreak/pipe-to-shell/eval-b64 antes de persistir), L6 reflexion-quarantine (trusted=false default, created_at/hits/useful_hits, filtra untrusted en search, feedback useful|stale, prune). Tests adversariales OK. | security-hardening-batch |
+| 17 | 2026-04-18 | performance | helix-cache-metrics.sh — parsea message.usage en ~/.claude/projects/*/*.jsonl y reporta hit_rate/savings del prompt cache Anthropic. Medición real: 91.8% hit rate, 80.6% savings (~42.5M tokens ahorrados en 500 API calls, 2 proyectos). Verdict healthy ≥60%. Confirma que el cache se está usando correctamente — no requiere tuning adicional de CLAUDE.md. | cache-observability |
+| 18 | 2026-04-18 | operatividad | helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. Crea worktrees aislados bajo .helix-worktrees/ y dispara claude -p por tarea. Spec.md: '- [ ] ID:X | branch:Y | prompt:"..."'. Complementado con helix-longmemeval.sh (build/run/compare) que mide Precision@1, P@k, MRR vs benchmarks LongMemEval ICLR 2025 (OMEGA 95.4, Mastra 94.9, Zep 71.2). Baseline actual P@1=100% / MRR=1.000 en 8 queries sintéticas (dataset pequeño — ampliar con reflexiones reales para medición robusta). | batch-dispatcher-longmemeval |
+| 19 | 2026-04-18 | operatividad | .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita que Claude Code cargue secretos (.env, *.pem, *_rsa, credentials.json), binarios, node_modules/venv, data/raw, media, helix internals (.claude/memory/*.jsonl, decay-scores.json). Reduce ruido de tool search y superficie de exposición. | claudeignore-template |
 <!-- EVOLUTION_LOG_END -->
 
 ---

@@ -53,6 +53,33 @@ store)
     SAFE_PROJ=$(echo "$PROYECTO" | tr ' ' '_' | tr -cd '[:alnum:]_-')
 
     CREATED_AT=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+    # ── Quarantine check — reflexión va como trusted=false hasta feedback explícito ──
+    # Flags: --trusted fuerza trusted=true (solo uso manual del operador)
+    TRUSTED_FLAG="false"
+    for arg in "$@"; do
+        [[ "$arg" == "--trusted" ]] && TRUSTED_FLAG="true"
+    done
+
+    # Scanner de contenido malicioso antes de indexar
+    if GUARD_TEXT="$ERROR_DESC||$RESOLUTION" python3 - <<'PYSCAN'
+import os, re, sys
+text = os.environ.get("GUARD_TEXT", "")
+BAD = [
+    r"(?i)\bcurl\s+\S+\s*\|\s*(bash|sh)",
+    r"(?i)ignore\s+(all\s+)?previous\s+instructions",
+    r"[\u200b-\u200f\u202a-\u202e\u2060-\u206f]",
+    r"(?<![A-Za-z0-9+/=])[A-Za-z0-9+/]{200,}={0,2}(?![A-Za-z0-9+/=])",
+]
+for pat in BAD:
+    if re.search(pat, text):
+        print("🛡️  Reflexion rechazada: contenido sospechoso", file=sys.stderr)
+        sys.exit(1)
+PYSCAN
+    then :; else
+        exit 1
+    fi
+
     RESULT=$(python3 "$HV" store helix_reflexions "$EMBED_TEXT" \
         --meta \
             "error=$SAFE_ERROR" \
@@ -63,6 +90,7 @@ store)
             "created_at=$CREATED_AT" \
             "hits=0" \
             "useful_hits=0" \
+            "trusted=$TRUSTED_FLAG" \
             "type=reflexion" \
         2>/dev/null)
 
@@ -100,6 +128,11 @@ search)
     QUERY="${1:-}"
     TOP_K="${2:-3}"
     THRESHOLD="${3:-0.65}"
+    INCLUDE_UNTRUSTED="false"
+    for arg in "$@"; do
+        [[ "$arg" == "--include-untrusted" ]] && INCLUDE_UNTRUSTED="true"
+    done
+    export HV_INCLUDE_UNTRUSTED="$INCLUDE_UNTRUSTED"
 
     [[ -z "$QUERY" ]] && {
         echo "Uso: helix-reflexion.sh search '<error>' [top-k] [threshold]" >&2; exit 1
@@ -138,8 +171,26 @@ except:
     print(f"{GRAY}Error al parsear respuesta de Qdrant{NC}")
     sys.exit(0)
 
+# Filtrar untrusted salvo flag --include-untrusted
+include_untrusted = os.environ.get('HV_INCLUDE_UNTRUSTED', 'false') == 'true'
+if not include_untrusted:
+    filtered = []
+    skipped = 0
+    for r in results:
+        pl = r.get('payload', {}) or {}
+        # trusted puede ser bool o string
+        t = pl.get('trusted', True)
+        if isinstance(t, str): t = t.lower() == 'true'
+        if t:
+            filtered.append(r)
+        else:
+            skipped += 1
+    if skipped:
+        print(f"{GRAY}(filtradas {skipped} reflexiones untrusted — usar --include-untrusted para verlas){NC}")
+    results = filtered
+
 if not results:
-    print(f"{GRAY}Sin reflexiones similares (threshold: {thr}){NC}")
+    print(f"{GRAY}Sin reflexiones similares trusted (threshold: {thr}){NC}")
     sys.exit(0)
 
 print(f"\n{BLUE}⬡ Helix Reflexion — {len(results)} coincidencia(s):{NC}")
@@ -209,8 +260,9 @@ except Exception as e:
 
 if verdict == 'useful':
     new_useful = int(cur.get('useful_hits', 0)) + 1
-    patch = {"useful_hits": new_useful, "stale": False}
-    msg = f"✅ Reflexión {pid} marcada útil (useful_hits={new_useful})"
+    # Marcar como trusted después de 1er feedback útil (promoción por validación humana)
+    patch = {"useful_hits": new_useful, "stale": False, "trusted": True}
+    msg = f"✅ Reflexión {pid} marcada útil (useful_hits={new_useful}, trusted=True)"
 elif verdict == 'stale':
     patch = {"stale": True}
     msg = f"🗑️  Reflexión {pid} marcada stale — candidata a prune"

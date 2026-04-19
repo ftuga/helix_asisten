@@ -161,6 +161,35 @@ cmd_learn() {
     exit 1
   fi
 
+  # ── Evolve guard — rechazar aprendizajes con instrucciones ejecutables ──
+  # Protege contra prompt injection que usa evolve.sh como vector persistente
+  if GUARD_TEXT="$aprendizaje" python3 - <<'PYGUARD'
+import os, re, sys
+text = os.environ.get("GUARD_TEXT", "")
+BAD = [
+    (r"(?i)\bcurl\s+\S+\s*\|\s*(bash|sh|zsh|python)", "pipe-to-shell"),
+    (r"(?i)\bwget\s+\S+\s*-O-?\s*\|\s*(bash|sh)", "wget-pipe"),
+    (r"(?i)\b(rm|dd|mkfs|shutdown|reboot)\s+-", "destructive"),
+    (r"(?i)\beval\s*\(\s*(atob|base64)", "eval-obfuscated"),
+    (r"(?i)ignore\s+(all\s+)?previous\s+instructions", "jailbreak"),
+    (r"(?i)you\s+are\s+now\s+(a|an)\s+\w+\s+(assistant|ai)", "role-reset"),
+    (r"[\u200b-\u200f\u202a-\u202e\u2060-\u206f]", "zero-width"),
+    (r"(?<![A-Za-z0-9+/=])[A-Za-z0-9+/]{200,}={0,2}(?![A-Za-z0-9+/=])", "long-b64"),
+]
+hits = []
+for pat, tag in BAD:
+    if re.search(pat, text):
+        hits.append(tag)
+if hits:
+    print(f"🛡️  EVOLVE GUARD: rechazado — patrones peligrosos: {sorted(set(hits))}", file=sys.stderr)
+    print(f"   Texto: {text[:140]}", file=sys.stderr)
+    sys.exit(1)
+PYGUARD
+  then :; else
+    err "Aprendizaje rechazado por evolve-guard (ver mensaje arriba)"
+    exit 1
+  fi
+
   # Mapeo categoría español → nombre de marcador en CLAUDE.md (inglés)
   local marker_name
   case "$categoria" in

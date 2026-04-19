@@ -1,0 +1,116 @@
+# .claudeignore — archivos que Claude Code NO debe cargar al contexto.
+# Funciona como .gitignore (glob patterns).
+# Razón: reducir ruido de tool search + evitar leer secretos o binarios grandes.
+
+# ── Secretos y credenciales ─────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.pfx
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+id_rsa*
+id_ed25519*
+credentials.json
+secrets.json
+service-account*.json
+
+# ── Binarios / artefactos ──────────────────────────────────
+*.pyc
+*.pyo
+__pycache__/
+*.class
+*.jar
+*.war
+*.o
+*.so
+*.dylib
+*.dll
+*.exe
+*.wasm
+target/
+build/
+dist/
+out/
+bin/
+obj/
+
+# ── Dependencias ────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+vendor/
+venv/
+.venv/
+env/
+.tox/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# ── Logs y runtime ──────────────────────────────────────────
+*.log
+logs/
+*.pid
+*.seed
+*.sock
+.DS_Store
+Thumbs.db
+
+# ── Data y datasets pesados ─────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.pkl
+*.npy
+*.npz
+data/raw/
+data/processed/
+datasets/
+
+# ── Media ───────────────────────────────────────────────────
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ── IDE / tooling ──────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.history/
+
+# ── Coverage y reports ──────────────────────────────────────
+coverage/
+.coverage
+.nyc_output/
+htmlcov/
+*.lcov
+
+# ── Helix internals que el IDE no necesita ver al contexto ──
+.claude/memory/*.jsonl
+.claude/memory/decay-scores.json
+.claude/memory/knowledge-map.json
+.claude/data/

@@ -49,9 +49,36 @@
             "command": "bash \"$HOME/.claude/helpers/routing-check-hook.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/network-egress-hook.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/secrets-scanner-hook.sh\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "WebFetch|WebSearch|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/injection-detector-hook.sh\""
+          }
+        ]
+      },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
