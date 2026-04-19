@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-18 20:40<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-18 20:43<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -247,7 +247,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 {
   "total_sesiones": 31,
   "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 13
+  "total_aprendizajes": 14
 }
 ```
 <!-- METRICS_END -->
@@ -285,6 +285,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 10 | 2026-04-18 | arquitectura | DISCOVERY-FIRST pre-flight obligatorio en helix_control_total: detectar stack, checar conflictos, pedir contexto antes de actuar | gap-helix-control-total |
 | 11 | 2026-04-18 | performance | HELIX-COMPRESS pipeline verificado: DISTILL 83% + S:hash 97% + SPEAK aplicable. Prompt caching (Opus 4.7) reduce coste de repetición en 90% | self-eval-performance |
 | 12 | 2026-04-18 | operatividad | HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración | deprecation-helix-lang |
+| 13 | 2026-04-18 | arquitectura | routing-check-hook PreToolUse(Agent): bloquea mismatches dominio↔agente detectados por ExpeL. exit 2 fuerza reconsiderar. Latencia 29ms | expel-routing-drift |
 <!-- EVOLUTION_LOG_END -->
 
 ---

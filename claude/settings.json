@@ -40,6 +40,15 @@
             "command": "bash \"$HOME/.claude/helpers/capa0-guard.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/routing-check-hook.sh\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
