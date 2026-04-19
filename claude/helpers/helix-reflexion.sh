@@ -52,6 +52,7 @@ store)
     SAFE_RESOL=$(echo "$RESOLUTION" | head -c 150 | tr ' ' '_' | tr -cd '[:print:]' | tr -d '"\\')
     SAFE_PROJ=$(echo "$PROYECTO" | tr ' ' '_' | tr -cd '[:alnum:]_-')
 
+    CREATED_AT=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
     RESULT=$(python3 "$HV" store helix_reflexions "$EMBED_TEXT" \
         --meta \
             "error=$SAFE_ERROR" \
@@ -59,6 +60,9 @@ store)
             "categoria=$CATEGORIA" \
             "proyecto=$SAFE_PROJ" \
             "date=$SHORT_DATE" \
+            "created_at=$CREATED_AT" \
+            "hits=0" \
+            "useful_hits=0" \
             "type=reflexion" \
         2>/dev/null)
 
@@ -139,19 +143,154 @@ if not results:
     sys.exit(0)
 
 print(f"\n{BLUE}⬡ Helix Reflexion — {len(results)} coincidencia(s):{NC}")
+import urllib.request, json as _json
+QDRANT = os.environ.get('QDRANT_URL', 'http://localhost:6333')
+
+def _bump_hits(pid):
+    """Incrementa contador 'hits' en payload; silencioso si falla."""
+    try:
+        # Leer hits actual
+        req = urllib.request.Request(f"{QDRANT}/collections/helix_reflexions/points/{pid}")
+        with urllib.request.urlopen(req, timeout=2) as r:
+            cur = _json.loads(r.read()).get('result', {}).get('payload', {})
+        new_hits = int(cur.get('hits', 0)) + 1
+        # Set payload (merge)
+        body = _json.dumps({"payload": {"hits": new_hits}, "points": [pid]}).encode()
+        req2 = urllib.request.Request(
+            f"{QDRANT}/collections/helix_reflexions/points/payload?wait=true",
+            data=body, method='POST',
+            headers={'Content-Type': 'application/json'}
+        )
+        urllib.request.urlopen(req2, timeout=2).read()
+    except Exception:
+        pass
+
 for i, r in enumerate(results, 1):
     score   = r.get('score', 0)
+    pid     = r.get('id', '')
     payload = r.get('payload', {})
-    # Los valores pueden estar con _ o sin _ según cómo fueron guardados
     error = (payload.get('error') or payload.get('text', '')[:80]).replace('_', ' ')[:80]
     resol = payload.get('resolution', '').replace('_', ' ')[:100]
     cat   = payload.get('categoria', payload.get('category', ''))
     date  = payload.get('date', '')
+    hits  = payload.get('hits', 0)
+    useful = payload.get('useful_hits', 0)
     conf  = 'alta' if score > 0.85 else 'media' if score > 0.72 else 'baja'
-    print(f"\n  {GREEN}[{i}] confianza {conf} ({score:.3f}) | {cat} | {date}{NC}")
+    meta_str = f" | hits={hits} useful={useful}" if (hits or useful) else ""
+    print(f"\n  {GREEN}[{i}] id={pid} confianza {conf} ({score:.3f}) | {cat} | {date}{meta_str}{NC}")
     print(f"  Patrón:     {error}")
     if resol:
         print(f"  Resolución: {resol}")
+    _bump_hits(pid)
+print(f"\n{GRAY}💡 Feedback: helix-reflexion.sh feedback <id> useful|stale{NC}")
+PYEOF
+    ;;
+
+# ─────────────────────────────────────────────────────────────
+feedback)
+    POINT_ID="${1:-}"
+    VERDICT="${2:-useful}"   # useful | stale
+    [[ -z "$POINT_ID" ]] && {
+        echo "Uso: helix-reflexion.sh feedback <point_id> useful|stale" >&2; exit 1
+    }
+    _ensure_qdrant || exit 1
+
+    export HV_PID="$POINT_ID" HV_VERDICT="$VERDICT" HV_URL="$QDRANT_URL"
+    python3 <<'PYEOF'
+import os, json, urllib.request
+URL = os.environ['HV_URL']; pid = os.environ['HV_PID']; verdict = os.environ['HV_VERDICT']
+
+# Leer estado actual
+try:
+    with urllib.request.urlopen(f"{URL}/collections/helix_reflexions/points/{pid}", timeout=3) as r:
+        cur = json.loads(r.read()).get('result', {}).get('payload', {}) or {}
+except Exception as e:
+    print(f"❌ No se pudo leer point {pid}: {e}"); raise SystemExit(1)
+
+if verdict == 'useful':
+    new_useful = int(cur.get('useful_hits', 0)) + 1
+    patch = {"useful_hits": new_useful, "stale": False}
+    msg = f"✅ Reflexión {pid} marcada útil (useful_hits={new_useful})"
+elif verdict == 'stale':
+    patch = {"stale": True}
+    msg = f"🗑️  Reflexión {pid} marcada stale — candidata a prune"
+else:
+    print(f"Verdict inválido: {verdict}. Usa 'useful' o 'stale'"); raise SystemExit(1)
+
+body = json.dumps({"payload": patch, "points": [pid]}).encode()
+req = urllib.request.Request(
+    f"{URL}/collections/helix_reflexions/points/payload?wait=true",
+    data=body, method='POST',
+    headers={'Content-Type': 'application/json'}
+)
+try:
+    urllib.request.urlopen(req, timeout=3).read()
+    print(msg)
+except Exception as e:
+    print(f"❌ No se pudo actualizar: {e}"); raise SystemExit(1)
+PYEOF
+    ;;
+
+# ─────────────────────────────────────────────────────────────
+prune)
+    # Elimina reflexiones con stale=true O (older>N días Y useful_hits=0)
+    OLDER_DAYS="${1:-60}"
+    DRY_RUN="${2:-}"
+    _ensure_qdrant || exit 1
+
+    export HV_OLDER="$OLDER_DAYS" HV_URL="$QDRANT_URL" HV_DRY="$DRY_RUN"
+    python3 <<'PYEOF'
+import os, json, urllib.request
+from datetime import datetime, timedelta, timezone
+URL = os.environ['HV_URL']; older = int(os.environ['HV_OLDER']); dry = os.environ.get('HV_DRY') == '--dry-run'
+
+cutoff = (datetime.now(timezone.utc) - timedelta(days=older)).isoformat()
+
+# Scroll all points
+candidates_stale = []
+candidates_old = []
+offset = None
+while True:
+    body = {"limit": 100, "with_payload": True, "with_vector": False}
+    if offset is not None: body["offset"] = offset
+    req = urllib.request.Request(
+        f"{URL}/collections/helix_reflexions/points/scroll",
+        data=json.dumps(body).encode(), method='POST',
+        headers={'Content-Type': 'application/json'}
+    )
+    try:
+        resp = json.loads(urllib.request.urlopen(req, timeout=5).read()).get('result', {})
+    except Exception as e:
+        print(f"❌ scroll failed: {e}"); raise SystemExit(1)
+    for pt in resp.get('points', []):
+        pid = pt['id']; pl = pt.get('payload') or {}
+        if pl.get('stale'):
+            candidates_stale.append(pid); continue
+        useful = int(pl.get('useful_hits', 0))
+        created = pl.get('created_at', '')
+        if useful == 0 and created and created < cutoff:
+            candidates_old.append(pid)
+    offset = resp.get('next_page_offset')
+    if not offset: break
+
+to_delete = candidates_stale + candidates_old
+print(f"Candidatos a prune: stale={len(candidates_stale)} old_unused(>{older}d)={len(candidates_old)}")
+if not to_delete:
+    print("Nada que eliminar."); raise SystemExit(0)
+if dry:
+    print(f"(dry-run) Se eliminarían: {to_delete}"); raise SystemExit(0)
+
+body = json.dumps({"points": to_delete}).encode()
+req = urllib.request.Request(
+    f"{URL}/collections/helix_reflexions/points/delete?wait=true",
+    data=body, method='POST',
+    headers={'Content-Type': 'application/json'}
+)
+try:
+    urllib.request.urlopen(req, timeout=5).read()
+    print(f"🗑️  Eliminados {len(to_delete)} puntos")
+except Exception as e:
+    print(f"❌ delete failed: {e}"); raise SystemExit(1)
 PYEOF
     ;;
 
@@ -177,9 +316,11 @@ for l in lines:
     echo -e "${BLUE}helix-reflexion.sh — Memoria semántica de errores${NC}"
     echo ""
     echo "Comandos:"
-    echo "  store  '<error>' '<resolución>' [categoría] [proyecto]"
-    echo "  search '<descripción del error>' [top-k] [threshold]"
-    echo "  list   [limit]"
+    echo "  store    '<error>' '<resolución>' [categoría] [proyecto]"
+    echo "  search   '<descripción del error>' [top-k] [threshold]"
+    echo "  feedback <point_id> useful|stale   — marca reflexión recuperada"
+    echo "  prune    [older_days=60] [--dry-run] — limpia stales + unused>N días"
+    echo "  list     [limit]"
     echo ""
     echo "Colección Qdrant: helix_reflexions"
     echo "Backup local:     $REFLEXIONS_LOG"

@@ -1,5 +1,6 @@
 # Active Rules — Reglas activas instaladas de evoluciones
 
+- [2026-04-18] [arquitectura] ERL pondera por skill-quality avg y filtra por catálogo DOMAIN_CATALOG; drift explícito en routing-heuristics.md. Reflexion: hits/useful_hits/created_at + feedback/prune commands
 - [2026-04-18] [arquitectura] routing-check-hook PreToolUse(Agent): bloquea mismatches dominio↔agente detectados por ExpeL. exit 2 fuerza reconsiderar. Latencia 29ms
 - [2026-04-18] [operatividad] HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración
 - [2026-04-18] [performance] HELIX-COMPRESS pipeline verificado: DISTILL 83% + S:hash 97% + SPEAK aplicable. Prompt caching (Opus 4.7) reduce coste de repetición en 90%
