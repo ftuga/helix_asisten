@@ -2,57 +2,47 @@
 > Solo este índice se carga al inicio. Descripción completa en `~/.claude/memory/agents/<nombre>.md`.
 > Actualizar cuando se habilita/deshabilita un agente.
 
-## Agentes Activos (20)
+## Agentes Activos
 
-| Agente | Trigger (5 palabras) | Detalle |
-|---|---|---|
-| `python-pro` | Nuevo endpoint FastAPI o refactor | [detalle](agents/python-pro.md) |
-| `typescript-pro` | Tipos TS complejos o generics | [detalle](agents/typescript-pro.md) |
-| `frontend-developer` | Componente React o página nueva | [detalle](agents/frontend-developer.md) |
-| `backend-architect` | Diseño de API o estructura | [detalle](agents/backend-architect.md) |
-| `database-architect` | Cambio de modelo o esquema | [detalle](agents/database-architect.md) |
-| `postgresql-dba` | Optimizar query PostgreSQL específica | [detalle](agents/postgresql-dba.md) |
-| `sql-pro` | Query lenta o window functions | [detalle](agents/sql-pro.md) |
-| `error-detective` | Bug o error inesperado SIEMPRE | [detalle](agents/error-detective.md) |
-| `code-reviewer` | Pre-cierre de tarea OBLIGATORIO | [detalle](agents/code-reviewer.md) |
-| `security-auditor` | Auditoría de seguridad o compliance | [detalle](agents/security-auditor.md) |
-| `api-security-audit` | Endpoint nuevo o cambio auth | [detalle](agents/api-security-audit.md) |
-| `devops-engineer` | Docker, CI/CD, infra ★ devops (no frontend-developer) | [detalle](agents/devops-engineer.md) |
-| `deployment-engineer` | Deploy, rollback o zero-downtime | [detalle](agents/deployment-engineer.md) |
-| `data-analyst` | Análisis de reportes o métricas | [detalle](agents/data-analyst.md) |
-| `test-engineer` | Tests, pytest, cobertura ★ testing (no researcher) | [detalle](agents/test-engineer.md) |
-| `test-automator` | Implementar tests automatizados CI | [detalle](agents/test-automator.md) |
-| `monitoring-specialist` | Logs, alertas o observabilidad | [detalle](agents/monitoring-specialist.md) |
-| `architect-reviewer` | Decisión arquitectónica o SOLID | [detalle](agents/architect-reviewer.md) |
-| `fin-saas-advisor` | Precios, márgenes o modelo SaaS | [detalle](agents/fin-saas-advisor.md) |
-| `investment-expert` | Invertir en bolsa, cripto, trading, portafolio | [detalle](agents/investment-expert.md) |
-| `ui-designer` | Componente visual, dirección estética, HTML prod | [detalle](agents/ui-designer.md) |
-| `ui-ux-designer` | Flujos, arquitectura info, criterio UX | [detalle](agents/ui-ux-designer.md) |
+| Agente | Trigger |
+|---|---|
+| `python-pro` | Endpoint FastAPI, refactor, async |
+| `typescript-pro` | Tipos TS complejos, generics |
+| `frontend-developer` | Componente React, página nueva |
+| `backend-architect` | Diseño de API, estructura de servicio |
+| `database-architect` | Cambio de modelo o esquema |
+| `postgres-pro` | PostgreSQL HA, replicación, backup enterprise |
+| `postgresql-dba` | Query PostgreSQL específica (legacy → migrar a postgres-pro) |
+| `sql-pro` | Query lenta, window functions, plan de ejecución |
+| `error-detective` | Bug o error inesperado — SIEMPRE PRIMERO |
+| `code-reviewer` | Pre-cierre — OBLIGATORIO antes de declarar completa |
+| `security-auditor` | Auditoría de seguridad, compliance |
+| `api-security-audit` | Endpoint nuevo, cambio auth |
+| `devops-engineer` | Docker, CI/CD, infra (no frontend-developer) |
+| `deployment-engineer` | Deploy, rollback, zero-downtime |
+| `data-analyst` | Análisis de reportes, métricas |
+| `test-engineer` | Tests, pytest, cobertura (no researcher) |
+| `test-automator` | Implementación tests automatizados CI |
+| `monitoring-specialist` | Logs, alertas, observabilidad |
+| `architect-reviewer` | Decisión arquitectónica, SOLID |
+| `performance-engineer` | Bottleneck, profiling, load testing |
+| `prompt-engineer` | Diseñar o auditar system prompt |
+| `codebase-explorer` | Explorar codebase sin leer archivos |
+| `context-manager` | Gestión contexto sesiones largas |
+| `task-decomposition-expert` | Descomponer tarea compleja |
+| `research-coordinator` | Investigación multi-agente |
+| `ui-designer` | Componente visual, dirección estética |
+| `ui-ux-designer` | Flujos, arquitectura info, UX |
+| `fin-saas-advisor` | Precios, márgenes, modelo SaaS |
+| `investment-expert` | Bolsa, cripto, trading, portafolio |
 
-## Deshabilitados (15)
-`api-architect` `api-designer` `api-documenter` `azure-infra-engineer`
-`backend-developer` `business-analyst` `fullstack-developer` `mcp-security-auditor`
-`metadata-agent` `nextjs-architecture-expert` `product-manager` `project-manager`
-`qa-expert` `scrum-master` `security-engineer`
+## Deshabilitados (no invocar)
+`api-architect` · `api-designer` · `api-documenter` · `azure-infra-engineer` · `backend-developer` · `business-analyst` · `fullstack-developer` · `mcp-security-auditor` · `metadata-agent` · `nextjs-architecture-expert` · `product-manager` · `project-manager` · `qa-expert` · `scrum-master` · `security-engineer`
 
-## Agentes Nuevos (2026-03-30)
+## Notas ERL+ExpeL
+- `researcher` y `general-purpose` son tipos internos de Claude Code, no agentes Helix. Para research → `research-coordinator` o `backend-architect` según dominio.
+- `postgresql-dba` → migrar a `postgres-pro`. Mantener temporalmente por compatibilidad.
 
-| Agente | Trigger (5 palabras) | Detalle |
-|---|---|---|
-| `prompt-engineer` | Diseñar o auditar system prompt | [detalle](agents/prompt-engineer.md) |
+> Última corrección: 2026-04-18
 
-## Agentes Nuevos (2026-03-26)
-
-| Agente | Trigger (5 palabras) | Detalle |
-|---|---|---|
-| `postgres-pro` | PostgreSQL HA, replicación, backup enterprise | [detalle](agents/postgres-pro.md) |
-| `codebase-explorer` | Explorar codebase sin leer archivos | [detalle](agents/codebase-explorer.md) |
-| `context-manager` | Gestión de contexto sesiones largas | [detalle](agents/context-manager.md) |
-| `performance-engineer` | Bottleneck, profiling, load testing | [detalle](agents/performance-engineer.md) |
-| `task-decomposition-expert` | Descomponer tarea compleja en subtareas | [detalle](agents/task-decomposition-expert.md) |
-| `research-coordinator` | Investigación multi-agente coordinada | [detalle](agents/research-coordinator.md) |
-
-> `postgresql-dba` → migrar a `postgres-pro` (más completo). Mantener temporalmente por compatibilidad.
-> ExpeL 2026-04-02: `researcher` y `general-purpose` son tipos internos de Claude Code (no agentes Helix). `researcher` = general-purpose con instrucción de investigación. Para research → usar `research-coordinator` o `backend-architect` según dominio.
-
-> Última corrección ERL+ExpeL: 2026-04-12
+> Última corrección ERL+ExpeL: 2026-04-18

@@ -56,3 +56,4 @@ claude/skills/_distilled/
 claude/data/distill-meta.json
 claude/data/helix-lang.jsonl
 claude/data/helix-states/
+labs/

@@ -70,3 +70,15 @@
 
 ## Archivado 2026-04-11 01:51 — Historial evoluciones
 |---|---|---|---|
+
+## Archivado 2026-04-18 — pre-v3.11 (2026-04-05)
+| # | Fecha | Categoría | Aprendizaje |
+|---|---|---|---|
+| 28 | 2026-04-05 | arquitectura | Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster+output contracts+DoD+dispatch), helix-backlog.md y helix-roadmap.md. Team Dispatch descompone reqs por dominio y despacha en paralelo. |
+| 29 | 2026-04-05 | arquitectura | helix-roadmap.md: documento persistente del equipo técnico — milestones de 1-4 semanas, arquitectura de alto nivel, decisiones arquitectónicas acumulativas. NUNCA se borra automáticamente. |
+| 30 | 2026-04-05 | operatividad | skill-tracker.sh: quality/quality-report — scores 1-3 por skill/agente → skill-quality.jsonl. report integrado con uso (30d/7d). prune --execute archiva con confirmación interactiva. |
+| 31 | 2026-04-05 | operatividad | mcp-tracker-hook.sh: PostToolUse(mcp__.*) extrae servicio de tool_name y registra tipo=mcp en skill-usage.jsonl. |
+| 32 | 2026-04-05 | operatividad | self-check.sh stack-aware: HAS_DOCKER/FASTAPI/CELERY/FRONTEND/TS/PYTHON detectados desde pyproject.toml, package.json, etc. PLANES COMPLETADOS solo elimina helix-plan-REQ-*.md. |
+
+## Archivado 2026-04-18 20:40 — Historial evoluciones
+|---|---|---|---|

@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-11 01:51<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-18 20:40<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -15,221 +15,99 @@
 | Antes de declarar una tarea completa | `bash ~/.claude/self-check.sh` |
 | Al cerrar cada sesión | `bash ~/.claude/session-end.sh "<resumen>"` |
 
-**Categorías válidas:**
-`seguridad` | `interfaz` | `funcionalidad` | `operatividad` | `arquitectura` | `performance` | `testing` | `datos` | `celery` | `auth` | `docker`
+**Categorías válidas:** `seguridad` | `interfaz` | `funcionalidad` | `operatividad` | `arquitectura` | `performance` | `testing` | `datos` | `celery` | `auth` | `docker`
 
 ---
 
 ## 🎛️ MODOS DE HELIX
 
-> Cada proyecto declara su modo en su CLAUDE.md con `HELIX_MODE: <modo>`.
-> Si no se declara → modo `helix_minimal` por defecto.
+> Cada proyecto declara su modo en su CLAUDE.md con `HELIX_MODE: <modo>`. Si no se declara → `helix_minimal`.
 
 | Modo | Qué activa | Cuándo usarlo |
 |---|---|---|
-| `helix_control_total` | 4 capas completas: Ollama + Subagents + claude-flow swarm + Agent Teams. Helix decide todo. | Proyectos propios con `.mcp.json` configurado |
-| `helix_minimal` | Solo Capa 1 (Subagents). Sin claude-flow, sin Agent Teams. | Proyectos simples, clientes, sin infraestructura |
-| `helix_off` | Sin orquestación. Claude responde directamente. | Exploración, preguntas rápidas, prototipado |
+| `helix_control_total` | 4 capas: Ollama + Subagents + claude-flow swarm + Agent Teams | Proyectos propios con `.mcp.json` |
+| `helix_minimal` | Solo Capa 1 (Subagents) | Proyectos simples, clientes |
+| `helix_off` | Sin orquestación. Claude directo | Exploración, preguntas rápidas |
 
 ---
 
-## 🤖 PROTOCOLO DE ORQUESTACIÓN — AUTOMÁTICO
+## 🔍 DISCOVERY-FIRST (pre-flight obligatorio)
 
-> **Solo aplica si el proyecto declara `HELIX_MODE: helix_control_total`.**
-> Helix evalúa y ejecuta. El usuario NUNCA decide ni ve la capa interna.
-> NUNCA preguntar "¿usamos swarm o subagent?". Decidir, ejecutar, reportar resultado.
+Antes de CUALQUIER acción que toque código o estructura del proyecto, ejecutar el pre-flight. Aplica a los 3 modos.
 
-### Regla de evaluación (interna, transparente al usuario)
+### 1. Detección de stack (silenciosa, 1 vez por sesión)
+- Si no existe `{PROJECT_ROOT}/.claude/memory/helix-analysis.md` ni `.analysis-declined`:
+  - Ejecutar `bash ~/.claude/helpers/helix-detect-stack.sh` → resumen en contexto de sesión
+  - Si hay código pero sin análisis → sugerir `/helix-analiza` UNA VEZ
+- Si ya hay stack detectado → cargarlo y respetarlo
 
-Helix evalúa en silencio antes de cada tarea:
+### 2. Chequeo de conflicto stack↔petición
+Antes de ejecutar, comparar la petición contra el stack detectado:
 
-| Señal en la tarea | Acción automática |
+| Situación | Acción |
 |---|---|
-| Log / texto largo / salida Docker | Capa 0: Ollama primero (gratis). Si detecta problema → escalar |
-| Un artefacto concreto (endpoint, componente, query, bug) — un solo dominio | Capa 1: `Agent tool` — agente especializado correcto |
-| **2+ dominios en paralelo** (análisis, validación, investigación simultánea) | **Capa 2: `swarm_init` + `agent_spawn`** — visible en ruflow |
-| Feature completa que toca ≥2 capas del stack con coordinación activa | Capa 2: `swarm_init` + `task_orchestrate` |
-| **Agentes que necesitan hablarse entre sí** (no solo reportar al lead) | **Capa 3: Agent Teams nativo** — mailbox peer-to-peer, task list compartida |
+| Petición alineada con stack (ej: endpoint FastAPI en proyecto FastAPI) | Proceder |
+| Petición fuera del stack (ej: FastAPI en proyecto Django) | **Detener. Preguntar:** "Detecto Django — ¿usar Django o migrar a FastAPI?" |
+| Sin stack detectado aún | Preguntar intención antes de elegir |
+| Ambigüedad de versión (React 18 vs 19, Python 3.11 vs 3.12) | Inferir del lockfile y mencionarlo, o preguntar |
 
-**Regla clave — cuándo usar cada capa:**
-- `Agent tool` en paralelo = subprocesos del CLI. Invisibles en ruflow. Solo para 1 dominio.
-- `swarm_init` + `agent_spawn` = claude-flow. Visibles en ruflow. Para 2+ dominios sin necesidad de que los agentes se hablen entre sí.
-- **Agent Teams nativo** = cuando los agentes necesitan comunicarse directamente (peer-to-peer). Ej: frontend le avisa al backend sobre un cambio de contrato, o investigadores se desafían mutuamente sus hipótesis.
+### 3. Pedido de contexto adicional
+Pedir contexto antes de actuar cuando:
+- La petición menciona un archivo/módulo que no existe → preguntar ubicación esperada
+- Hay múltiples candidatos para la misma función (ej: 2 servicios de auth) → preguntar cuál
+- La acción cambia contratos públicos (API, DB schema) y no se declaró el alcance → preguntar
+- Orden corta sin síntoma ("arreglá el login") → pedir repro/error concreto
 
-**Diferencia clave Capa 2 vs Capa 3:**
-- Capa 2 (claude-flow): paralelismo con coordinación desde el lead. Los agentes no se hablan entre sí.
-- Capa 3 (Agent Teams): los agentes se envían mensajes directamente vía mailbox. El lead no es intermediario.
+### 4. Recomendaciones proactivas (accionables, sin ampliar scope)
+Cuando detectes durante discovery:
+- Dependencias con CVE conocido → mencionar antes de cerrar
+- Stack obsoleto (Node <18, Python <3.10, React <18) → sugerir upgrade con costo estimado
+- Anti-patterns evidentes (secrets hardcoded, rutas sin auth) → reportar aunque no sea scope
 
-**Si hay duda entre Capa 1 y 2:** preferir Capa 1 si es 1 dominio. Si son 2+ dominios → Capa 2. Si los agentes necesitan debatir/coordinarse entre sí → Capa 3.
+Reportar ≠ ejecutar. No ampliar scope sin permiso explícito.
 
-**Agent Teams — configuración:**
-- Ya habilitado en `settings.json` (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"`)
-- Requiere Claude Code ≥ v2.1.32 (actual: 2.1.101 ✓)
-- Hooks disponibles: `TeammateIdle`, `TaskCreated`, `TaskCompleted`
-- Limitación conocida: sin session resumption con in-process teammates
-- Tamaño óptimo: 3-5 teammates, 5-6 tasks por teammate
-
-**HELIX-LANG — mensajes inter-agente (Capa 2 y 3) — OBLIGATORIO:**
-- **Usar siempre** para status updates, handoffs y bloqueos entre agentes. No para comunicación con el usuario.
-- Al iniciar swarm (≥2 agentes): `S:v=$(bash ~/.claude/helpers/helix-lang-state.sh vocab "A:{...}" "D:{...}")`
-- Mensajes: `FROM->TO verb:object.domain | D:{AGENT:STATE} @temporal`
-- Estado compartido: `S:hash` — 2 tokens en lugar de reenviar contexto completo (~97% ahorro)
-- Skill completa: `~/.claude/skills/helix-lang/SKILL.md`
-
-**HELIX-DISTILL — slices por agente — OBLIGATORIO al usar Agent tool:**
-- Antes de invocar un agente especializado, verificar si existe `~/.claude/skills/_distilled/<subagent_type>.md`
-- Si existe → incluir su contenido en el campo `prompt` del Agent tool (reemplaza instrucciones manuales redundantes)
-- Si no existe → continuar normalmente
-- Slices disponibles: architect-reviewer, backend-architect, code-reviewer, data-analyst, database-architect, devops-engineer, error-detective, frontend-developer, monitoring-specialist, python-pro, security-auditor, sql-pro, test-engineer, typescript-pro, ui-designer
-- Ejemplo: `Read ~/.claude/skills/_distilled/python-pro.md` → pegar contenido en el prompt del agente
+### 5. Regla dura
+Si ≥2 de las condiciones anteriores aplican y no se preguntaron → fallo de protocolo. Registrar con:
+`bash ~/.claude/evolve.sh learn "operatividad" "<qué se omitió>" "discovery-miss"`
 
 ---
 
-### Routing check — OBLIGATORIO antes de invocar cualquier agente
+## 🤖 ORQUESTACIÓN (solo `helix_control_total`)
 
-Antes de elegir un agente, identificar el dominio de la tarea y verificar en la tabla:
+Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir, ejecutar, reportar.
 
-| Dominio | Keywords de la tarea | Agente correcto | ❌ NO usar |
-|---|---|---|---|
-| **frontend** | componente, UI, React, página, CSS, Tailwind, formulario | `frontend-developer` | — |
-| **backend** | endpoint, API, FastAPI, servicio, ruta, handler | `backend-architect` → `python-pro` | `frontend-developer` |
-| **database** | schema, migración, modelo, tabla, índice, query lenta | `database-architect` → `sql-pro` | `python-pro` |
-| **devops** | Docker, deploy, CI/CD, infra, contenedor, Nginx, pipeline | `devops-engineer` | `frontend-developer` |
-| **testing** | test, cobertura, pytest, jest, e2e, unitario | `test-engineer` | `frontend-developer`, `python-pro` |
-| **architecture** | diseño, estructura, capas, dependencias, SOLID, decisión técnica | `architect-reviewer` | `frontend-developer` |
-| **security** | auth, JWT, permisos, RBAC, vulnerabilidad, endpoint nuevo | `security-auditor` + `api-security-audit` | — |
-| **analysis** | métricas, reporte, datos, tendencias, KPI, dashboard de datos | `data-analyst` | `frontend-developer` |
-| **bug** | error, excepción, falla, crash, traceback, no funciona | `error-detective` SIEMPRE PRIMERO | cualquier otro |
-| **review** | revisar, calidad, pre-cierre, checklist | `code-reviewer` | — |
-
-**Regla de verificación (3 segundos antes de invocar):**
-1. ¿El dominio es frontend/UI? → `frontend-developer`. Si no → NO usar `frontend-developer`.
-2. ¿El dominio está en la tabla? → usar el agente mapeado.
-3. ¿Es un bug? → `error-detective` antes que cualquier otro.
-
----
-
-### Catálogo de agentes por dominio (Capa 1)
-
-| Dominio | Agente(s) |
+| Señal | Capa |
 |---|---|
-| Nueva feature / endpoint FastAPI | `backend-architect` planifica → `python-pro` implementa |
-| Nuevo componente React/TS | `frontend-developer` + `typescript-pro` |
-| Nueva página con UI compleja | `ui-ux-designer` define flujo → `ui-designer` produce visual → `frontend-developer` implementa |
-| Dirección estética / sistema visual | `ui-designer` (estilos, animaciones, tokens) |
-| Flujos UX / arquitectura de información | `ui-ux-designer` (workflow, decisiones de diseño) |
-| Cambio en modelos o schema DB | `database-architect` revisa → `postgresql-dba` optimiza |
-| Query SQL compleja | `sql-pro` |
-| Bug o error inesperado | `error-detective` primero, siempre |
-| Antes de declarar tarea completa | `code-reviewer` obligatorio |
-| Endpoint nuevo o cambio auth | `security-auditor` + `api-security-audit` |
-| Decisión de arquitectura | `architect-reviewer` |
-| Docker / infra / deploy | `devops-engineer` + `deployment-engineer` |
-| Tests / cobertura | `test-engineer` diseña → `test-automator` automatiza |
-| Monitoreo / logs / alertas | `monitoring-specialist` |
-| Análisis de datos / reportes | `data-analyst` |
-| Nombre de marca / identidad visual / tagline | `brand-identity-expert` |
-| Estrategia de marketing / Google Ads / Meta Ads | `brand-identity-expert` |
-| Ideas de producto / nuevas features / diferenciación / modelo de negocio | `app-creative-genius` |
+| Log / texto largo / salida Docker | **Capa 0** — Ollama (`capa0.sh logs\|code\|transform`). Si responde "no sé" → escalar |
+| 1 dominio (un endpoint, componente, bug, query) | **Capa 1** — `Agent tool` con agente del catálogo |
+| 2+ dominios en paralelo (sin diálogo entre agentes) | **Capa 2** — `mcp__claude-flow__swarm_init` + `agent_spawn`. Visible en ruflow |
+| Agentes que necesitan hablarse peer-to-peer | **Capa 3** — Agent Teams nativo (mailbox). Ya habilitado en `settings.json` |
+
+**Reglas duras:**
+- NUNCA múltiples `Agent tool` en paralelo para 2+ dominios — son invisibles en ruflow. Usar Capa 2.
+- Bug o error inesperado → `error-detective` PRIMERO, siempre.
+- Antes de declarar tarea completa → `code-reviewer`.
+- Endpoint nuevo / cambio de auth → `security-auditor` + `api-security-audit`.
+- Catálogo completo de agentes: `~/.claude/memory/agents-index.md` (1 dominio → 1 agente).
+
+**HELIX-DISTILL (opcional):** solo en swarms Capa 2 con ≥8 agentes. `~/.claude/helpers/helix-distill.sh run`. Para sesiones normales, Opus 4.7 maneja contexto largo nativamente.
+
+> HELIX-LANG decomisionado 2026-04-18 (uso real nulo desde benchmarks). Archivado en `~/.claude/memory/topics/deprecated/helix-lang/`.
 
 ---
 
-### claude-flow — herramientas de orquestación (Capa 2)
+## 🗂️ TEAM DISPATCH
 
-```
-mcp__claude-flow__swarm_init        → iniciar swarm con topología y objetivo
-mcp__claude-flow__task_orchestrate  → coordinar agentes (el swarm decide quién hace qué)
-mcp__claude-flow__agent_spawn       → lanzar agente específico dentro del swarm
-mcp__claude-flow__memory_store      → persistir conocimiento con vector embedding
-mcp__claude-flow__memory_search     → recuperar por similitud semántica
-```
+Si existe `{PROJECT_ROOT}/.claude/memory/helix-team.md` → seguir protocolo en `~/.claude/memory/topics/team-dispatch.md`.
+Si no existe → routing normal por `agents-index.md`.
 
-Topología activa: `hierarchical-mesh`, máx 15 agentes. agentic-flow (AttentionCoordinator + ReasoningBank) ya está embebido como base.
+Backlog (`helix-backlog.md`) se actualiza en silencio: en progreso → completado → bloqueado. No pedir permiso.
 
 ---
 
-**Principio absoluto:** Máximo paralelismo. El usuario solo ve el resultado. Si un agente falla → Helix corrige y registra. Si el routing de claude-flow es incorrecto → ignorarlo, usar juicio propio.
+## 🔒 PRIVACIDAD
 
----
-
-## 🗂️ TEAM DISPATCH & REQUIREMENT INTAKE
-
-> Aplica cuando el proyecto tiene `helix-team.md` (generado por /helix-analiza).
-> Si no existe → routing normal según catálogo de agentes.
-
-### Al recibir un requerimiento
-
-1. **Leer** `{PROJECT_ROOT}/.claude/memory/helix-team.md` si existe
-2. **Buscar plan reutilizable** (si Qdrant disponible):
-   - `mcp__claude-flow__memory_search` con el texto del req en namespace `helix/{project}/plans/`
-   - Si score > 0.82 → mostrar plan anterior y preguntar "¿aplica este plan?" → adaptar si sí
-   - Si score ≤ 0.82 → generar plan nuevo
-3. **Descomponer** en tasks: ¿qué dominios toca? (backend, frontend, DB, tests, infra…)
-4. **Preguntar** máx 2 dudas agrupadas si hay ambigüedad real — si está claro, proceder directo
-5. **Si toca ≥3 dominios o tiene dependencias no obvias** → generar `helix-plan-{REQ-NNN}.md` y mostrarlo:
-
-```markdown
-# Helix Plan — {nombre corto del req}
-> Generado: {fecha} | Req: {REQ-NNN} — {resumen 1 línea}
-
-## Tasks
-| # | Task | Dominio | Agente | Input esperado | Output contract | Depende de |
-|---|------|---------|--------|----------------|-----------------|------------|
-| 1 | {descripción} | {dominio} | {agente} | {qué recibe} | {qué produce} | — |
-| 2 | {descripción} | {dominio} | {agente} | output task 1 | {qué produce} | task 1 |
-
-## Orden de ejecución
-{paralelo si no hay dependencias, secuencial si las hay}
-```
-
-> Naming obligatorio: `helix-plan-REQ-NNN.md` — nunca solo `helix-plan.md`. Cada req tiene su plan único. self-check.sh los limpia cuando el req pasa a Completado en el backlog.
-
-6. **Despachar** según output contracts de helix-team.md:
-   - 1 dominio → Capa 1 directo
-   - 2+ dominios sin dependencias de contrato → Capa 2 paralelo (swarm_init + agent_spawn)
-   - 2+ dominios con dependencias de contrato → Capa 1 secuencial (output A → input B)
-7. **Almacenar plan completado** en Qdrant: `helix/{project}/plans/{req_id}` para reuso futuro
-8. **Registrar calidad** (silencioso, tras completar el req):
-   - Por cada agente principal usado → `bash ~/.claude/helpers/skill-tracker.sh quality <agente> <score>`
-   - Score: `3` = correcto al primer intento · `2` = requirió corrección · `1` = falló/enfoque incorrecto
-   - Criterio: si el agente produjo exactamente el output contract esperado sin iteración → 3
-
-### Backlog — actualización automática
-
-Cuando existe `{PROJECT_ROOT}/.claude/memory/helix-backlog.md`:
-- Al iniciar un req → agregar fila en "🔵 En Progreso" con ID REQ-NNN
-- Al completarlo → mover a "🟢 Completado" con fecha y resultado
-- Si hay bloqueador → mover a "🔴 Bloqueado" con razón
-No pedir permiso para actualizar el backlog — es mantenimiento silencioso.
-
----
-
-## 🔒 PRIVACIDAD DEL REPO GLOBAL (helix_asisten)
-
-> Aplica cada vez que se sincroniza `~/.claude/` con `~/helix_asisten/`.
-
-**Regla principal:** `memory/agents/*.md` puede tener contexto de proyecto en local (`~/.claude/`) pero **nunca** debe llegar al repo público.
-
-**Convención de markers** — para contexto que convive con la versión local:
-```
-<!-- PROJECT-CONTEXT:START -->
-## Contexto del proyecto actual
-...datos específicos del proyecto...
-<!-- PROJECT-CONTEXT:END -->
-```
-`update.sh` strip estos bloques automáticamente al sincronizar. Sin markers, `## Contexto del proyecto` se elimina por fallback.
-
-**Patrones prohibidos en el repo** (pre-commit hook los bloquea):
-- `## Contexto del proyecto actual` sin markers
-- Nombres de proyectos o clientes privados
-- Rutas absolutas a proyectos (`/home/user/proyectos/...`)
-
-**Flujo correcto:**
-```
-~/.claude/memory/agents/agente.md     ← tiene contexto de proyecto (con markers)
-       ↓ update.sh sanitize
-helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
-```
+Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público `helix_asisten`. Usar markers `<!-- PROJECT-CONTEXT:START -->...<!-- PROJECT-CONTEXT:END -->`. Detalles: `~/.claude/memory/topics/privacy.md`.
 
 ---
 
@@ -245,167 +123,117 @@ helix_asisten/claude/memory/agents/   ← versión limpia, sin contexto
 
 ---
 
-## 📝 COMMITS (Universal)
+## 📝 COMMITS
 
 - **NO incluir** `Co-Authored-By` en ningún commit. Omitir siempre esa línea del mensaje.
 
 ---
 
 <!-- OPERABILITY_START -->
-## 🔧 BASH GOTCHAS (Universal)
+## 🔧 OPERABILIDAD
 
-- `VAR=$((VAR + 1))` — nunca `((VAR++))` con `set -euo pipefail` cuando VAR puede ser 0.
-- `wc -l` devuelve espacios — limpiar con `tr -d '[:space:]'` antes de comparar numéricamente.
-- `git diff HEAD -- '*.ts' '*.tsx'` para checks de frontend — sin filtro captura CLAUDE.md y genera falsos positivos.
-- Para pasar strings con caracteres especiales a Python desde bash: usar variables de entorno (`PYVAR=valor python3 -`), evita todo problema de escaping.
-- [2026-04-11] HELIX-COMPRESS v2 — helix-distill.sh pulido y testeado. Tres comandos: (1) run: slices CLAUDE.md por agente — 78-96% ahorro por agente, 93% en sesión 15 agentes. (2) compress-project [DIR]: comprime helix-*.md del proyecto con backup. (3) compress-file FILE [task]: extrae bloques relevantes de código (.py/.ts/.js por función, .md por sección, otros por keywords ±10 líneas). Fixes: HTML comment stripping, doble-run Python eliminado, --keep arg parsing, pipe-vs-heredoc stdin bug.
+Bash gotchas y patrones de scripts → `~/.claude/memory/topics/bash-gotchas.md`.
+- [2026-04-18] DISCOVERY-FIRST agregado como pre-flight obligatorio (stack detect, conflict check, context request).
+- [2026-04-18] CLAUDE.md podado 482→305 líneas; detalles movibles en `memory/topics/`.
+- [2026-04-18] HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración
 <!-- OPERABILITY_END -->
 
 ---
 
-## 🎨 DISEÑO UI (Universal)
+## 🎨 DISEÑO UI
 
-> Sistema de diseño completo en `~/.claude/memory/design-system.md`
-> Cargar cuando se trabaje en componentes frontend o páginas.
+Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar en frontend.
 
 **Reglas mínimas siempre activas:**
-- Mobile-first siempre — nunca diseñar solo para desktop y adaptar después.
-- Touch targets mínimo 44×44px. Inputs font-size ≥ 16px en móvil (evita zoom iOS).
-- Nunca información accesible solo por hover — en móvil no existe.
-- Usar Puppeteer MCP para verificar visualmente antes de entregar cualquier UI.
+- Mobile-first. Nunca diseñar solo para desktop y adaptar.
+- Touch targets ≥ 44×44px. Inputs font-size ≥ 16px en móvil (evita zoom iOS).
+- Nunca información accesible solo por hover.
+- Verificar visualmente con Puppeteer MCP antes de entregar UI.
 
 ---
 
-## 🧪 TESTING (Universal)
+## 🧪 TESTING
 
 - Todo bug corregido debe tener un test que lo reproduzca antes del fix.
 - Testear siempre: happy path + edge cases + estado vacío.
 
 ---
 
-## 🗣️ PROTOCOLO DE DIÁLOGO (Universal)
+## 🗣️ PROTOCOLO DE DIÁLOGO
 
-> Reglas de comunicación activas en toda solicitud, antes y durante la ejecución.
+**1. Preguntas ante ambigüedad real.** Si la solicitud es ambigua en alcance, archivo o comportamiento → máx 2-4 preguntas agrupadas en UN mensaje antes de tocar código. Si es clara → proceder directo.
 
-**0. HELIX-SPEAK — compresión de output (siempre activo)**
-Aplicar automáticamente según tipo de contenido (`~/.claude/skills/helix-speak/SKILL.md`):
-- Coordinación inter-agente → `ultra` (+ HELIX-LANG si hay swarm)
-- Reporte de estado al usuario → `brief` (bullets, sin prosa)
-- Explicación técnica → `brief` (sustancia completa, sin relleno)
-- Código / comandos / advertencias de seguridad → `off` (nunca comprimir)
-- Siempre eliminar: artículos, relleno (`basically`, `just`, `actually`), cortesías (`sure`, `happy to`), confirmaciones redundantes (`As I mentioned`)
+**2. Plan visible antes de ejecutar.** Si la tarea toca ≥2 archivos o tiene pasos no triviales → mostrar plan (A→B→C) y esperar OK.
 
-**1. Preguntas antes de actuar**
-Si la solicitud es ambigua en alcance, archivo o comportamiento esperado → hacer máx. 2-4 preguntas agrupadas en un solo mensaje antes de tocar código. Si es clara y concreta → proceder directo sin preguntar.
+**3. Alerta antes de tocar zona 🔴.** Antes de modificar archivos marcados 🔴 en el risk-map → declarar línea/función exacta y por qué. Esperar OK.
 
-**2. Plan visible antes de ejecutar**
-Cuando la tarea toca ≥2 archivos o tiene pasos no triviales → mostrar el plan (A → B → C) y esperar confirmación antes de empezar.
+**4. Registro proactivo de decisiones.** Decisión de diseño no trivial → agregarla a `## 🧠 DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
 
-**3. Umbral de confianza**
-El usuario puede declarar al inicio: `autonomía alta` (ejecutar sin preguntar) o `autonomía baja` (confirmar cada paso). Default: preguntar solo ante ambigüedad real.
+**5. Análisis inicial de proyecto.** Si session-start incluye `[HELIX-SUGGEST-ANALYSIS]` → al final del primer mensaje sugerir `/helix-analiza`. Si "no" → `touch {PROJECT_ROOT}/.claude/memory/.analysis-declined`. Si ya existe → cargar en silencio.
 
-**4. Alerta antes de tocar zona 🔴**
-Antes de modificar archivos marcados 🔴 en el mapa de riesgo del proyecto → declarar exactamente qué línea/función se va a cambiar y por qué. Esperar OK.
+**6. Bitácora continua.** Si `.claude/memory/helix-bitacora.md` existe → actualizar tras cambios significativos, recomendaciones no triviales y errores cometidos. Sin pedir permiso.
 
-**5. Exploración antes de implementación**
-Para features nuevas → proponer opciones (máx 3 alternativas breves) y esperar elección antes de implementar. Para bugs y tareas concretas → implementar directo.
+**7. "Tenemos que hablar".** Si session-start incluye `[HELIX-NECESITAMOS-HABLAR]` → leer `helix-alerta.md` y reportar antes de responder. Si usuario dice "no" → `rm helix-alerta.md`.
 
-**6. Registro proactivo de decisiones**
-Cuando se toma una decisión de diseño no trivial → agregarla a `## 🧠 DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
+**8. Requirement Intake con plan visible.** ≥3 dominios o dependencias no triviales → generar `helix-plan-REQ-NNN.md`. 1-2 dominios → ejecutar directo.
 
-**7. Análisis inicial de proyecto**
-Si session-start incluye `[HELIX-SUGGEST-ANALYSIS]`:
-- Responder primero la tarea del usuario si la hay.
-- Al FINAL del primer mensaje agregar una nota breve:
-  > "💡 Noto que este proyecto no tiene análisis guardado. ¿Querés que haga un diagnóstico inicial? (`/helix-analiza`). Solo se hace una vez."
-- Si "sí" → ejecutar `/helix-analiza`.
-- Si "no" → `mkdir -p {PROJECT_ROOT}/.claude/memory && touch {PROJECT_ROOT}/.claude/memory/.analysis-declined`. Mencionar que puede usarlo con `/helix-analiza`. No volver a preguntar.
-- Si `helix-analysis.md` ya existe → no preguntar, cargarlo en silencio.
-- Detección de modo (vector/file): automática — intentar MCP primero, fallback a archivo.
+**9. Auto-economía por señal.** Si la primera petición del usuario es ≤15 palabras, verbo imperativo, sin rutas de archivo ni stack trace → autoaplicar `modo economía` silenciosamente (sin subagentes, sin swarm, respuestas en bullets). Si la tarea escala después → desactivar sin avisar. Es un heurístico, no una barrera: ante duda real, usar juicio.
 
-**8. Actualización continua de bitácora**
-Si `.claude/memory/helix-bitacora.md` existe en el proyecto:
-- Después de cada cambio significativo (≥1 archivo modificado) → agregar fila en `📝 Cambios Realizados`.
-- Después de dar una recomendación no trivial → agregar fila en `💡 Recomendaciones`.
-- Después de cometer un error (bug introducido, enfoque incorrecto) → agregar fila en `🐛 Errores Cometidos`.
-No pedir permiso para actualizar la bitácora — es mantenimiento silencioso.
+**10. Paralelismo obligatorio.** Reads/Greps/Bash independientes entre sí → SIEMPRE en un solo mensaje con múltiples tool calls. Serializar sin dependencia real es un antipattern medible — audita el self-check.
 
-**9. "Tenemos que hablar" — alerta de salud**
-Si session-start incluye `[HELIX-NECESITAMOS-HABLAR]`:
-- ANTES de responder cualquier tarea → leer `helix-alerta.md` y reportar los problemas al usuario.
-- Formato: "Helix necesita hablar — detecté estos problemas al cerrar la sesión anterior: [lista]. ¿Resolvemos esto primero? (`/helix-actualiza` resuelve la mayoría)"
-- Si el usuario dice "sí" → ejecutar `/helix-actualiza`.
-- Si el usuario dice "no" o quiere continuar → respetar y borrar el archivo: `rm helix-alerta.md`.
-
-**10. Requirement Intake con plan visible**
-Cuando el req toca ≥3 dominios o tiene dependencias no triviales → generar `helix-plan.md` y mostrar el plan antes de ejecutar. Para 1-2 dominios sin dependencias → ejecutar directo (mostrar el plan sería overhead innecesario).
+**HELIX-SPEAK:** compresión de output según tipo. Coordinación inter-agente → `ultra`. Reporte al usuario → `brief`. Código/comandos/seguridad → `off`. Skill: `~/.claude/skills/helix-speak/SKILL.md`.
 
 ---
 
-## 💰 CONTROL DE COSTOS (Universal)
+## 💰 CONTROL DE COSTOS
 
-**Modo economía** — activar con `modo economía` al inicio de la tarea:
-- Sin subagentes salvo ≥3 dominios simultáneos con coordinación activa
+**Modo economía** — activar con `modo economía`:
+- Sin subagentes salvo ≥3 dominios con coordinación activa
 - Sin Capa 2 (swarm deshabilitado)
-- Respuestas ultra-concisas: solo bullets, sin prosa explicativa
-- Grep antes que Read — Read solo con `limit`/`offset` cuando sea necesario
-- Sin sugerencias proactivas fuera del scope exacto de la tarea
+- Respuestas en bullets, sin prosa
+- Grep antes que Read. Read solo con `limit`/`offset` cuando sea imprescindible
 
-**Checklist pre-Read (siempre activo, incluso fuera de modo economía):**
+**Checklist pre-Read (siempre activo):**
 1. ¿Ya tengo el contenido en contexto? → omitir Read
-2. ¿Grep encuentra lo que necesito? → usar Grep, no Read
-3. ¿Necesito todo el archivo? → usar `limit` y `offset` en Read
+2. ¿Grep resuelve? → usar Grep
+3. ¿Necesito todo el archivo? → usar `limit`/`offset`
 
-**Umbral para subagentes:**
-Un archivo / un dominio → yo solo (sin subagentes). Dos o más dominios en paralelo → **Capa 2: swarm_init + agent_spawn** (visible en ruflow). NUNCA múltiples Agent tool en paralelo para 2+ dominios — son invisibles en ruflow y no aportan coordinación.
-
-**Capa 0 agresiva — OBLIGATORIO antes de procesar con Claude:**
-
-| Trigger | Comando |
-|---|---|
-| Archivo o contenido > 200 líneas | `bash ~/helix_asisten/scripts/capa0.sh logs "$CONTENIDO"` |
-| `docker compose logs` o salida de contenedor | `bash ~/helix_asisten/scripts/capa0.sh logs "$(docker compose logs --tail=100)"` |
-| Stacktrace / traceback / error largo | `bash ~/helix_asisten/scripts/capa0.sh logs "$ERROR"` |
-| Refactor o explicación de bloque de código | `bash ~/helix_asisten/scripts/capa0.sh code "$CODIGO"` |
-| Transformación de datos o formato | `bash ~/helix_asisten/scripts/capa0.sh transform "$DATA"` |
-
-**Regla de escalado:** Si capa0 responde con "no sé" o la respuesta es insuficiente → escalar a Capa 1. Si capa0 resuelve → fin, no escalar.
-**Modelos disponibles:** `helix-scout` (logs/errores) · `helix-coder` (código/transformaciones)
+**Capa 0 — escalado silencioso:**
+- Contenido > 200 líneas, logs Docker, stacktraces, refactors de bloques grandes, transformaciones de datos → `bash ~/helix_asisten/scripts/capa0.sh logs|code|transform "$DATA"`
+- Si capa0 responde "no sé" → escalar a Capa 1. Si resuelve → fin.
+- Modelos: `helix-scout` (logs/errores), `helix-coder` (código).
 
 ---
 
-## ✅ CHECKLIST PRE-CIERRE (Universal)
+## ✅ CHECKLIST PRE-CIERRE
 
 ```
 □ ¿Ejecuté bash ~/.claude/self-check.sh?
 □ ¿Si es UI → verifiqué con Puppeteer MCP en 375px, 768px, 1280px?
 □ ¿Si modifiqué modelo DB → actualicé schema → actualicé types frontend?
-□ ¿Si agregué endpoint → lo registré en el router principal → en api/index.ts?
+□ ¿Si agregué endpoint → lo registré en router principal → en api/index.ts?
 □ ¿Si es acción mutante → escribí AuditLog?
-□ ¿Si hay nuevas variables de entorno → las agregué a .env.example?
+□ ¿Si hay nuevas env vars → las agregué a .env.example?
 □ ¿Si el patrón apareció 2+ veces → creé o actualicé una skill?
 □ ¿Si encontré un bug → lo registré en el risk-map del proyecto?
+□ ¿Reads/Greps independientes se ejecutaron en paralelo (no serializados)?
 ```
 
 ---
 
 ## 🤖 AGENTES
 
-Índice liviano en `~/.claude/memory/agents-index.md` — solo este se carga al inicio.
-Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` — cargar solo cuando el agente sea invocado o haya duda de cuándo usarlo.
+Índice liviano: `~/.claude/memory/agents-index.md` (cargado al inicio).
+Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 
-**Reglas de creación de agentes:**
-- Descripción máximo 3 líneas: qué hace, cuándo, límite
-- NUNCA código de ejemplo en el system prompt del agente
-- Los ejemplos y patrones van en `~/.claude/skills/`
-- Descripción completa (con contexto del proyecto) en `~/.claude/memory/agents/<nombre>.md`
+**Reglas al crear agentes:**
+- Descripción máx 3 líneas: qué hace, cuándo, límite.
+- NUNCA código de ejemplo en el system prompt. Los ejemplos van a `~/.claude/skills/`.
 
 ---
 
 <!-- SKILLS_INDEX_START -->
 ## 📚 SKILLS GLOBALES
-
-> Skills reutilizables entre proyectos. Ver detalles en `~/.claude/skills/`
 
 | Skill | Descripción |
 |---|---|
@@ -417,9 +245,9 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 25,
-  "ultima_actualizacion": "2026-04-01",
-  "total_aprendizajes": 8
+  "total_sesiones": 31,
+  "ultima_actualizacion": "2026-04-18",
+  "total_aprendizajes": 13
 }
 ```
 <!-- METRICS_END -->
@@ -427,8 +255,8 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 <!-- SESSIONS_START -->
 ## 📋 SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
-0 |
-| #10 | 2026-04-12 | Sesión cerrada | 2 | 0
+| #12 | 2026-04-15 | fix(install): check-prereqs.sh, pip PEP 668, WSL node detection, auto-MCPs | 0 | 0 |
+| #14 | 2026-04-18 | Evolución Opus 4.7: CLAUDE.md 482→307 líneas, DISCOVERY-FIRST pre-flight, 7 evolutions perf/cost, HELIX-LANG deprecado, audit hooks/decay OK | 5 | 0
 0 |
 <!-- SESSIONS_END -->
 
@@ -441,22 +269,22 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 
 ---
 
-## 📈 EVOLUCIONES CROSS-PROYECTO
+## 📈 EVOLUCIONES RECIENTES
 
 <!-- EVOLUTION_LOG_START -->
-> Historial pre-v3.11 archivado en `~/.claude/memory/topics/evolution-history.md`
+> Historial archivado en `~/.claude/memory/topics/evolution-history.md`. Solo últimas 2 semanas aquí.
 | # | Fecha | Categoría | Aprendizaje |
-| 28 | 2026-04-05 | arquitectura | Project Team Protocol v3.11: helix-analiza genera helix-team.md (roster+output contracts+DoD+dispatch), helix-backlog.md y helix-roadmap.md. Team Dispatch descompone reqs por dominio y despacha en paralelo. | usuario-solicitud-evolucion |
-| 29 | 2026-04-05 | arquitectura | helix-roadmap.md: documento persistente del equipo técnico — milestones de 1-4 semanas, arquitectura de alto nivel, decisiones arquitectónicas acumulativas. NUNCA se borra automáticamente (ni self-check ni scripts). | usuario-solicitud-evolucion |
-| 30 | 2026-04-05 | operatividad | skill-tracker.sh: quality/quality-report — scores 1-3 por skill/agente → skill-quality.jsonl. report integrado con uso (30d/7d). prune --execute archiva con confirmación interactiva. | auto-evolución |
-| 31 | 2026-04-05 | operatividad | mcp-tracker-hook.sh: PostToolUse(mcp__.*) extrae servicio de tool_name y registra tipo=mcp en skill-usage.jsonl. Tracking real de MCPs sin intervención manual. | auto-evolución |
-| 32 | 2026-04-05 | operatividad | self-check.sh stack-aware: HAS_DOCKER/FASTAPI/CELERY/FRONTEND/TS/PYTHON detectados desde pyproject.toml, package.json, etc. Checks solo activos cuando el stack los requiere. PLANES COMPLETADOS solo elimina helix-plan-REQ-*.md. | auto-evolución |
-| 7 | 2026-04-11 | arquitectura | Agent Teams nativo (Claude Code ≥v2.1.32): Capa 3 real. Peer-to-peer mailbox entre agentes. Diferencia clave vs Capa 2 (claude-flow): en Capa 2 los agentes no se hablan entre sí — solo reportan al lead. En Capa 3 los agentes se envían mensajes directamente. Usar Capa 3 cuando agentes necesiten debatir/coordinar entre sí (ej: frontend avisa a backend sobre cambio de contrato, investigadores se desafían hipótesis). Hooks nativos: TeammateIdle, TaskCreated, TaskCompleted. Limitación: sin session resumption. Ya habilitado en settings.json. | investigacion-tecnologias-2026 |
-| 8 | 2026-04-11 | arquitectura | SuperLocalMemory V3.3: sistema de memoria local-first con MCP, sin cloud. Olvido adaptativo basado en curvas Ebbinghaus (memorias poco accedidas se degradan gradualmente, no se borran). 6 canales de retrieval. AGPL v3. npm install superlocalmemory. Alternativa/complemento a Qdrant. Pendiente de evaluar: instalar MCP server y comparar retrieval vs Qdrant para memoria de Helix. | investigacion-tecnologias-2026 |
-| 9 | 2026-04-11 | performance | HELIX-LANG v1.1: benchmark real muestra ~57% compresión de tokens en mensajes individuales (no 75%). El gap existe porque operadores ASCII (:, ., ->, |) son cada uno 1 token BPE, igual que una palabra NL corta. La compresión de chars es ~62%. El 75%+ real vendrá del mecanismo S:hash (estado compartido por ID, reemplaza cientos de tokens de historial por 2 tokens). Skill instalada en ~/.claude/skills/helix-lang/. Benchmark en ~/.claude/helpers/helix-lang-bench.sh + data en ~/.claude/data/helix-lang.jsonl. | helix-lang-benchmark-v1 |
-| 10 | 2026-04-11 | performance | HELIX-LANG v1.1 benchmark final: mensajes individuales 58.7% compresión de tokens (64% chars). S:hash 96.7% de ahorro en contexto compartido. Combinado: 64.8% ahorro total (objetivo 75%). Gap restante: ~10%. Causa: contratos de API detallados comprimen poco (46%) — son los peores casos. Mejor caso con S:hash integrado: 80%. Próximo ajuste: vocabulario de contratos más compacto para endpoints. Artefactos: ~/.claude/skills/helix-lang/SKILL.md + ~/.claude/helpers/helix-lang-bench.sh + ~/.claude/helpers/helix-lang-state.sh + ~/.claude/data/helix-lang.jsonl | helix-lang-test-final |
-| 11 | 2026-04-11 | performance | HELIX-DISTILL v1.0: sistema de compresión de contexto adaptativa por agente. Genera slices de CLAUDE.md específicos por tipo de agente. Ahorro medido: 63-93% por agente vs CLAUDE.md completo (6,047 tok). Proyección sesión Capa 2 (13 agentes): 83% menos tokens de inicialización (78,611→12,977 tok). Tres capas del sistema completo — DISTILL (input, 83%), S:hash (estado, 97%), HELIX-SPEAK (output, TBD). Script: ~/.claude/helpers/helix-distill.sh. Slices: ~/.claude/skills/_distilled/. Nombre del sistema: HELIX-COMPRESS. | helix-distill-benchmark |
-| 12 | 2026-04-11 | operatividad | HELIX-COMPRESS v2 — helix-distill.sh pulido y testeado. Tres comandos: (1) run: slices CLAUDE.md por agente — 78-96% ahorro por agente, 93% en sesión 15 agentes. (2) compress-project [DIR]: comprime helix-*.md del proyecto con backup. (3) compress-file FILE [task]: extrae bloques relevantes de código (.py/.ts/.js por función, .md por sección, otros por keywords ±10 líneas). Fixes: HTML comment stripping, doble-run Python eliminado, --keep arg parsing, pipe-vs-heredoc stdin bug. | helix-compress-test |
+| 7 | 2026-04-11 | arquitectura | Agent Teams nativo (Claude Code ≥v2.1.32): Capa 3 real. Peer-to-peer mailbox. En Capa 2 los agentes no se hablan entre sí — solo reportan al lead. Usar Capa 3 cuando agentes necesiten debatir/coordinar. Hooks: TeammateIdle, TaskCreated, TaskCompleted. |
+| 8 | 2026-04-11 | arquitectura | SuperLocalMemory V3.3: memoria local-first con MCP, sin cloud. Olvido adaptativo Ebbinghaus. AGPL v3. Pendiente evaluar vs Qdrant. |
+| 9 | 2026-04-11 | performance | HELIX-LANG v1.1: 58.7% compresión tokens en mensajes individuales (no 75%). Operadores ASCII pesan 1 token BPE cada uno. El 75%+ viene de S:hash (contexto compartido por ID). |
+| 10 | 2026-04-11 | performance | HELIX-LANG benchmark final: 64.8% ahorro combinado. Gap: contratos API comprimen poco (46%). Mejor caso con S:hash integrado: 80%. |
+| 11 | 2026-04-11 | performance | HELIX-DISTILL v1.0: slices CLAUDE.md por agente. 63-93% ahorro. Proyección Capa 2 (13 agentes): 83% menos tokens de init. |
+| 12 | 2026-04-11 | operatividad | HELIX-COMPRESS v2: helix-distill.sh con run/compress-project/compress-file. 78-96% ahorro por agente, 93% en sesión 15 agentes. |
+| 8 | 2026-04-18 | operatividad | CLAUDE.md podado 482→305 líneas; DISCOVERY-FIRST como pre-flight obligatorio en 3 modos; detalles a `topics/`. |
+| 9 | 2026-04-18 | performance | Batch Opus 4.7: agents-index slim, auto-economy regla #9, HELIX-LANG decomisionado, paralelismo regla #10, hooks <40ms verificados, decay saludable. |
+| 10 | 2026-04-18 | arquitectura | DISCOVERY-FIRST pre-flight obligatorio en helix_control_total: detectar stack, checar conflictos, pedir contexto antes de actuar | gap-helix-control-total |
+| 11 | 2026-04-18 | performance | HELIX-COMPRESS pipeline verificado: DISTILL 83% + S:hash 97% + SPEAK aplicable. Prompt caching (Opus 4.7) reduce coste de repetición en 90% | self-eval-performance |
+| 12 | 2026-04-18 | operatividad | HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración | deprecation-helix-lang |
 <!-- EVOLUTION_LOG_END -->
 
 ---
@@ -466,17 +294,18 @@ Descripción completa de cada agente en `~/.claude/memory/agents/<nombre>.md` �
 | Recurso | Ubicación |
 |---|---|
 | Sistema de diseño UI | `~/.claude/memory/design-system.md` |
-| Índice de agentes (liviano) | `~/.claude/memory/agents-index.md` |
-| Descripciones completas de agentes | `~/.claude/memory/agents/` |
+| Índice de agentes | `~/.claude/memory/agents-index.md` |
+| Descripciones de agentes | `~/.claude/memory/agents/` |
+| Topics (privacidad, bash, dispatch, historia) | `~/.claude/memory/topics/` |
 | Scripts de evolución | `~/.claude/{evolve,session-start,session-end,self-check}.sh` |
 | Template nuevo proyecto | `~/.claude-template/` |
-| Perfil de usuario (local, nunca al repo) | `~/.claude/memory/user-profile.md` |
+| Perfil de usuario (local) | `~/.claude/memory/user-profile.md` |
 
-**MCPs disponibles — cuándo usar cada uno:**
-| MCP | Cuándo | Alternativa |
-|---|---|---|
-| `context7` | Docs de cualquier lib/framework | — siempre disponible |
-| `claude-flow` | 2+ dominios en paralelo (swarm) | Agent tool si 1 dominio |
-| `sequential-thinking` | Arquitectura compleja, decisiones con múltiples trade-offs | — |
-| `puppeteer` | Verificar UI renderizada antes de entregar | — |
-| `pageindex` | Skills >150 líneas, PDFs externos, docs masivos, helix-analysis-full >500 líneas | Qdrant para snippets cortos |
+**MCPs — cuándo usar:**
+| MCP | Cuándo |
+|---|---|
+| `context7` | Docs de cualquier lib/framework (siempre disponible) |
+| `claude-flow` | 2+ dominios en paralelo (swarm). Capa 1 si 1 dominio |
+| `sequential-thinking` | Arquitectura compleja con múltiples trade-offs |
+| `puppeteer` | Verificar UI renderizada antes de entregar |
+| `pageindex` | Skills >150 líneas, PDFs, docs masivos |

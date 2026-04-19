@@ -34,7 +34,7 @@ Preservar siempre:
 
 | Tipo de contenido | Modo aplicado |
 |---|---|
-| Coordinación inter-agente | `ultra` — usar HELIX-LANG si está disponible |
+| Coordinación inter-agente | `ultra` — bullets telegráficos, sin prosa |
 | Reporte de estado al usuario | `brief` — bullets, sin prosa |
 | Explicación técnica | `brief` — sustancia completa, sin relleno |
 | Código o comandos | `off` — nunca comprimir |

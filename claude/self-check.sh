@@ -282,6 +282,12 @@ else
 fi
 
 # ════════════════════════════════════════════════════════════
+section "PERFORMANCE (recordatorios)"
+# ════════════════════════════════════════════════════════════
+warn "¿Reads/Greps independientes se ejecutaron en paralelo? (manual)"
+warn "¿Tareas triviales autoaplicaron modo economía? (manual)"
+
+# ════════════════════════════════════════════════════════════
 # RESULTADO FINAL
 # ════════════════════════════════════════════════════════════
 echo ""
