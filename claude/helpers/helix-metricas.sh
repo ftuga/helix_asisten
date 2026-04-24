@@ -49,11 +49,11 @@ score_ctx = 100
 
 claude_md = global_dir / 'CLAUDE.md'
 lines = len(claude_md.read_text().splitlines()) if claude_md.exists() else 0
-if lines > 220:
-    prob_ctx.append(f"CLAUDE.md en {lines} líneas — CRÍTICO (límite: 180). Ejecutar /helix-actualiza.")
+if lines > 400:
+    prob_ctx.append(f"CLAUDE.md en {lines} líneas — CRÍTICO (límite: 350). Ejecutar /helix-actualiza.")
     score_ctx -= 40
-elif lines > 180:
-    prob_ctx.append(f"CLAUDE.md en {lines} líneas — elevado (límite: 180)")
+elif lines > 350:
+    prob_ctx.append(f"CLAUDE.md en {lines} líneas — elevado (límite: 350)")
     score_ctx -= 20
 
 if project:

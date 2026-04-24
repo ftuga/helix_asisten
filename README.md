@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.11.0** — [Changelog](#changelog)
+> **Current version: v3.12.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -534,6 +534,37 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.12.0 — 2026-04-23 · Research-first agent creation + vector store self-healing
+
+Four changes that tighten how Helix creates experts and keeps its semantic index consistent across machines.
+
+**`skills/agent-create/` — research-first pipeline for new experts**
+- Six-phase pipeline: scoping → research (source allowlist) → anti-injection sanitize → synthesize → validate → atomic commit of the three agent files (slim, on-demand, index-row).
+- Source allowlist: only official normatives (NIST, OWASP, IETF RFCs, ISO, W3C), vendor docs, peer-reviewed papers, canonical repos, and recognized-author books. No blogs, no AI-generated content, no single-source StackOverflow.
+- Anti-injection in research phase reuses Helix Security Layer L1 (`injection-detector-hook`) and adds manual scanners (`</?(system|assistant|user)>`, `ignore previous instructions`, long base64 blobs, invisible Unicode) plus **cross-validation: every principle must appear in ≥3 independent sources** or be discarded.
+- Fingerprinting: `memory/agents/<name>.md` includes `## Fuentes` (URL + date + content hash) and `## Metadata` (created_at, last_refresh, invocations). Every expert is re-auditable.
+- Validation gate: ≥80% correct on 5–10 domain-specific questions before activation. Below 60% → back to research phase, not more prompt text.
+- Refresh cycle: agents with ≥20 invocations in 30 days go through a 90-day re-research of deltas (new CVEs, deprecations, standard updates). Prompt changes require user approval — no auto-merge.
+- Rule added to `CLAUDE.md § AGENTES`: never write an agent system prompt without invoking this skill.
+
+**`helpers/agents-vector-sync-hook.sh` — auto-sync of `helix_agents` collection**
+- PostToolUse hook on `Write|Edit|MultiEdit` that detects edits to `~/.claude/agents/*.md` or `~/.claude/memory/agents/*.md` and triggers `hv index-agents` in background.
+- `flock --nonblock` debounce of 8 s: ten consecutive edits produce a single re-index, not ten.
+- Exit 0 immediate, `disown` so the edit workflow never blocks. Graceful skip if Qdrant is down.
+- Log: `~/.claude/memory/agents-vector-sync.log`. Manual fallback: `hv index-agents`.
+
+**`install.sh` — bootstrap of vector index on new machines**
+- New block after Vector Memory install: deferred background bootstrap that waits up to 180 s for the `nomic-embed-text` pull, verifies Qdrant `/healthz` and model availability, then runs `hv index-agents` + `hv index-memories`.
+- Closes the gap where a fresh install left Qdrant running with an empty collection until the user ran `hv sync` manually.
+- Idempotent: stable IDs by content hash — re-install does not duplicate points.
+- Log: `~/.claude/memory/install-vector-bootstrap.log`. Non-blocking: install finishes immediately.
+
+**`helpers/helix-metricas.sh` — threshold realignment with `health-check.sh`**
+- Drift detected: `helix-metricas.sh` flagged `CLAUDE.md` as CRITICAL at >220 lines (limit 180) while `health-check.sh` accepted up to 350 lines. The actual `CLAUDE.md` post-pruning stabilized at 305–329 lines, producing a permanent false positive.
+- Thresholds aligned: elevated at 350, critical at 400. Context score now reflects the real post-DISCOVERY-FIRST + Security Layer v1 baseline instead of the pre-prune limit.
+
+---
 
 ### v3.11.0 — 2026-04-11 · HELIX-COMPRESS — three-layer token compression system
 

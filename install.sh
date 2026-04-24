@@ -171,14 +171,50 @@ else
 fi
 
 # Embedding model vía Ollama
+OLLAMA_PULL_PID=""
 if command -v ollama &>/dev/null; then
     ollama pull nomic-embed-text &>/dev/null &
+    OLLAMA_PULL_PID=$!
     echo "  → nomic-embed-text descargando en background..."
 else
     INSTALL_WARNINGS+=("Ollama no encontrado — Capa 0 (modelos locales) no disponible. Instalar: https://ollama.com/download\n  Luego: ollama pull nomic-embed-text")
 fi
 
 echo "  ✓ Vector Memory listo (hv y helix-project-index disponibles)"
+
+# ── 6e. Bootstrap del índice vectorial (background, no bloquea install) ──
+# En máquina nueva, qdrant_storage arranca vacío. Las fuentes de verdad
+# (agents/*.md, memory/*.md) ya están en disco; los embeddings se generan aquí.
+# Sync diferido que espera al pull de nomic-embed-text y luego indexa.
+# Idempotente: re-install no duplica (IDs estables por hash).
+BOOTSTRAP_LOG="$CLAUDE_DIR/memory/install-vector-bootstrap.log"
+(
+  echo "[$(date '+%F %T')] bootstrap iniciado" >> "$BOOTSTRAP_LOG"
+  if [[ -n "$OLLAMA_PULL_PID" ]]; then
+    for _ in $(seq 1 180); do
+      kill -0 "$OLLAMA_PULL_PID" 2>/dev/null || break
+      sleep 1
+    done
+  fi
+  if ! curl -sf http://localhost:6333/healthz >/dev/null 2>&1; then
+    echo "[$(date '+%F %T')] skip: qdrant no responde en :6333 — correr 'hv sync' manualmente tras iniciar Qdrant" >> "$BOOTSTRAP_LOG"
+    exit 0
+  fi
+  if ! command -v ollama >/dev/null 2>&1 || ! ollama list 2>/dev/null | grep -q nomic-embed-text; then
+    echo "[$(date '+%F %T')] skip: nomic-embed-text no disponible — correr 'hv sync' cuando termine el pull" >> "$BOOTSTRAP_LOG"
+    exit 0
+  fi
+  HV="$CLAUDE_DIR/hv.sh"
+  [[ -x "$HV" ]] || { echo "[$(date '+%F %T')] skip: hv.sh no ejecutable" >> "$BOOTSTRAP_LOG"; exit 0; }
+  echo "[$(date '+%F %T')] indexando agentes..." >> "$BOOTSTRAP_LOG"
+  bash "$HV" index-agents >> "$BOOTSTRAP_LOG" 2>&1 || echo "[$(date '+%F %T')] fallo index-agents" >> "$BOOTSTRAP_LOG"
+  echo "[$(date '+%F %T')] indexando memorias..." >> "$BOOTSTRAP_LOG"
+  bash "$HV" index-memories >> "$BOOTSTRAP_LOG" 2>&1 || echo "[$(date '+%F %T')] fallo index-memories" >> "$BOOTSTRAP_LOG"
+  echo "[$(date '+%F %T')] bootstrap completo" >> "$BOOTSTRAP_LOG"
+) >/dev/null 2>&1 &
+disown
+echo "  → Bootstrap del índice vectorial lanzado en background"
+echo "    Log: $BOOTSTRAP_LOG"
 
 # ── 7. Template de nuevo proyecto ───────────────────────────
 echo "→ Copiando template..."

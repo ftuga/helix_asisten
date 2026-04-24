@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-18 21:41<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-23 23:36<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -140,6 +140,9 @@ Bash gotchas y patrones de scripts → `~/.claude/memory/topics/bash-gotchas.md`
 - [2026-04-18] HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración
 - [2026-04-18] helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. Crea worktrees aislados bajo .helix-worktrees/ y dispara claude -p por tarea. Spec.md: '- [ ] ID:X | branch:Y | prompt:"..."'. Complementado con helix-longmemeval.sh (build/run/compare) que mide Precision@1, P@k, MRR vs benchmarks LongMemEval ICLR 2025 (OMEGA 95.4, Mastra 94.9, Zep 71.2). Baseline actual P@1=100% / MRR=1.000 en 8 queries sintéticas (dataset pequeño — ampliar con reflexiones reales para medición robusta).
 - [2026-04-18] .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita que Claude Code cargue secretos (.env, *.pem, *_rsa, credentials.json), binarios, node_modules/venv, data/raw, media, helix internals (.claude/memory/*.jsonl, decay-scores.json). Reduce ruido de tool search y superficie de exposición.
+- [2026-04-19] Al crear un agente nuevo, completar los 3 pasos juntos: (1) slim en ~/.claude/agents/<name>.md (frontmatter + 3 líneas), (2) contexto on-demand en ~/.claude/memory/agents/<name>.md (expertise + cuándo invocar + limitaciones + output contract), (3) fila en ~/.claude/memory/agents-index.md. Si son específicos de un proyecto, evaluar si el dominio es reutilizable antes de promover a global.
+- [2026-04-23] Umbrales CLAUDE.md alineados entre helix-metricas.sh (era 180/220) y health-check.sh (350) → ahora ambos usan 350 elevado / 400 crítico. Evita falsos positivos: CLAUDE.md podado post-2026-04-18 se estabiliza en 305-329 líneas (DISCOVERY-FIRST + Security Layer v1 + evolutions recientes ocupan baseline real). Umbral anterior (180) databa de pre-podas y no reflejaba el contenido mínimo viable actual.
+- [2026-04-23] Response-sizing: calibrar profundidad al peso del mensaje del usuario. Mensajes sociales breves (gracias/ok/buen trabajo) → respuesta ≤2 líneas sin cargar contexto adicional. Preguntas técnicas → respuesta general primero (2-4 líneas) + '¿querés que profundice en X?'. Solo desplegar explicación larga si el usuario confirma. Why: evita quemar tokens, cache y paciencia del usuario cuando la intención no lo justifica.
 <!-- OPERABILITY_END -->
 
 ---
@@ -231,8 +234,10 @@ Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar e
 Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 
 **Reglas al crear agentes:**
+- **SIEMPRE invocar skill `agent-create`** ANTES de escribir cualquier agente nuevo. Research-first con allowlist de fuentes, anti-injection, validación ≥80%. Nunca escribir system prompts desde el aire.
 - Descripción máx 3 líneas: qué hace, cuándo, límite.
 - NUNCA código de ejemplo en el system prompt. Los ejemplos van a `~/.claude/skills/`.
+- Agentes con ≥20 invocaciones/30d entran al refresh cycle cada 90d (ver skill `agent-create` §Refresh cycle).
 
 ---
 
@@ -242,6 +247,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | Skill | Descripción |
 |---|---|
 | `design-system` | Paleta, tipografía, breakpoints, patrones responsivos Tailwind v4 |
+| `python-production` | Python production-grade: src/ layout, imports al top, mypy strict, tests coverage 75, pydantic Settings, docstrings Google, pre-commit gates. Invocar al refactorizar o crear Python >5 módulos. Antipatrones detectados: imports en funciones, god-scripts, magic numbers, config como env strings. | - | v1.0 |
 <!-- SKILLS_INDEX_END -->
 
 ---
@@ -249,9 +255,10 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 31,
+  "total_sesiones": 32,
   "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 20
+  "total_aprendizajes": 28,
+  "total_skills_creadas": 1
 }
 ```
 <!-- METRICS_END -->
@@ -259,8 +266,8 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- SESSIONS_START -->
 ## 📋 SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
-| #12 | 2026-04-15 | fix(install): check-prereqs.sh, pip PEP 668, WSL node detection, auto-MCPs | 0 | 0 |
-| #14 | 2026-04-18 | Evolución Opus 4.7: CLAUDE.md 482→307 líneas, DISCOVERY-FIRST pre-flight, 7 evolutions perf/cost, HELIX-LANG deprecado, audit hooks/decay OK | 5 | 0
+0 |
+| #14 | 2026-04-19 | Fix multiclass labels: _extract_classes remapea 0/1/2 → alto/bajo/medio (LabelEncoder alfabético). Handles np.int64 vía str().isdigit(). Verificado /model/info classes=['alto','bajo','medio'] y /predict/sample con predicted_class semántico coincidiendo con real_estrato. | 3 | 0
 0 |
 <!-- SESSIONS_END -->
 
@@ -296,6 +303,14 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 17 | 2026-04-18 | performance | helix-cache-metrics.sh — parsea message.usage en ~/.claude/projects/*/*.jsonl y reporta hit_rate/savings del prompt cache Anthropic. Medición real: 91.8% hit rate, 80.6% savings (~42.5M tokens ahorrados en 500 API calls, 2 proyectos). Verdict healthy ≥60%. Confirma que el cache se está usando correctamente — no requiere tuning adicional de CLAUDE.md. | cache-observability |
 | 18 | 2026-04-18 | operatividad | helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. Crea worktrees aislados bajo .helix-worktrees/ y dispara claude -p por tarea. Spec.md: '- [ ] ID:X | branch:Y | prompt:"..."'. Complementado con helix-longmemeval.sh (build/run/compare) que mide Precision@1, P@k, MRR vs benchmarks LongMemEval ICLR 2025 (OMEGA 95.4, Mastra 94.9, Zep 71.2). Baseline actual P@1=100% / MRR=1.000 en 8 queries sintéticas (dataset pequeño — ampliar con reflexiones reales para medición robusta). | batch-dispatcher-longmemeval |
 | 19 | 2026-04-18 | operatividad | .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita que Claude Code cargue secretos (.env, *.pem, *_rsa, credentials.json), binarios, node_modules/venv, data/raw, media, helix internals (.claude/memory/*.jsonl, decay-scores.json). Reduce ruido de tool search y superficie de exposición. | claudeignore-template |
+| 20 | 2026-04-19 | operatividad | Al crear un agente nuevo, completar los 3 pasos juntos: (1) slim en ~/.claude/agents/<name>.md (frontmatter + 3 líneas), (2) contexto on-demand en ~/.claude/memory/agents/<name>.md (expertise + cuándo invocar + limitaciones + output contract), (3) fila en ~/.claude/memory/agents-index.md. Si son específicos de un proyecto, evaluar si el dominio es reutilizable antes de promover a global. | agent-creation-completeness |
+| 21 | 2026-04-19 | datos | Antes de codificar features o modelos, verificar schema REAL del dataset con DESCRIBE — README puede estar desactualizado. En ent-tesis, README prometía 'is_rugpull' (binaria) pero schema real tiene 'estrato' (multi-clase 3 niveles). metadata prometía name/symbol/decimals/supply pero solo tiene token_creator/creation_tx/creation_block/timestamp. | readme-schema-drift |
+| 22 | 2026-04-19 | datos | Uniswap amount0/amount1 son uint256 (Ethereum) — no caben en Int64 pandas (OverflowError). Cast a float64 (pérdida de precisión en dígito 16+ es inmaterial para ratios rugpull). Aplica a cualquier columna que venga de uint256 on-chain. | uint256-int64-overflow |
+| 23 | 2026-04-23 | arquitectura | Python production code: NUNCA imports dentro de funciones (excepto opt-in con flag a nivel módulo); NUNCA god-scripts >300 líneas (split por responsabilidad: data/features/models/eval/tracking/orchestration); type hints consistentes con mypy --strict; tests unitarios por módulo (coverage gate 75%); config como pydantic.BaseSettings (no os.environ con cast ad-hoc); src/ layout con paquete instalable (pip install -e .); pre-commit con ruff strict + mypy + pydocstyle; docstrings Google-style | vibe-code-antipatterns-train_c3_v1 |
+| 24 | 2026-04-23 | operatividad | Umbrales CLAUDE.md alineados entre helix-metricas.sh (era 180/220) y health-check.sh (350) → ahora ambos usan 350 elevado / 400 crítico. Evita falsos positivos: CLAUDE.md podado post-2026-04-18 se estabiliza en 305-329 líneas (DISCOVERY-FIRST + Security Layer v1 + evolutions recientes ocupan baseline real). Umbral anterior (180) databa de pre-podas y no reflejaba el contenido mínimo viable actual. | threshold-drift-metricas-vs-healthcheck |
+| 25 | 2026-04-23 | arquitectura | Vector store helix_agents ahora se auto-sincroniza: hook PostToolUse(Write|Edit|MultiEdit) agents-vector-sync-hook.sh detecta edits en ~/.claude/agents/*.md o ~/.claude/memory/agents/*.md y dispara 'hv index-agents' en background con flock debounce 8s. Exit 0 inmediato (no bloquea edits). Log en ~/.claude/memory/agents-vector-sync.log. Skip si Qdrant está down. Tiempo real de index: ~5.5s para 34 agentes. | vector-sync-auto |
+| 26 | 2026-04-23 | operatividad | Response-sizing: calibrar profundidad al peso del mensaje del usuario. Mensajes sociales breves (gracias/ok/buen trabajo) → respuesta ≤2 líneas sin cargar contexto adicional. Preguntas técnicas → respuesta general primero (2-4 líneas) + '¿querés que profundice en X?'. Solo desplegar explicación larga si el usuario confirma. Why: evita quemar tokens, cache y paciencia del usuario cuando la intención no lo justifica. | response-sizing-feedback |
+| 27 | 2026-04-23 | arquitectura | Proceso research-first para crear expertos: skill agent-create con pipeline de 6 fases (scoping/research/sanitize/synthesize/validate/commit). Allowlist de fuentes (NIST/OWASP/IETF/W3C/vendor-docs/papers/repos-canónicos), anti-injection vía L1 existente + scanner manual + cross-validation ≥3 fuentes, fingerprinting de fuentes con URL+fecha+hash, validación ≥80% antes de activar. Refresh cycle cada 90d para agentes con ≥20 invocaciones/30d. Cambios al prompt requieren OK del usuario. | agent-create-skill |
 <!-- EVOLUTION_LOG_END -->
 
 ---

@@ -85,6 +85,10 @@
           {
             "type": "command",
             "command": "bash \"$HOME/.claude/helpers/helix-bitacora-hook.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/agents-vector-sync-hook.sh\""
           }
         ]
       },
