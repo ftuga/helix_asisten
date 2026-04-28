@@ -7,16 +7,16 @@
 - Cuando necesites cargar relaciones (evitar N+1)
 - Cuando trabajes con el resultado de ORM inmediatamente después de modificarlo
 
-## ⚠️ Patrón CRÍTICO: No re-leer ORM tras asignación
+## Patrón CRÍTICO: No re-leer ORM tras asignación
 
 ```python
-# ❌ MAL — SQLAlchemy identity map devuelve valor STALE
+# MAL — SQLAlchemy identity map devuelve valor STALE
 retiro.etapas_cerradas = nueva_data
 await db.flush()
 if retiro.etapas_cerradas.get("compras"):  # <- puede devolver valor viejo
     ...
 
-# ✅ BIEN — Usar variable local, no re-leer del ORM
+# BIEN — Usar variable local, no re-leer del ORM
 nueva_data = {**retiro.etapas_cerradas, "compras": {...}}
 retiro.etapas_cerradas = nueva_data
 await db.flush()
@@ -27,7 +27,7 @@ if nueva_data.get("compras"):  # <- usar la variable local
 ## Patrón: Queries con relaciones
 
 ```python
-# ✅ SIEMPRE selectinload() para relaciones — evita N+1 con AsyncSession
+# SIEMPRE selectinload() para relaciones — evita N+1 con AsyncSession
 from sqlalchemy.orm import selectinload
 
 result = await db.execute(
@@ -42,10 +42,10 @@ retiro = result.scalar_one_or_none()
 ## Patrón: Boolean desde raw SQL
 
 ```python
-# ❌ MAL — raw SQL puede devolver NULL para booleanos
+# MAL — raw SQL puede devolver NULL para booleanos
 {"completada": tarea.completada}
 
-# ✅ BIEN — siempre bool()
+# BIEN — siempre bool()
 {"completada": bool(tarea.completada)}
 ```
 

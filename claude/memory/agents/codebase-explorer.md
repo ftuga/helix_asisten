@@ -1,4 +1,6 @@
 ---
+status: preserved
+preserved_reason: agente removido del index 2026-04-27, context retenido por si se restaura
 name: codebase-explorer
 description: |
   Deep-dive analysis of unfamiliar codebases. Generates a structured mental model of any project — tech stack, architecture, patterns, entry points, data flow — and optionally creates a CLAUDE.md with findings.

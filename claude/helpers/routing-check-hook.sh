@@ -27,6 +27,32 @@ if not agent:
 prompt = (tool_input.get("prompt") or "") + " " + (tool_input.get("description") or "")
 prompt = prompt.lower()[:1000]
 
+# ─────────────────────────────────────────────────────────────
+# Pre-check stack-aware (Fase 2): bloqueo duro por excluded
+# Independiente del dominio — si está excluido, siempre bloquear
+# ─────────────────────────────────────────────────────────────
+import re as _re
+from pathlib import Path as _Path
+_cwd = data.get("cwd") or os.getcwd()
+_stack_file = _Path(_cwd) / ".claude/memory/helix-stack.md"
+_stack_excluded = []
+_stack_core = []
+_stack_extended = []
+if _stack_file.is_file():
+    _content = _stack_file.read_text()
+    def _get_list(key):
+        m = _re.search(rf"({key}:\s*\n)((?:    - .*\n)*)", _content)
+        return _re.findall(r"    - (.+)", m.group(2)) if m else []
+    _stack_excluded = _get_list("excluded")
+    _stack_core = _get_list("core")
+    _stack_extended = _get_list("extended")
+
+if agent in _stack_excluded:
+    print(f"🛑 ROUTING BLOCK: '{agent}' está en stack.excluded del proyecto. "
+          f"Reconsiderar o usar 'helix-stack.sh remove' si fue intencional.",
+          file=sys.stderr)
+    sys.exit(2)
+
 # Dominio -> agentes aceptados (primer match gana)
 DOMAIN_KEYWORDS = [
     ("devops",       ["docker", "ci/cd", "pipeline", "kubernetes", "k8s", "nginx", "deploy"],
@@ -57,7 +83,13 @@ for dom, kws, allowed in DOMAIN_KEYWORDS:
         break
 
 if not dominio:
-    sys.exit(0)  # dominio no identificable — dejar pasar
+    # Sin dominio identificable — pero aún chequear warning stack-aware antes de salir
+    _in_stack_early = set(_stack_core) | set(_stack_extended)
+    if _in_stack_early and agent not in _in_stack_early and agent != "general-purpose":
+        print(f"💡 ROUTING SUGGESTION: '{agent}' no está en el stack del proyecto. "
+              f"Stack core: {_stack_core[:5]}. Considerar: helix-stack add {agent} si lo usarás recurrente.",
+              file=sys.stderr)
+    sys.exit(0)
 
 # general-purpose siempre es señal de ruido (no está en catálogo)
 if agent == "general-purpose":
@@ -70,6 +102,17 @@ if agent not in permitidos:
           f"catálogo permitido {sorted(permitidos)}. Reconsiderar elección o justificar override.",
           file=sys.stderr)
     sys.exit(2)
+
+# ─────────────────────────────────────────────────────────────
+# Warning stack-aware (no bloqueante): agente fuera del stack del proyecto
+# ─────────────────────────────────────────────────────────────
+_in_stack = set(_stack_core) | set(_stack_extended)
+if _in_stack and agent not in _in_stack and agent != "general-purpose":
+    cubre_dominio = (permitidos and agent in permitidos)
+    if not cubre_dominio:
+        print(f"💡 ROUTING SUGGESTION: '{agent}' no está en el stack del proyecto. "
+              f"Stack core: {_stack_core[:5]}. Considerar: helix-stack add {agent} si lo usarás recurrente.",
+              file=sys.stderr)
 
 sys.exit(0)
 PYEOF

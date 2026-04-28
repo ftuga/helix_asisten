@@ -1,11 +1,11 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-23 23:36<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-04-27 22:40<!-- /LAST_EVOLUTION -->
 
 ---
 
-## 🔄 PROTOCOLO DE AUTO-EVOLUCIÓN
+## PROTOCOLO DE AUTO-EVOLUCIÓN
 
 | Momento | Comando |
 |---|---|
@@ -19,7 +19,7 @@
 
 ---
 
-## 🎛️ MODOS DE HELIX
+## MODOS DE HELIX
 
 > Cada proyecto declara su modo en su CLAUDE.md con `HELIX_MODE: <modo>`. Si no se declara → `helix_minimal`.
 
@@ -31,7 +31,7 @@
 
 ---
 
-## 🔍 DISCOVERY-FIRST (pre-flight obligatorio)
+## DISCOVERY-FIRST (pre-flight obligatorio)
 
 Antes de CUALQUIER acción que toque código o estructura del proyecto, ejecutar el pre-flight. Aplica a los 3 modos.
 
@@ -70,9 +70,21 @@ Reportar ≠ ejecutar. No ampliar scope sin permiso explícito.
 Si ≥2 de las condiciones anteriores aplican y no se preguntaron → fallo de protocolo. Registrar con:
 `bash ~/.claude/evolve.sh learn "operatividad" "<qué se omitió>" "discovery-miss"`
 
+### 6. Staleness check (estado / pendientes / próximos pasos)
+Antes de responder preguntas sobre estado del proyecto, pendientes o próximos pasos:
+
+| Condición | Acción |
+|---|---|
+| `helix-backlog.md`, `helix-analysis.md`, `helix-plan-*.md` existen | Verificar `git log --after` contra su mtime |
+| Hay commits posteriores a la última modificación | Advertir: "Memoria puede estar desactualizada — N commits no reflejados" y recomendar `/helix-actualiza` antes de responder |
+| Sin commits posteriores | Responder normalmente con la memoria cargada |
+| Sin repo git (o archivos ausentes) | Sin verificación requerida |
+
+Script: `bash ~/.claude/helpers/helix-staleness.sh <archivo>`. Session-start ya lo ejecuta e inyecta `[HELIX-SUGGEST-ACTUALIZA]` si detecta staleness.
+
 ---
 
-## 🤖 ORQUESTACIÓN (solo `helix_control_total`)
+## ORQUESTACIÓN (solo `helix_control_total`)
 
 Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir, ejecutar, reportar.
 
@@ -81,7 +93,7 @@ Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir
 | Log / texto largo / salida Docker | **Capa 0** — Ollama (`capa0.sh logs\|code\|transform`). Si responde "no sé" → escalar |
 | 1 dominio (un endpoint, componente, bug, query) | **Capa 1** — `Agent tool` con agente del catálogo |
 | 2+ dominios en paralelo (sin diálogo entre agentes) | **Capa 2** — `mcp__claude-flow__swarm_init` + `agent_spawn`. Visible en ruflow |
-| Agentes que necesitan hablarse peer-to-peer | **Capa 3** — Agent Teams nativo (mailbox). Ya habilitado en `settings.json` |
+| Agentes que necesitan hablarse peer-to-peer | **Capa 3** — Agent Teams. NO IMPLEMENTADO (faltan mailbox + teammates dirs + hook TaskCreated). Status: `topics/agent-teams-status.md` |
 
 **Reglas duras:**
 - NUNCA múltiples `Agent tool` en paralelo para 2+ dominios — son invisibles en ruflow. Usar Capa 2.
@@ -92,11 +104,11 @@ Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir
 
 **HELIX-DISTILL (opcional):** solo en swarms Capa 2 con ≥8 agentes. `~/.claude/helpers/helix-distill.sh run`. Para sesiones normales, Opus 4.7 maneja contexto largo nativamente.
 
-> HELIX-LANG decomisionado 2026-04-18 (uso real nulo desde benchmarks). Archivado en `~/.claude/memory/topics/deprecated/helix-lang/`.
+**HELIX-LANG (restaurado 2026-04-27):** protocolo comprimido. 58.7% ahorro de tokens output medido (output NO se cachea — savings reales por costo). Skill: `~/.claude/skills/helix-lang/SKILL.md`. **Usar cuando**: (1) invocar `Agent` tool con prompt estructurado >500 tokens, (2) coordinación 2+ agentes intercambiando estado, (3) memoria interna releída por otro agente. **NO usar**: respuestas al usuario (prosa legible), código fuente, comandos shell/SQL.
 
 ---
 
-## 🗂️ TEAM DISPATCH
+## TEAM DISPATCH
 
 Si existe `{PROJECT_ROOT}/.claude/memory/helix-team.md` → seguir protocolo en `~/.claude/memory/topics/team-dispatch.md`.
 Si no existe → routing normal por `agents-index.md`.
@@ -105,49 +117,54 @@ Backlog (`helix-backlog.md`) se actualiza en silencio: en progreso → completad
 
 ---
 
-## 🔒 PRIVACIDAD
+## PRIVACIDAD
 
 Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público `helix_asisten`. Usar markers `<!-- PROJECT-CONTEXT:START -->...<!-- PROJECT-CONTEXT:END -->`. Detalles: `~/.claude/memory/topics/privacy.md`.
 
 ---
 
 <!-- SECURITY_START -->
-## 🔐 SEGURIDAD (Universal)
+## SEGURIDAD (Universal)
 
 - Nunca exponer variables de entorno en logs ni en respuestas al usuario.
 - `.env` siempre en `.gitignore`. Usar `.env.example` con valores placeholder.
 - Nunca hardcodear credenciales, URLs internas ni secrets en el código fuente.
 - Endpoints de test/debug DEBEN eliminarse antes de producción — usar feature flags.
 - Confirmar acciones destructivas antes de ejecutarlas.
-- [2026-04-18] Helix Security Layer v1: 6 capas activas (injection, egress, secrets, integrity, evolve-guard, reflexion-quarantine)
-- [2026-04-18] Helix Security Layer v1 — 6 capas: L1 injection-detector-hook (PostToolUse WebFetch/Read, patrones jailbreak/exec/hidden), L2 network-egress-hook (PreToolUse Bash, allowlist ~/.claude/config/network-allowlist.txt), L3 secrets-scanner-hook (PreToolUse Write/Edit/Bash, AWS/GCP/GH/OpenAI/Anthropic/Slack/SSH/JWT), L4 integrity-check.sh (manifest SHA256 de 29 ficheros críticos), L5 evolve-guard en evolve.sh (rechaza jailbreak/pipe-to-shell/eval-b64 antes de persistir), L6 reflexion-quarantine (trusted=false default, created_at/hits/useful_hits, filtra untrusted en search, feedback useful|stale, prune). Tests adversariales OK.
+- [2026-04-18] Helix Security Layer v1 — 6 capas activas (injection L1, egress L2, secrets L3, integrity L4, evolve-guard L5, reflexion-quarantine L6). Detalles técnicos: `~/.claude/memory/topics/operatividad.md` §HSL-v1.
 <!-- SECURITY_END -->
 
 ---
 
-## 📝 COMMITS
+## COMMITS
 
 - **NO incluir** `Co-Authored-By` en ningún commit. Omitir siempre esa línea del mensaje.
 
 ---
 
 <!-- OPERABILITY_START -->
-## 🔧 OPERABILIDAD
+## OPERABILIDAD
 
 Bash gotchas y patrones de scripts → `~/.claude/memory/topics/bash-gotchas.md`.
-- [2026-04-18] DISCOVERY-FIRST agregado como pre-flight obligatorio (stack detect, conflict check, context request).
-- [2026-04-18] CLAUDE.md podado 482→305 líneas; detalles movibles en `memory/topics/`.
-- [2026-04-18] HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración
-- [2026-04-18] helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. Crea worktrees aislados bajo .helix-worktrees/ y dispara claude -p por tarea. Spec.md: '- [ ] ID:X | branch:Y | prompt:"..."'. Complementado con helix-longmemeval.sh (build/run/compare) que mide Precision@1, P@k, MRR vs benchmarks LongMemEval ICLR 2025 (OMEGA 95.4, Mastra 94.9, Zep 71.2). Baseline actual P@1=100% / MRR=1.000 en 8 queries sintéticas (dataset pequeño — ampliar con reflexiones reales para medición robusta).
-- [2026-04-18] .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita que Claude Code cargue secretos (.env, *.pem, *_rsa, credentials.json), binarios, node_modules/venv, data/raw, media, helix internals (.claude/memory/*.jsonl, decay-scores.json). Reduce ruido de tool search y superficie de exposición.
-- [2026-04-19] Al crear un agente nuevo, completar los 3 pasos juntos: (1) slim en ~/.claude/agents/<name>.md (frontmatter + 3 líneas), (2) contexto on-demand en ~/.claude/memory/agents/<name>.md (expertise + cuándo invocar + limitaciones + output contract), (3) fila en ~/.claude/memory/agents-index.md. Si son específicos de un proyecto, evaluar si el dominio es reutilizable antes de promover a global.
-- [2026-04-23] Umbrales CLAUDE.md alineados entre helix-metricas.sh (era 180/220) y health-check.sh (350) → ahora ambos usan 350 elevado / 400 crítico. Evita falsos positivos: CLAUDE.md podado post-2026-04-18 se estabiliza en 305-329 líneas (DISCOVERY-FIRST + Security Layer v1 + evolutions recientes ocupan baseline real). Umbral anterior (180) databa de pre-podas y no reflejaba el contenido mínimo viable actual.
-- [2026-04-23] Response-sizing: calibrar profundidad al peso del mensaje del usuario. Mensajes sociales breves (gracias/ok/buen trabajo) → respuesta ≤2 líneas sin cargar contexto adicional. Preguntas técnicas → respuesta general primero (2-4 líneas) + '¿querés que profundice en X?'. Solo desplegar explicación larga si el usuario confirma. Why: evita quemar tokens, cache y paciencia del usuario cuando la intención no lo justifica.
+Histórico de operatividad (≥7 días) → `~/.claude/memory/topics/operatividad.md`.
+
+Activas (últimos 7 días):
+- [2026-04-24] Rule 11 en PROTOCOLO DE DIÁLOGO: cierre automático cuando usuario escribe exit/salir/bye/cerrar → Claude ejecuta session-end.sh sin preguntar.
+- [2026-04-25] WSL2 sin .wslconfig + dos stacks paralelos (Compose + microk8s) satura RAM del host Windows. Fix: bajar uno + crear `.wslconfig` con memory/swap explícitos.
+- [2026-04-27] Agentes se mejoran auditando contra documentación canónica (libros, PEPs, RFCs, papers), no por estadísticas de uso. Aplicar `agent-create` retroactivamente + ver iniciativa Helix Canon en `topics/canon-design.md`.
+- [2026-04-27] CLAUDE.md podado 371→343 lineas: archivadas evoluciones 2026-04-11 (#7-12) y 2026-04-18 (#8-19) a topics/evolution-history.md; bullets OPERABILIDAD reducidos a ultimos 7 dias; SEGURIDAD HSL v1 condensada en 1 linea con puntero a topics/operatividad.md; tabla SESIONES limpiada de basura de rendering. Score contexto 80 -> 100.
+- [2026-04-27] Vector store fix: hv search usa --top-k (no --limit), output viene como {results:[{score,id,payload:{agent,text}}]}. Bug acumulado: heredoc Python fallaba por raw output >30KB con \n y " — pasar via tmpfile (mismo patron que cmd_init). Despues del fix: helix-route pick activa scoring multi-criterio real con freshness boost (test-automator fresh=1.0 gana sobre test-engineer fresh=0.48 con 2 usos).
+- [2026-04-27] Tres helpers nuevos para housekeeping: (1) helix-claude-md-prune.sh: auto-archive evoluciones >14d cuando CLAUDE.md > umbral 340. Idempotente, dry-run mode, archiva a topics/evolution-history.md. (2) helix-agents-audit.sh: diff entre ~/.claude/agents/*.md y agents-index.md y context files. Detecta orphans en 4 sentidos. Detectado real: 12 agentes en indice sin archivo, 5 archivos sin entry, 11 context huerfanos. (3) helix-stack create-suggested: bridge para invocar skill agent-create con contexto del proyecto pre-cargado (output estructurado para Helix).
+- [2026-04-27] Drift cleanup agents-index 2026-04-27: (1) renombrado architect-review.md → architect-reviewer.md (typo: el frontmatter ya decia architect-reviewer). (2) Removidos 11 entries huerfanos del index (postgres-pro, performance-engineer, prompt-engineer, codebase-explorer, context-manager, task-decomposition-expert, research-coordinator, ui-designer, ui-ux-designer, fin-saas-advisor, mme-domain-expert). Context files preservados en memory/agents/ por si se restauran. (3) Agregados al index 3 archivos sin entry: app-creative-genius, brand-identity-expert, loop-operator. (4) Audit script ahora excluye INDEX/README/CHANGELOG/TODO de file_without_index_entry. Resultado: index ahora coherente con filesystem.
+- [2026-04-27] Capa 3 Agent Teams: corregido drift en CLAUDE.md. Antes prometía 'ya habilitada en settings.json' — VERIFICACION 2026-04-27 mostró que mailbox/teammates dirs no existen, hook TaskCreated no registrado, 0 invocaciones swarm/team en 30d. Ahora CLAUDE.md dice 'NO IMPLEMENTADO' con puntero a topics/agent-teams-status.md que documenta estado real y plan de implementación mínima. Honestidad estructural restaurada.
+- [2026-04-27] helix-agents-audit ahora distingue context_orphan accidental vs preserved (frontmatter status: preserved). 10 context files de agentes removidos marcados como preserved. Audit ahora reporta status:OK con orphans=0 accidentales y 10 preserved.
+- [2026-04-27] Backup tarball protege trabajo entre sesiones (~/.claude-backups/, exclude credentials/projects/cache/sessions/history). helix_asisten ahora tiene su stack manifest aplicado: tier=medium, core=[error-detective, code-reviewer, architect-reviewer, python-pro, harness-optimizer], extended=[security-auditor]. El detector existente helix-detect-stack.sh es ciego a proyectos sin manifest en root (helix_asisten tiene .py files dispersos pero no requirements.txt en raiz) — limitación conocida del detector.
+- [2026-04-27] Research dump completo sobre manejo de conversación y contexto en topics/conversation-context-research.md (264 líneas). Cubre: (1) inventario Helix interno (scripts sesion, skills strategic-compact/context-budget, bitacoras, 22 transcripts jsonl disponibles pero sin parser propio), (2) SOTA externo (Claude Code session format, LongMemEval ICLR 2025 con 5 abilities + 30% accuracy drop, Mem0 paper 2504.19413 con 91% latency / 90% cost reduction, compaction strategies: observation masking vs LLM summary vs structured vs ACON vs provider-native, Anthropic prompt caching 2026 workspace-isolation), (3) gaps Helix vs SOTA (snapshot persistente, resume opt-in, masking de tool results, staleness conversacional, pinning), (4) 7 decisiones de diseño abiertas con recomendaciones tentativas. NO IMPLEMENTADO — research preparatorio para discusión a fondo en próxima sesión.
 <!-- OPERABILITY_END -->
 
 ---
 
-## 🎨 DISEÑO UI
+## DISEÑO UI
 
 Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar en frontend.
 
@@ -159,22 +176,22 @@ Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar e
 
 ---
 
-## 🧪 TESTING
+## TESTING
 
 - Todo bug corregido debe tener un test que lo reproduzca antes del fix.
 - Testear siempre: happy path + edge cases + estado vacío.
 
 ---
 
-## 🗣️ PROTOCOLO DE DIÁLOGO
+## PROTOCOLO DE DIÁLOGO
 
 **1. Preguntas ante ambigüedad real.** Si la solicitud es ambigua en alcance, archivo o comportamiento → máx 2-4 preguntas agrupadas en UN mensaje antes de tocar código. Si es clara → proceder directo.
 
 **2. Plan visible antes de ejecutar.** Si la tarea toca ≥2 archivos o tiene pasos no triviales → mostrar plan (A→B→C) y esperar OK.
 
-**3. Alerta antes de tocar zona 🔴.** Antes de modificar archivos marcados 🔴 en el risk-map → declarar línea/función exacta y por qué. Esperar OK.
+**3. Alerta antes de tocar zona .** Antes de modificar archivos marcados  en el risk-map → declarar línea/función exacta y por qué. Esperar OK.
 
-**4. Registro proactivo de decisiones.** Decisión de diseño no trivial → agregarla a `## 🧠 DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
+**4. Registro proactivo de decisiones.** Decisión de diseño no trivial → agregarla a `##  DECISIONES DE DISEÑO` del CLAUDE.md del proyecto sin que el usuario lo pida.
 
 **5. Análisis inicial de proyecto.** Si session-start incluye `[HELIX-SUGGEST-ANALYSIS]` → al final del primer mensaje sugerir `/helix-analiza`. Si "no" → `touch {PROJECT_ROOT}/.claude/memory/.analysis-declined`. Si ya existe → cargar en silencio.
 
@@ -188,11 +205,15 @@ Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar e
 
 **10. Paralelismo obligatorio.** Reads/Greps/Bash independientes entre sí → SIEMPRE en un solo mensaje con múltiples tool calls. Serializar sin dependencia real es un antipattern medible — audita el self-check.
 
+**11. Cierre automático.** Si el usuario escribe `exit`, `salir`, `bye`, `cerrar`, `/exit` o variación clara de cierre → ejecutar `bash ~/.claude/session-end.sh "<resumen>"` sin preguntar. Generar resumen conciso de la sesión. Si contexto está agotado → resumen mínimo ("sesión cerrada" es aceptable). Si rate-limit impide ejecutar el script → aceptable, el usuario puede correrlo manual después.
+
+**12. Resume opt-in.** Si session-start incluye `[HELIX-SUGGEST-RESUME]` → al final del primer mensaje ofrecer 3 opciones: (1) retomar contexto, (2) nuevo chat, (3) ver detalle. NUNCA cargar snapshot sin consentimiento. Si elige (1) → leer vía `helix-snapshot show` + declarar staleness con `stale-check`. Antes de cerrar sesión larga (≥10 tool calls con decisiones) → invocar `helix-snapshot capture` con YAML estructurado en stdin (schema: skill `helix-snapshot`).
+
 **HELIX-SPEAK:** compresión de output según tipo. Coordinación inter-agente → `ultra`. Reporte al usuario → `brief`. Código/comandos/seguridad → `off`. Skill: `~/.claude/skills/helix-speak/SKILL.md`.
 
 ---
 
-## 💰 CONTROL DE COSTOS
+## CONTROL DE COSTOS
 
 **Modo economía** — activar con `modo economía`:
 - Sin subagentes salvo ≥3 dominios con coordinación activa
@@ -212,7 +233,7 @@ Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar e
 
 ---
 
-## ✅ CHECKLIST PRE-CIERRE
+## CHECKLIST PRE-CIERRE
 
 ```
 □ ¿Ejecuté bash ~/.claude/self-check.sh?
@@ -228,7 +249,7 @@ Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar e
 
 ---
 
-## 🤖 AGENTES
+## AGENTES
 
 Índice liviano: `~/.claude/memory/agents-index.md` (cargado al inicio).
 Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
@@ -242,12 +263,14 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 ---
 
 <!-- SKILLS_INDEX_START -->
-## 📚 SKILLS GLOBALES
+## SKILLS GLOBALES
 
 | Skill | Descripción |
 |---|---|
 | `design-system` | Paleta, tipografía, breakpoints, patrones responsivos Tailwind v4 |
-| `python-production` | Python production-grade: src/ layout, imports al top, mypy strict, tests coverage 75, pydantic Settings, docstrings Google, pre-commit gates. Invocar al refactorizar o crear Python >5 módulos. Antipatrones detectados: imports en funciones, god-scripts, magic numbers, config como env strings. | - | v1.0 |
+| `python-production` | Python production-grade: src/ layout, imports al top, mypy strict, tests coverage 75, pydantic Settings, docstrings Google, pre-commit gates. v1.0 |
+| `helix-canon` | Auto-formación trazable de agentes contra fuentes canónicas (libros/PEPs/RFCs). Curriculum mensual con citas por página. Diseño: `topics/canon-design.md`. v0.1 piloto |
+| `agent-create` | Pipeline research-first para crear expertos con fundamento trazable. Anti-prompt-injection + validación ≥80%. Invocar ANTES de escribir cualquier agente nuevo. |
 <!-- SKILLS_INDEX_END -->
 
 ---
@@ -255,19 +278,19 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 32,
+  "total_sesiones": 42,
   "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 28,
+  "total_aprendizajes": 59,
   "total_skills_creadas": 1
 }
 ```
 <!-- METRICS_END -->
 
 <!-- SESSIONS_START -->
-## 📋 SESIONES
+## SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
 0 |
-| #14 | 2026-04-19 | Fix multiclass labels: _extract_classes remapea 0/1/2 → alto/bajo/medio (LabelEncoder alfabético). Handles np.int64 vía str().isdigit(). Verificado /model/info classes=['alto','bajo','medio'] y /predict/sample con predicted_class semántico coincidiendo con real_estrato. | 3 | 0
+| #17 | 2026-04-27 | Sesión 2026-04-27: refactor masivo routing (stack manifest 7 categorías 60+ agentes, anti-bias scoring multi-criterio, hook helix-lang-trigger PreToolUse), drift cleanup agents-index (12 huérfanos removidos, architect-review→architect-reviewer, 10 contexts marcados preserved), Capa 3 honesty fix (de 'habilitada' a 'NO IMPLEMENTADO' + topics/agent-teams-status.md), HELIX-LANG restaurado tras decomiso erróneo, Helix Canon v0.1 piloto, persistencia conversacional Fase 1 implementada (helix-snapshot.sh + skill + integración session-start + regla #12 CLAUDE.md). Backups limpios sin credentials. 20 evoluciones registradas. Auto-recovery chain verificado: Qdrant restart-policy + Ollama systemd + WSL systemd habilitados, todo sobrevive reboot. | 19 | 0
 0 |
 <!-- SESSIONS_END -->
 
@@ -280,29 +303,12 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 
 ---
 
-## 📈 EVOLUCIONES RECIENTES
+## EVOLUCIONES RECIENTES
 
 <!-- EVOLUTION_LOG_START -->
 > Historial archivado en `~/.claude/memory/topics/evolution-history.md`. Solo últimas 2 semanas aquí.
 | # | Fecha | Categoría | Aprendizaje |
-| 7 | 2026-04-11 | arquitectura | Agent Teams nativo (Claude Code ≥v2.1.32): Capa 3 real. Peer-to-peer mailbox. En Capa 2 los agentes no se hablan entre sí — solo reportan al lead. Usar Capa 3 cuando agentes necesiten debatir/coordinar. Hooks: TeammateIdle, TaskCreated, TaskCompleted. |
-| 8 | 2026-04-11 | arquitectura | SuperLocalMemory V3.3: memoria local-first con MCP, sin cloud. Olvido adaptativo Ebbinghaus. AGPL v3. Pendiente evaluar vs Qdrant. |
-| 9 | 2026-04-11 | performance | HELIX-LANG v1.1: 58.7% compresión tokens en mensajes individuales (no 75%). Operadores ASCII pesan 1 token BPE cada uno. El 75%+ viene de S:hash (contexto compartido por ID). |
-| 10 | 2026-04-11 | performance | HELIX-LANG benchmark final: 64.8% ahorro combinado. Gap: contratos API comprimen poco (46%). Mejor caso con S:hash integrado: 80%. |
-| 11 | 2026-04-11 | performance | HELIX-DISTILL v1.0: slices CLAUDE.md por agente. 63-93% ahorro. Proyección Capa 2 (13 agentes): 83% menos tokens de init. |
-| 12 | 2026-04-11 | operatividad | HELIX-COMPRESS v2: helix-distill.sh con run/compress-project/compress-file. 78-96% ahorro por agente, 93% en sesión 15 agentes. |
-| 8 | 2026-04-18 | operatividad | CLAUDE.md podado 482→305 líneas; DISCOVERY-FIRST como pre-flight obligatorio en 3 modos; detalles a `topics/`. |
-| 9 | 2026-04-18 | performance | Batch Opus 4.7: agents-index slim, auto-economy regla #9, HELIX-LANG decomisionado, paralelismo regla #10, hooks <40ms verificados, decay saludable. |
-| 10 | 2026-04-18 | arquitectura | DISCOVERY-FIRST pre-flight obligatorio en helix_control_total: detectar stack, checar conflictos, pedir contexto antes de actuar | gap-helix-control-total |
-| 11 | 2026-04-18 | performance | HELIX-COMPRESS pipeline verificado: DISTILL 83% + S:hash 97% + SPEAK aplicable. Prompt caching (Opus 4.7) reduce coste de repetición en 90% | self-eval-performance |
-| 12 | 2026-04-18 | operatividad | HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración | deprecation-helix-lang |
-| 13 | 2026-04-18 | arquitectura | routing-check-hook PreToolUse(Agent): bloquea mismatches dominio↔agente detectados por ExpeL. exit 2 fuerza reconsiderar. Latencia 29ms | expel-routing-drift |
-| 14 | 2026-04-18 | arquitectura | ERL pondera por skill-quality avg y filtra por catálogo DOMAIN_CATALOG; drift explícito en routing-heuristics.md. Reflexion: hits/useful_hits/created_at + feedback/prune commands | erl-reflexion-feedback |
-| 15 | 2026-04-18 | seguridad | Helix Security Layer v1: 6 capas activas (injection, egress, secrets, integrity, evolve-guard, reflexion-quarantine) | hsl-v1 |
-| 16 | 2026-04-18 | seguridad | Helix Security Layer v1 — 6 capas: L1 injection-detector-hook (PostToolUse WebFetch/Read, patrones jailbreak/exec/hidden), L2 network-egress-hook (PreToolUse Bash, allowlist ~/.claude/config/network-allowlist.txt), L3 secrets-scanner-hook (PreToolUse Write/Edit/Bash, AWS/GCP/GH/OpenAI/Anthropic/Slack/SSH/JWT), L4 integrity-check.sh (manifest SHA256 de 29 ficheros críticos), L5 evolve-guard en evolve.sh (rechaza jailbreak/pipe-to-shell/eval-b64 antes de persistir), L6 reflexion-quarantine (trusted=false default, created_at/hits/useful_hits, filtra untrusted en search, feedback useful|stale, prune). Tests adversariales OK. | security-hardening-batch |
-| 17 | 2026-04-18 | performance | helix-cache-metrics.sh — parsea message.usage en ~/.claude/projects/*/*.jsonl y reporta hit_rate/savings del prompt cache Anthropic. Medición real: 91.8% hit rate, 80.6% savings (~42.5M tokens ahorrados en 500 API calls, 2 proyectos). Verdict healthy ≥60%. Confirma que el cache se está usando correctamente — no requiere tuning adicional de CLAUDE.md. | cache-observability |
-| 18 | 2026-04-18 | operatividad | helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. Crea worktrees aislados bajo .helix-worktrees/ y dispara claude -p por tarea. Spec.md: '- [ ] ID:X | branch:Y | prompt:"..."'. Complementado con helix-longmemeval.sh (build/run/compare) que mide Precision@1, P@k, MRR vs benchmarks LongMemEval ICLR 2025 (OMEGA 95.4, Mastra 94.9, Zep 71.2). Baseline actual P@1=100% / MRR=1.000 en 8 queries sintéticas (dataset pequeño — ampliar con reflexiones reales para medición robusta). | batch-dispatcher-longmemeval |
-| 19 | 2026-04-18 | operatividad | .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita que Claude Code cargue secretos (.env, *.pem, *_rsa, credentials.json), binarios, node_modules/venv, data/raw, media, helix internals (.claude/memory/*.jsonl, decay-scores.json). Reduce ruido de tool search y superficie de exposición. | claudeignore-template |
+| 8-19 | 2026-04-18 | varias | DISCOVERY-FIRST, HSL v1, ERL/Reflexion, routing-check-hook, cache-metrics, batch-dispatcher, .claudeignore → archivadas en `topics/evolution-history.md`. |
 | 20 | 2026-04-19 | operatividad | Al crear un agente nuevo, completar los 3 pasos juntos: (1) slim en ~/.claude/agents/<name>.md (frontmatter + 3 líneas), (2) contexto on-demand en ~/.claude/memory/agents/<name>.md (expertise + cuándo invocar + limitaciones + output contract), (3) fila en ~/.claude/memory/agents-index.md. Si son específicos de un proyecto, evaluar si el dominio es reutilizable antes de promover a global. | agent-creation-completeness |
 | 21 | 2026-04-19 | datos | Antes de codificar features o modelos, verificar schema REAL del dataset con DESCRIBE — README puede estar desactualizado. En ent-tesis, README prometía 'is_rugpull' (binaria) pero schema real tiene 'estrato' (multi-clase 3 niveles). metadata prometía name/symbol/decimals/supply pero solo tiene token_creator/creation_tx/creation_block/timestamp. | readme-schema-drift |
 | 22 | 2026-04-19 | datos | Uniswap amount0/amount1 son uint256 (Ethereum) — no caben en Int64 pandas (OverflowError). Cast a float64 (pérdida de precisión en dígito 16+ es inmaterial para ratios rugpull). Aplica a cualquier columna que venga de uint256 on-chain. | uint256-int64-overflow |
@@ -311,11 +317,41 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 25 | 2026-04-23 | arquitectura | Vector store helix_agents ahora se auto-sincroniza: hook PostToolUse(Write|Edit|MultiEdit) agents-vector-sync-hook.sh detecta edits en ~/.claude/agents/*.md o ~/.claude/memory/agents/*.md y dispara 'hv index-agents' en background con flock debounce 8s. Exit 0 inmediato (no bloquea edits). Log en ~/.claude/memory/agents-vector-sync.log. Skip si Qdrant está down. Tiempo real de index: ~5.5s para 34 agentes. | vector-sync-auto |
 | 26 | 2026-04-23 | operatividad | Response-sizing: calibrar profundidad al peso del mensaje del usuario. Mensajes sociales breves (gracias/ok/buen trabajo) → respuesta ≤2 líneas sin cargar contexto adicional. Preguntas técnicas → respuesta general primero (2-4 líneas) + '¿querés que profundice en X?'. Solo desplegar explicación larga si el usuario confirma. Why: evita quemar tokens, cache y paciencia del usuario cuando la intención no lo justifica. | response-sizing-feedback |
 | 27 | 2026-04-23 | arquitectura | Proceso research-first para crear expertos: skill agent-create con pipeline de 6 fases (scoping/research/sanitize/synthesize/validate/commit). Allowlist de fuentes (NIST/OWASP/IETF/W3C/vendor-docs/papers/repos-canónicos), anti-injection vía L1 existente + scanner manual + cross-validation ≥3 fuentes, fingerprinting de fuentes con URL+fecha+hash, validación ≥80% antes de activar. Refresh cycle cada 90d para agentes con ≥20 invocaciones/30d. Cambios al prompt requieren OK del usuario. | agent-create-skill |
+| 28 | 2026-04-24 | operatividad | Antes de responder preguntas de estado/pendientes del proyecto, verificar que .claude/memory/helix-*.md no esté stale vs git log. Script helix-staleness.sh + flag [HELIX-SUGGEST-ACTUALIZA] en session-start + regla en DISCOVERY-FIRST. | stale-helix-memory-miss |
+| 29 | 2026-04-24 | operatividad | TEST_NUMERACION_MONOTONICA hook staleness mid-sesion y fix numeracion evolve.sh | helix-harness-optimizer |
+| 30 | 2026-04-24 | operatividad | helix-read-staleness-hook PreToolUse(Read): detecta helix-*.md stale mid-sesion (timeout 3s, exit 0 siempre). Fix evolve.sh numeracion monotonica global: max(nums)+1 en vez de grep -c que repetia numeros. | helix-harness-optimizer |
+| 31 | 2026-04-24 | operatividad | Rule 11 en PROTOCOLO DE DIÁLOGO: cierre automático cuando usuario escribe exit/salir/bye/cerrar → Claude ejecuta session-end.sh sin preguntar. Resumen mínimo si contexto agotado. Rate-limit → aceptable correr manual. Registrado harness-optimizer en agents-index.md + contexto on-demand en memory/agents/harness-optimizer.md. | auto-session-close |
+| 32 | 2026-04-24 | operatividad | jupyter/base-notebook:python-3.10 queda chico para stack ML moderno (sklearn>=1.8 y mlflow>=3.11 requieren Python>=3.11). Subir a jupyter/base-notebook:python-3.11. Mantener requirements del Jupyter sincronizado con pyproject.toml [dev] y montar el repo RO en /home/jovyan/repo con PYTHONPATH=/home/jovyan/repo/src para que el notebook importe 'from mme.*' sin duplicar deps. | p1-jupyter-deps |
+| 33 | 2026-04-24 | arquitectura | MLflow 3.x: stages (None/Staging/Production/Archived) deprecated desde 2.9. Usar aliases (client.set_registered_model_alias + get_model_version_by_alias + models:/<name>@champion). Para statsmodels GLM NegBin no hay flavor nativo → wrappear en mlflow.pyfunc.PythonModel con signature inferida vía infer_signature(sample_input, sample_output). | p1-mlflow3-aliases |
+| 34 | 2026-04-24 | docker | python:3.11-slim no trae libgomp (OpenMP). LightGBM lo requiere en runtime — si no esta, OSError libgomp.so.1 al importar. Fix: apt install libgomp1. Aplica a cualquier imagen Python slim que serve modelos sklearn/lgbm/xgb. Verificar en Dockerfile multi-stage: el stage runtime necesita libs runtime, no solo el builder. | py-slim-ml-missing-libs |
+| 35 | 2026-04-24 | testing | monkeypatch.setattr sobre submódulos mlflow puede colgar tests. Patron roto: monkeypatch.setattr('app.X.mlflow.lightgbm.load_model', ...). El acceso a mlflow.lightgbm dispara imports lazy que intentan conectar al tracking URI si no está fully mockeado. Patrón correcto: patchear el método en la clase que lo usa (monkeypatch.setattr(ModelStore, '_load_model', lambda self,*a: mock)). Evita gatillar la cadena de imports. | mlflow-submodule-mock-hang |
+| 36 | 2026-04-24 | datos | DIVIPOLA codes en parquets MME almacenados como int64 sin padding: cod_mpio=5001 para Medellín (real es 05001). Al comparar con input string del usuario (05001) fallar silencioso. Normalizar siempre en API boundary: df['cod_mpio'].astype(str).str.zfill(5) == user_input. Vale para cod_mpio (5), cod_dpto (2). No asumir que un schema 'obvio' ya está normalizado. | divipola-int-sin-padding |
+| 37 | 2026-04-25 | interfaz | Helix es de Colombia con acento neutro. Nunca usa modismos argentinos (vos/che/laburo), españoles (tío/vale), mexicanos (órale) ni otros. Aplica global a todos los proyectos. | user-feedback-identidad-colombiana |
+| 38 | 2026-04-25 | docker | Charts Bitnami pueden renombrar Service al migrar de manifest propio. Caso real: chart 'mlflow' (Bitnami) crea Service 'mlflow-tracking' en puerto 80, no 'mlflow:5000'. Toda referencia hardcoded en .env, ConfigMap y Deployment debe actualizarse — verificar con 'kubectl get svc -n <ns>' tras instalar chart Helm/Bitnami. | bitnami-svc-rename-mlflow |
+| 39 | 2026-04-25 | operatividad | WSL2 sin .wslconfig + dos stacks paralelos (Compose + microk8s) del mismo proyecto satura la RAM del host Windows. Síntoma: WSL muere y dmesg queda vacío al reboot (Windows recicla la VM completa). Diagnóstico: docker ps muestra ambos stacks; verificar con free -h. Fix: bajar uno de los dos + crear C:\Users\<user>\.wslconfig con memory/swap explícitos. | wsl-double-stack-oom |
+| 40 | 2026-04-27 | operatividad | Agentes se mejoran auditando contra documentación canónica (libros, PEPs, RFCs, papers), no por estadísticas de uso. Las rutas de alta confianza por % éxito tienen sesgo de selección — la calidad debe ser sólida por sus prácticas. Aplicar agent-create retroactivamente + diseñar Helix Canon (curriculum mensual con citas por página). | user-feedback-canon-vs-stats |
+| 41 | 2026-04-27 | operatividad | CLAUDE.md podado 371→343 lineas: archivadas evoluciones 2026-04-11 (#7-12) y 2026-04-18 (#8-19) a topics/evolution-history.md; bullets OPERABILIDAD reducidos a ultimos 7 dias; SEGURIDAD HSL v1 condensada en 1 linea con puntero a topics/operatividad.md; tabla SESIONES limpiada de basura de rendering. Score contexto 80 -> 100. | claude-md-prune-371-343 |
+| 42 | 2026-04-27 | arquitectura | Helix Canon v0.1 — skill + helper stub + design doc creados. Sistema continuo de auto-formacion de agentes contra fuentes canonicas (libros, PEPs, RFCs, papers) con citas por pagina. Complementa agent-create (one-shot) con curriculum mensual. Estado: piloto - falta implementacion real de extraccion (canon-read.sh es stub), cron mensual, inyeccion runtime, self-check anti-canon. Proximo experimento: python-pro + PEP-8. | helix-canon-v0.1 |
+| 43 | 2026-04-27 | arquitectura | Stack Manifest v0.1: cada proyecto declara stack curado en .claude/memory/helix-stack.md (tier small/medium/large + core/extended/excluded). helix-stack.sh detect|init|show|add|remove|promote. Catalogos por tier en topics/stack-catalogs.md. Diseño en topics/stack-manifest.md. Resuelve falta de roles transversales (security/qa/ba/devops) en proyectos large. | stack-manifest-v0.1 |
+| 44 | 2026-04-27 | arquitectura | Routing Anti-Bias v0.1: helix-route.sh pick|audit|weights con scoring multi-criterio (similarity 0.50 + freshness 0.20 + skill_quality 0.15 + stack_match 0.15) + epsilon-greedy 10% + filtro hard por catalogo del dominio. Test real: domain=testing devuelve qa-expert (nunca usado, freshness=1.0) sobre test-engineer (2 usos, freshness=0.48) — corrige drift detectado por ERL. Audit reporta cobertura/top3-saturation/never-used. Diseño: topics/routing-anti-bias.md. | routing-anti-bias-v0.1 |
+| 45 | 2026-04-27 | arquitectura | Routing Fase 2 completa: (1) routing-check-hook.sh extendido con bloqueo duro de stack.excluded (exit 2) + sugerencia stack-aware (exit 0 stderr) — independiente del dominio. (2) helix-stack auto-promote-check detecta extended con ≥3 usos como candidatos a core (sugiere, no auto-promociona). (3) helix-metricas dimension routing: stack_coverage, top3_saturation, never_used_count + score routing. (4) helix-route pick --shadow + shadow-report para validacion 1 semana antes de activar hook automatico. Todos los tests E2E pasan (5/5 casos de routing-check). | routing-fase2-complete |
+| 46 | 2026-04-27 | arquitectura | Stack Manifest extensiones: (A) UNIVERSAL_BASE [error-detective, code-reviewer, architect-reviewer] siempre en core independiente del lenguaje/tier — agentes de proceso. (B) suggest-agents detecta frameworks sin agente especializado (vue→vue-pro, svelte→svelte-pro, astro, remix, solid, nuxt, graphql, prisma, trpc, elixir, phoenix, rust, go, rails, spring) y propone comando para invocar skill agent-create. NUNCA auto-crea — solo sugiere, decisión queda en usuario. | stack-universal-base-suggest-agents |
+| 47 | 2026-04-27 | arquitectura | Catalogo extensible de agentes especializados: ~/.claude/memory/topics/specialized-agents-catalog.json con 7 categorias (languages, frameworks, domains, infrastructure, blockchain, specialized, compliance) y 9 tipos de señales (files, dirs, manifest, deps_python/node/ruby/elixir/rust/go, keywords_in_readme). Cubre 60+ agentes potenciales. helix-stack suggest-agents recorre el catalogo, evalua señales del proyecto, y reporta cualquier agente faltante con comando para crear. Tests E2E: 5/5 pasan (Rust, ML pytorch+langchain, Infra terraform+helm+k8s, Solidity+ethers, HIPAA por README). Catalogo es extensible sin tocar codigo. | specialized-agents-universal-catalog || 48 | 2026-04-27 | operatividad | Vector store fix: hv search usa --top-k (no --limit), output viene como {results:[{score,id,payload:{agent,text}}]}. Bug acumulado: heredoc Python fallaba por raw output >30KB con \n y " — pasar via tmpfile (mismo patron que cmd_init). Despues del fix: helix-route pick activa scoring multi-criterio real con freshness boost (test-automator fresh=1.0 gana sobre test-engineer fresh=0.48 con 2 usos). | vector-store-fix-helix-route |
+| 48 | 2026-04-27 | operatividad | Tres helpers nuevos para housekeeping: (1) helix-claude-md-prune.sh: auto-archive evoluciones >14d cuando CLAUDE.md > umbral 340. Idempotente, dry-run mode, archiva a topics/evolution-history.md. (2) helix-agents-audit.sh: diff entre ~/.claude/agents/*.md y agents-index.md y context files. Detecta orphans en 4 sentidos. Detectado real: 12 agentes en indice sin archivo, 5 archivos sin entry, 11 context huerfanos. (3) helix-stack create-suggested: bridge para invocar skill agent-create con contexto del proyecto pre-cargado (output estructurado para Helix). | housekeeping-helpers-prune-audit-bridge |
+| 49 | 2026-04-27 | operatividad | Drift cleanup agents-index 2026-04-27: (1) renombrado architect-review.md → architect-reviewer.md (typo: el frontmatter ya decia architect-reviewer). (2) Removidos 11 entries huerfanos del index (postgres-pro, performance-engineer, prompt-engineer, codebase-explorer, context-manager, task-decomposition-expert, research-coordinator, ui-designer, ui-ux-designer, fin-saas-advisor, mme-domain-expert). Context files preservados en memory/agents/ por si se restauran. (3) Agregados al index 3 archivos sin entry: app-creative-genius, brand-identity-expert, loop-operator. (4) Audit script ahora excluye INDEX/README/CHANGELOG/TODO de file_without_index_entry. Resultado: index ahora coherente con filesystem. | drift-cleanup-agents-index |
+| 50 | 2026-04-27 | performance | HELIX-LANG restaurado 2026-04-27 (revierte decomiso del 2026-04-18). Razon del decomiso original era 'uso real nulo' — pero eso fue Helix sin invocarlo, no fallo del protocolo. Bench mide 58.7% compresion real de tokens. CLAVE: output tokens NO se cachean, mientras input cache da 90% savings — HELIX-LANG ataca el costo donde cache no llega. Restaurado a skills/helix-lang/SKILL.md + helpers/helix-lang-{state,bench}.sh. CLAUDE.md actualizado con regla clara de cuando usar (Agent tool >500 tokens, multi-agente coordinacion, memoria inter-agente). | helix-lang-restored |
+| 51 | 2026-04-27 | performance | helix-lang-trigger-hook PreToolUse(Agent): auto-disparo del aviso HELIX-LANG cuando prompt >500 tokens y prosa-heavy (≥3 oraciones >80 chars) y SIN marcadores HELIX-LANG (A:, S:, T:, R:, H:). No bloqueante (exit 0 stderr). CORRIGE error de diseño previo: la regla 'usar HELIX-LANG' ahora se cementa via hook automatico, no via memoria del usuario o del agente. Test confirma: silencioso en prompts cortos, sugiere en prompt 632 tokens prosa, silencioso si ya tiene markers HELIX-LANG. Settings.json: PreToolUse Agent ahora tiene 2 hooks (routing-check + helix-lang-trigger). | helix-lang-auto-trigger-hook |
+| 52 | 2026-04-27 | operatividad | Capa 3 Agent Teams: corregido drift en CLAUDE.md. Antes prometía 'ya habilitada en settings.json' — VERIFICACION 2026-04-27 mostró que mailbox/teammates dirs no existen, hook TaskCreated no registrado, 0 invocaciones swarm/team en 30d. Ahora CLAUDE.md dice 'NO IMPLEMENTADO' con puntero a topics/agent-teams-status.md que documenta estado real y plan de implementación mínima. Honestidad estructural restaurada. | capa3-honesty-fix |
+| 53 | 2026-04-27 | operatividad | helix-agents-audit ahora distingue context_orphan accidental vs preserved (frontmatter status: preserved). 10 context files de agentes removidos marcados como preserved. Audit ahora reporta status:OK con orphans=0 accidentales y 10 preserved. | audit-preserved-marker |
+| 54 | 2026-04-27 | performance | helix-lang-trigger-hook validado E2E con payload realista 700+ tokens prosa: dispara stderr 'HELIX-LANG SUGGEST' con estimación ~370 tokens ahorro. routing-check-hook + helix-lang-trigger-hook coexisten en PreToolUse(Agent) sin conflicto. Hook listo para producción. | helix-lang-hook-e2e-validated |
+| 55 | 2026-04-27 | operatividad | Backup tarball protege trabajo entre sesiones (~/.claude-backups/, exclude credentials/projects/cache/sessions/history). helix_asisten ahora tiene su stack manifest aplicado: tier=medium, core=[error-detective, code-reviewer, architect-reviewer, python-pro, harness-optimizer], extended=[security-auditor]. El detector existente helix-detect-stack.sh es ciego a proyectos sin manifest en root (helix_asisten tiene .py files dispersos pero no requirements.txt en raiz) — limitación conocida del detector. | self-application-stack-manifest |
+| 56 | 2026-04-27 | operatividad | Research dump completo sobre manejo de conversación y contexto en topics/conversation-context-research.md (264 líneas). Cubre: (1) inventario Helix interno (scripts sesion, skills strategic-compact/context-budget, bitacoras, 22 transcripts jsonl disponibles pero sin parser propio), (2) SOTA externo (Claude Code session format, LongMemEval ICLR 2025 con 5 abilities + 30% accuracy drop, Mem0 paper 2504.19413 con 91% latency / 90% cost reduction, compaction strategies: observation masking vs LLM summary vs structured vs ACON vs provider-native, Anthropic prompt caching 2026 workspace-isolation), (3) gaps Helix vs SOTA (snapshot persistente, resume opt-in, masking de tool results, staleness conversacional, pinning), (4) 7 decisiones de diseño abiertas con recomendaciones tentativas. NO IMPLEMENTADO — research preparatorio para discusión a fondo en próxima sesión. | conversation-context-research-dump |
+| 57 | 2026-04-27 | arquitectura | Persistencia conversacional Fase 1 implementada: helix-snapshot.sh con 7 subcomandos (capture/resume/list/show/archive/prune/stale-check), schema YAML estructurado, storage por proyecto con archive lifecycle 7d/30d, chmod 600, .gitignore protegido. Integración con session-start.sh: HELIX-SUGGEST-RESUME flag al detectar snapshot reciente. CLAUDE.md regla #12: opt-in resume con 3 opciones, NUNCA auto-load. Skill helix-snapshot registrada. Stack 100% local sin egress sin paid. Test E2E: capture sesión actual exitoso, resume funcional, stale-check OK. detect_project mejorado con 3 fallbacks (CLAUDE.md ascendente, subdirs comunes, .git/package.json/requirements.txt) + override HELIX_SNAPSHOT_PROJECT. Pendiente fase 2: hook Stop auto-capture, cron 30min, compactación inteligente. | persistence-fase1-complete |
 <!-- EVOLUTION_LOG_END -->
 
 ---
 
-## 📖 Recursos Globales
+## Recursos Globales
 
 | Recurso | Ubicación |
 |---|---|

@@ -221,9 +221,9 @@ type Country = {
 };
 
 const countries: Country[] = [
-  { code: 'US', name: 'United States', flag: '🇺🇸' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+  { code: 'US', name: 'United States', flag: '' },
+  { code: 'CA', name: 'Canada', flag: '' },
+  { code: 'MX', name: 'Mexico', flag: '' },
 ];
 
 function CountrySelector() {

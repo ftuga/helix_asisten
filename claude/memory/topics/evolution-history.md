@@ -38,7 +38,7 @@
 | 5 | 2026-03-20 | interfaz | Preguntar antes de actuar: máx 2-4 preguntas agrupadas cuando solicitud es ambigua en alcance/archivo/comportamiento | usuario-solicitud-mejora |
 | 6 | 2026-03-20 | interfaz | Plan visible antes de ejecutar: mostrar A→B→C y esperar OK cuando tarea toca ≥2 archivos | usuario-solicitud-mejora |
 | 7 | 2026-03-20 | interfaz | Umbral de confianza: 'autonomía alta' ejecuta sin preguntar, 'autonomía baja' confirma cada paso | usuario-solicitud-mejora |
-| 8 | 2026-03-20 | interfaz | Alerta antes de zona 🔴: declarar qué línea/función se va a cambiar y esperar confirmación | usuario-solicitud-mejora |
+| 8 | 2026-03-20 | interfaz | Alerta antes de zona : declarar qué línea/función se va a cambiar y esperar confirmación | usuario-solicitud-mejora |
 
 ## Archivado 2026-04-01 00:12 — Historial evoluciones
 | 9 | 2026-03-20 | interfaz | Exploración antes de implementación: proponer ≤3 opciones en features nuevas, implementar directo en bugs/tasks concretas | usuario-solicitud-mejora |
@@ -82,3 +82,28 @@
 
 ## Archivado 2026-04-18 20:40 — Historial evoluciones
 |---|---|---|---|
+
+## Archivado 2026-04-27 — Evoluciones 2026-04-11 (movidas desde CLAUDE.md por poda)
+| 7 | 2026-04-11 | arquitectura | Agent Teams nativo (Claude Code ≥v2.1.32): Capa 3 real. Peer-to-peer mailbox. En Capa 2 los agentes no se hablan entre sí — solo reportan al lead. Usar Capa 3 cuando agentes necesiten debatir/coordinar. Hooks: TeammateIdle, TaskCreated, TaskCompleted. |
+| 8 | 2026-04-11 | arquitectura | SuperLocalMemory V3.3: memoria local-first con MCP, sin cloud. Olvido adaptativo Ebbinghaus. AGPL v3. Pendiente evaluar vs Qdrant. |
+| 9 | 2026-04-11 | performance | HELIX-LANG v1.1: 58.7% compresión tokens en mensajes individuales (no 75%). Operadores ASCII pesan 1 token BPE cada uno. El 75%+ viene de S:hash (contexto compartido por ID). |
+| 10 | 2026-04-11 | performance | HELIX-LANG benchmark final: 64.8% ahorro combinado. Gap: contratos API comprimen poco (46%). Mejor caso con S:hash integrado: 80%. |
+| 11 | 2026-04-11 | performance | HELIX-DISTILL v1.0: slices CLAUDE.md por agente. 63-93% ahorro. Proyección Capa 2 (13 agentes): 83% menos tokens de init. |
+| 12 | 2026-04-11 | operatividad | HELIX-COMPRESS v2: helix-distill.sh con run/compress-project/compress-file. 78-96% ahorro por agente, 93% en sesión 15 agentes. |
+
+## Archivado 2026-04-27 — Evoluciones 2026-04-18 (movidas desde CLAUDE.md por poda)
+| 8 | 2026-04-18 | operatividad | CLAUDE.md podado 482→305 líneas; DISCOVERY-FIRST como pre-flight obligatorio en 3 modos; detalles a `topics/`. |
+| 9 | 2026-04-18 | performance | Batch Opus 4.7: agents-index slim, auto-economy regla #9, HELIX-LANG decomisionado, paralelismo regla #10, hooks <40ms verificados, decay saludable. |
+| 10 | 2026-04-18 | arquitectura | DISCOVERY-FIRST pre-flight obligatorio en helix_control_total: detectar stack, checar conflictos, pedir contexto antes de actuar | gap-helix-control-total |
+| 11 | 2026-04-18 | performance | HELIX-COMPRESS pipeline verificado: DISTILL 83% + S:hash 97% + SPEAK aplicable. Prompt caching (Opus 4.7) reduce coste de repetición en 90% | self-eval-performance |
+| 12 | 2026-04-18 | operatividad | HELIX-LANG deprecado 2026-04-18: uso real nulo post-benchmarks. Archivado en memory/topics/deprecated/helix-lang/ con política de restauración | deprecation-helix-lang |
+| 13 | 2026-04-18 | arquitectura | routing-check-hook PreToolUse(Agent): bloquea mismatches dominio↔agente detectados por ExpeL. exit 2 fuerza reconsiderar. Latencia 29ms | expel-routing-drift |
+| 14 | 2026-04-18 | arquitectura | ERL pondera por skill-quality avg y filtra por catálogo DOMAIN_CATALOG; drift explícito en routing-heuristics.md. Reflexion: hits/useful_hits/created_at + feedback/prune commands | erl-reflexion-feedback |
+| 15 | 2026-04-18 | seguridad | Helix Security Layer v1: 6 capas activas (injection, egress, secrets, integrity, evolve-guard, reflexion-quarantine) | hsl-v1 |
+| 16 | 2026-04-18 | seguridad | Helix Security Layer v1 — 6 capas: L1 injection-detector-hook (PostToolUse WebFetch/Read, patrones jailbreak/exec/hidden), L2 network-egress-hook (PreToolUse Bash, allowlist ~/.claude/config/network-allowlist.txt), L3 secrets-scanner-hook (PreToolUse Write/Edit/Bash, AWS/GCP/GH/OpenAI/Anthropic/Slack/SSH/JWT), L4 integrity-check.sh (manifest SHA256 de 29 ficheros críticos), L5 evolve-guard en evolve.sh (rechaza jailbreak/pipe-to-shell/eval-b64 antes de persistir), L6 reflexion-quarantine (trusted=false default, created_at/hits/useful_hits, filtra untrusted en search, feedback useful|stale, prune). Tests adversariales OK. | security-hardening-batch |
+| 17 | 2026-04-18 | performance | helix-cache-metrics.sh — parsea message.usage en ~/.claude/projects/*/*.jsonl y reporta hit_rate/savings del prompt cache Anthropic. Medición real: 91.8% hit rate, 80.6% savings (~42.5M tokens ahorrados en 500 API calls, 2 proyectos). Verdict healthy ≥60%. Confirma que el cache se está usando correctamente — no requiere tuning adicional de CLAUDE.md. | cache-observability |
+| 18 | 2026-04-18 | operatividad | helix-batch.sh worktree dispatcher (plan/run --parallel/status/cleanup) — patrón /batch del ecosistema Claude Code. | batch-dispatcher-longmemeval |
+| 19 | 2026-04-18 | operatividad | .claudeignore template agregado a ~/.claude-template/ y aplicado a helix_asisten. Evita carga de secretos y binarios. | claudeignore-template |
+
+## Archivado 2026-04-27 20:48 — Auto-prune (CLAUDE.md > 340 líneas)
+| 7-12 | 2026-04-11 | varias | HELIX-LANG/DISTILL/COMPRESS, Agent Teams, SuperLocalMemory → archivadas en `topics/evolution-history.md`. |

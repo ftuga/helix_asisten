@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 
 ---
 
-## ⚠️ How to Use This Skill
+## How to Use This Skill
 
 This skill teaches **decision-making principles**, not fixed code to copy.
 
@@ -298,7 +298,7 @@ node --test src/**/*.test.ts
 
 ## 10. Anti-Patterns to Avoid
 
-### ❌ DON'T:
+### DON'T:
 - Use Express for new edge projects (use Hono)
 - Use sync methods in production code
 - Put business logic in controllers
@@ -307,7 +307,7 @@ node --test src/**/*.test.ts
 - Trust external data without validation
 - Block event loop with CPU work
 
-### ✅ DO:
+### DO:
 - Choose framework based on context
 - Ask user for preferences when unclear
 - Use layered architecture for growing projects

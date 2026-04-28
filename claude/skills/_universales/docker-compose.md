@@ -34,7 +34,7 @@ docker compose ps                      # Estado de todos los servicios
 docker compose top                     # Procesos corriendo
 ```
 
-## ⚠️ Reglas Críticas
+## Reglas Críticas
 
 ```bash
 # Variables VITE_* se hornean al buildear la imagen
@@ -49,12 +49,12 @@ PG_USER=$(grep POSTGRES_USER .env | cut -d'=' -f2)
 
 | Servicio | Puerto | Acceso externo |
 |---|---|---|
-| Backend FastAPI | 8000 | ❌ Solo via Nginx |
-| Frontend Nginx | 80/443 | ✅ |
-| PostgreSQL | 5432 | ❌ |
-| Redis | 6379 | ❌ |
-| MinIO API | 9000 | ❌ |
-| MinIO Console | 9001 | ⚠️ Solo dev |
+| Backend FastAPI | 8000 | Solo via Nginx |
+| Frontend Nginx | 80/443 | |
+| PostgreSQL | 5432 | |
+| Redis | 6379 | |
+| MinIO API | 9000 | |
+| MinIO Console | 9001 | Solo dev |
 
 ## Producción — Cambios Pendientes en compose.yml
 

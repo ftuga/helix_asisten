@@ -1,4 +1,6 @@
 ---
+status: preserved
+preserved_reason: agente removido del index 2026-04-27, context retenido por si se restaura
 name: fin-saas-advisor
 description: "Use this agent when analyzing SaaS business metrics, pricing strategy, unit economics, or financial modeling for software products. Specifically:
 

@@ -47,6 +47,19 @@
           {
             "type": "command",
             "command": "bash \"$HOME/.claude/helpers/routing-check-hook.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/helix-lang-trigger-hook.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/.claude/helpers/helix-read-staleness-hook.sh\""
           }
         ]
       },

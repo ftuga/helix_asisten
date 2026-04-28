@@ -7,7 +7,7 @@ React 19 introduces breaking changes and new APIs requiring updated TypeScript p
 React 19 allows ref as regular prop — forwardRef deprecated but still works.
 
 ```typescript
-// ✅ React 19 - ref as prop
+//  React 19 - ref as prop
 type InputProps = {
   ref?: React.Ref<HTMLInputElement>;
   label: string;
@@ -36,7 +36,7 @@ function Form() {
 ```
 
 ```typescript
-// ❌ Old pattern (still works, but unnecessary)
+//  Old pattern (still works, but unnecessary)
 import { forwardRef } from 'react';
 
 type InputProps = {
@@ -274,7 +274,7 @@ export function TodoList({ initialTodos }: { initialTodos: Todo[] }) {
           >
             <input type="hidden" name="todoId" value={todo.id} />
             <button type="submit">
-              {todo.completed ? '✓' : '○'} {todo.title}
+              {todo.completed ? '' : '○'} {todo.title}
             </button>
           </form>
         </li>

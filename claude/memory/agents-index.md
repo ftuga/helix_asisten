@@ -11,9 +11,8 @@
 | `frontend-developer` | Componente React, página nueva |
 | `backend-architect` | Diseño de API, estructura de servicio |
 | `database-architect` | Cambio de modelo o esquema |
-| `postgres-pro` | PostgreSQL HA, replicación, backup enterprise |
-| `postgresql-dba` | Query PostgreSQL específica (legacy → migrar a postgres-pro) |
-| `sql-pro` | Query lenta, window functions, plan de ejecución |
+| `postgresql-dba` | Query PostgreSQL, índices, plan de ejecución |
+| `sql-pro` | Query lenta, window functions, optimización SQL |
 | `error-detective` | Bug o error inesperado — SIEMPRE PRIMERO |
 | `code-reviewer` | Pre-cierre — OBLIGATORIO antes de declarar completa |
 | `security-auditor` | Auditoría de seguridad, compliance |
@@ -25,24 +24,35 @@
 | `test-automator` | Implementación tests automatizados CI |
 | `monitoring-specialist` | Logs, alertas, observabilidad |
 | `architect-reviewer` | Decisión arquitectónica, SOLID |
-| `performance-engineer` | Bottleneck, profiling, load testing |
-| `prompt-engineer` | Diseñar o auditar system prompt |
-| `codebase-explorer` | Explorar codebase sin leer archivos |
-| `context-manager` | Gestión contexto sesiones largas |
-| `task-decomposition-expert` | Descomponer tarea compleja |
-| `research-coordinator` | Investigación multi-agente |
-| `ui-designer` | Componente visual, dirección estética |
-| `ui-ux-designer` | Flujos, arquitectura info, UX |
-| `fin-saas-advisor` | Precios, márgenes, modelo SaaS |
 | `investment-expert` | Bolsa, cripto, trading, portafolio |
+| `mlflow-expert` | MLflow 2.x: runs, registry, artifacts S3/MinIO, reproducibilidad |
+| `airflow-dag-expert` | Airflow 2.x CeleryExecutor: DAGs, TaskFlow, pools, connections |
+| `rugpull-domain-expert` | DeFi forense Uniswap V2: SYNC/MINT/BURN, features rug pull |
+| `harness-optimizer` | Auditar/modificar harness Helix: hooks, CLAUDE.md, scripts core de ~/.claude/. NO toca código de producto |
+| `app-creative-genius` | Visionario producto/UX. Ideas bold para features, flujos, modelo de negocio, diferenciación |
+| `brand-identity-expert` | Brand naming, identity, taglines, go-to-market, Google/Meta Ads |
+| `loop-operator` | Operación de loops autónomos con safeguards: detecta stalls, retries, presupuesto |
 
 ## Deshabilitados (no invocar)
 `api-architect` · `api-designer` · `api-documenter` · `azure-infra-engineer` · `backend-developer` · `business-analyst` · `fullstack-developer` · `mcp-security-auditor` · `metadata-agent` · `nextjs-architecture-expert` · `product-manager` · `project-manager` · `qa-expert` · `scrum-master` · `security-engineer`
 
+## Removidos del índice 2026-04-27 (no tenían archivo en `~/.claude/agents/`)
+> Context files preservados en `~/.claude/memory/agents/` por si se restauran.
+`postgres-pro` (HA enterprise) · `performance-engineer` (profiling) · `prompt-engineer` (audit system prompts) · `codebase-explorer` · `context-manager` · `task-decomposition-expert` · `research-coordinator` · `ui-designer` · `ui-ux-designer` · `fin-saas-advisor` · `mme-domain-expert` (project-local ent-tesis)
+
+Para restaurar: instalar archivo con `helix-agent-manager` o crear con skill `agent-create`, luego mover de "Removidos" a "Activos".
+
 ## Notas ERL+ExpeL
-- `researcher` y `general-purpose` son tipos internos de Claude Code, no agentes Helix. Para research → `research-coordinator` o `backend-architect` según dominio.
-- `postgresql-dba` → migrar a `postgres-pro`. Mantener temporalmente por compatibilidad.
+- `researcher` y `general-purpose` son tipos internos de Claude Code, no agentes Helix. Para research → `backend-architect` o `general-purpose` según dominio.
+- `postgresql-dba` cubre dominio Postgres mientras no exista `postgres-pro`.
 
-> Última corrección: 2026-04-18
+## Agentes de dominio MLOps/DeFi (2026-04-19)
+Promovidos desde `ent-tesis` — útiles para cualquier proyecto con Airflow + MLflow + MinIO o
+analítica on-chain de Uniswap V2. Contexto completo en `memory/agents/<nombre>.md`.
+- `mlflow-expert` — tracking + registry + artifacts
+- `airflow-dag-expert` — DAGs idempotentes + CeleryExecutor
+- `rugpull-domain-expert` — criterio de dominio DeFi (específico pero reutilizable)
 
-> Última corrección ERL+ExpeL: 2026-04-18
+> Última corrección: 2026-04-27 (drift cleanup: 11 entries huérfanos removidos, 3 archivos agregados, architect-review→architect-reviewer renombrado)
+
+> Última corrección ERL+ExpeL: 2026-04-27

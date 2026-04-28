@@ -214,9 +214,19 @@ PYGUARD
   # Insertar en sección de categoría (ambos CLAUDE.md)
   py_insert_both "<!-- ${marker_name}_END -->" "$new_entry"
 
-  # Calcular número de entrada para el log de evoluciones
+  # Calcular numero de entrada para el log de evoluciones (monotónico global)
+  # Lee el maximo existente en la tabla y hace +1. Nunca repite ni reinicia.
   local num
-  num=$(grep -c "^| [0-9]" "$GLOBAL_CLAUDE_MD" 2>/dev/null || echo "1")
+  num=$(python3 - "$GLOBAL_CLAUDE_MD" <<'PYNUMEOF'
+import sys, re
+try:
+    content = open(sys.argv[1]).read()
+    nums = [int(m) for m in re.findall(r'^\|\s*(\d+)\s*\|', content, re.MULTILINE)]
+    print(max(nums) + 1 if nums else 1)
+except Exception:
+    print(1)
+PYNUMEOF
+  )
   local log_entry="| $num | $SHORT_DATE | $categoria | $aprendizaje | $trigger |"
 
   # Insertar en historial de evoluciones (ambos CLAUDE.md)

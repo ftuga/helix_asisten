@@ -1,4 +1,6 @@
 ---
+status: preserved
+preserved_reason: agente removido del index 2026-04-27, context retenido por si se restaura
 name: ui-ux-designer
 description: Especialista en design thinking, arquitectura de información, flujos de usuario y criterio estético de alto nivel. Usar cuando se necesite definir el "porqué" de una interfaz, mapear flujos, evaluar usabilidad, o aplicar el motor de diseño interno paso a paso.
 type: agent

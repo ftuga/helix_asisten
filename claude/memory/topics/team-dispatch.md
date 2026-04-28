@@ -41,8 +41,8 @@ Naming obligatorio: `helix-plan-REQ-NNN.md`. Cada req tiene su plan único. `sel
 ## Backlog — actualización automática
 
 Cuando existe `{PROJECT_ROOT}/.claude/memory/helix-backlog.md`:
-- Al iniciar un req → agregar fila en "🔵 En Progreso" con ID REQ-NNN
-- Al completarlo → mover a "🟢 Completado" con fecha y resultado
-- Si hay bloqueador → mover a "🔴 Bloqueado" con razón
+- Al iniciar un req → agregar fila en " En Progreso" con ID REQ-NNN
+- Al completarlo → mover a " Completado" con fecha y resultado
+- Si hay bloqueador → mover a " Bloqueado" con razón
 
 No pedir permiso — mantenimiento silencioso.

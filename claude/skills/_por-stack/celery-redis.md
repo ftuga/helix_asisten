@@ -7,13 +7,13 @@
 - Al depurar workers o tareas que no se ejecutan
 - Al escalar workers
 
-## ⚠️ Regla Fundamental: Sync vs Async
+## Regla Fundamental: Sync vs Async
 
 ```python
 # FastAPI routers → AsyncSession (async/await)
 # Celery tasks   → SyncSessionLocal (sync) — SON DISTINTAS
 
-# ✅ En tasks.py
+# En tasks.py
 from app.database import SyncSessionLocal
 
 @celery_app.task

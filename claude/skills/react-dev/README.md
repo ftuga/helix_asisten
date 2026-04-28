@@ -324,24 +324,24 @@ The skill provides:
 
 ### Always Do
 
-✅ **Use specific event types** - `MouseEvent<HTMLButtonElement>` not `React.MouseEvent`
-✅ **Explicit `useState` for unions/null** - `useState<User | null>(null)`
-✅ **Extend native elements** - `ComponentPropsWithoutRef<'button'>`
-✅ **Discriminated unions for variants** - Type-safe props based on variant
-✅ **`as const` for tuple returns** - Preserve tuple types in custom hooks
-✅ **`ref` as prop in React 19** - No `forwardRef` needed
-✅ **`useActionState` for forms** - Not deprecated `useFormState`
-✅ **Type-safe routing patterns** - Use provided router patterns
+ **Use specific event types** - `MouseEvent<HTMLButtonElement>` not `React.MouseEvent`
+ **Explicit `useState` for unions/null** - `useState<User | null>(null)`
+ **Extend native elements** - `ComponentPropsWithoutRef<'button'>`
+ **Discriminated unions for variants** - Type-safe props based on variant
+ **`as const` for tuple returns** - Preserve tuple types in custom hooks
+ **`ref` as prop in React 19** - No `forwardRef` needed
+ **`useActionState` for forms** - Not deprecated `useFormState`
+ **Type-safe routing patterns** - Use provided router patterns
 
 ### Never Do
 
-❌ **Use `any` for event handlers** - Defeats TypeScript's purpose
-❌ **Use `JSX.Element` for children** - Use `ReactNode` instead
-❌ **Use `forwardRef` in React 19+** - It's deprecated
-❌ **Use `useFormState`** - Deprecated in React 19
-❌ **Forget null handling for DOM refs** - Always use `ref?.current`
-❌ **Mix Server/Client in same file** - Will cause hydration errors
-❌ **Await promises before `use()`** - Defeats streaming/Suspense
+ **Use `any` for event handlers** - Defeats TypeScript's purpose
+ **Use `JSX.Element` for children** - Use `ReactNode` instead
+ **Use `forwardRef` in React 19+** - It's deprecated
+ **Use `useFormState`** - Deprecated in React 19
+ **Forget null handling for DOM refs** - Always use `ref?.current`
+ **Mix Server/Client in same file** - Will cause hydration errors
+ **Await promises before `use()`** - Defeats streaming/Suspense
 
 ### Progressive Enhancement
 

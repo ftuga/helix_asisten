@@ -10,7 +10,7 @@
 ## Estructura de api/index.ts
 
 ```typescript
-// ✅ SIEMPRE agregar métodos aquí — nunca fetch directo
+//  SIEMPRE agregar métodos aquí — nunca fetch directo
 export const retirosApi = {
   list: (params?) => axios.get('/api/retiros', { params }).then(r => r.data),
   get: (id: string) => axios.get(`/api/retiros/${id}`).then(r => r.data),
@@ -49,10 +49,10 @@ const toggleTarea = useMutation({
 // store/auth.ts — patrón de uso
 const { user, token, logout } = useAuthStore();
 
-// ✅ Detección de admin
+//  Detección de admin
 if (user?.rol === 'admin') { /* acceso total */ }
 
-// ⛔ NUNCA
+//  NUNCA
 if (user?.area === 'admin') { /* admin es rol, no área */ }
 
 // Rehydration al cargar la app

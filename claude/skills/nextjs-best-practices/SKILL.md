@@ -23,7 +23,7 @@ Does it need...?
 ├── Direct data fetching, no interactivity
 │   └── Server Component (default)
 │
-└── Both? 
+└── Both?
     └── Split: Server parent + Client child
 ```
 
@@ -172,7 +172,7 @@ Does it need...?
 
 ## 9. Anti-Patterns
 
-| ❌ Don't | ✅ Do |
+| Don't | Do |
 |----------|-------|
 | 'use client' everywhere | Server by default |
 | Fetch in client components | Fetch in server |

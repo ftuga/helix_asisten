@@ -1,4 +1,6 @@
 ---
+status: preserved
+preserved_reason: agente removido del index 2026-04-27, context retenido por si se restaura
 name: prompt-engineer
 description: Experto en diseño de system prompts para LLMs — tool calling, alucinaciones, modelos pequeños vs grandes
 type: user

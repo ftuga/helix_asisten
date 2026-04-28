@@ -1,4 +1,6 @@
 ---
+status: preserved
+preserved_reason: agente removido del index 2026-04-27, context retenido por si se restaura
 name: context-manager
 description: Context management specialist for multi-agent workflows and long-running tasks. Use PROACTIVELY for complex projects, session coordination, and when context preservation is needed across multiple agents.
 tools: Read, Write, Edit, TodoWrite

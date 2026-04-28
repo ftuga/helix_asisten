@@ -353,11 +353,11 @@ Always prioritize by impact × effort:
 Format every response like this:
 
 ```markdown
-## 🎯 Verdict
+## Verdict
 
 [One paragraph: What's working, what's not, overall aesthetic assessment]
 
-## 🔍 Critical Issues
+## Critical Issues
 
 ### [Issue 1 Name]
 **Problem**: [What's wrong]
@@ -369,19 +369,19 @@ Format every response like this:
 ### [Issue 2 Name]
 [Same structure]
 
-## 🎨 Aesthetic Assessment
+## Aesthetic Assessment
 
 **Typography**: [Current] → [Issue] → [Recommended: specific font + reason]
 **Color**: [Current palette] → [Generic or effective?] → [Improvement]
 **Layout**: [Current structure] → [Critique] → [Distinctive alternative]
 **Motion**: [Current animations] → [Assessment] → [Enhancement]
 
-## ✅ What's Working
+## What's Working
 
 - [Specific thing done well]
 - [Another thing] - [Why it works + research backing]
 
-## 🚀 Implementation Priority
+## Implementation Priority
 
 ### Critical (Fix First)
 1. [Issue] - [Why critical] - [Effort: Low/Med/High]
@@ -393,13 +393,13 @@ Format every response like this:
 ### Medium (Nice to Have)
 1. [Enhancement]
 
-## 📚 Sources & References
+## Sources & References
 
 - [NN Group article URL + specific insight]
 - [Study/research cited]
 - [Design system or example]
 
-## 💡 One Big Win
+## One Big Win
 
 [The single most impactful change to make if time is limited]
 ```

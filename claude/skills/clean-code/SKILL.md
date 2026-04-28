@@ -72,7 +72,7 @@ priority: CRITICAL
 
 ## Anti-Patterns (DON'T)
 
-| ❌ Pattern | ✅ Fix |
+| Pattern | Fix |
 |-----------|-------|
 | Comment every line | Delete obvious comments |
 | Helper for one-liner | Inline the code |
@@ -85,7 +85,7 @@ priority: CRITICAL
 
 ---
 
-## 🔴 Before Editing ANY File (THINK FIRST!)
+## Before Editing ANY File (THINK FIRST!)
 
 **Before changing a file, ask yourself:**
 
@@ -103,8 +103,8 @@ File to edit: UserService.ts
 └── Do they need changes too? → Check function signatures
 ```
 
-> 🔴 **Rule:** Edit the file + all dependent files in the SAME task.
-> 🔴 **Never leave broken imports or missing updates.**
+>  **Rule:** Edit the file + all dependent files in the SAME task.
+>  **Never leave broken imports or missing updates.**
 
 ---
 
@@ -123,25 +123,25 @@ File to edit: UserService.ts
 
 ---
 
-## 🔴 Self-Check Before Completing (MANDATORY)
+## Self-Check Before Completing (MANDATORY)
 
 **Before saying "task complete", verify:**
 
 | Check | Question |
 |-------|----------|
-| ✅ **Goal met?** | Did I do exactly what user asked? |
-| ✅ **Files edited?** | Did I modify all necessary files? |
-| ✅ **Code works?** | Did I test/verify the change? |
-| ✅ **No errors?** | Lint and TypeScript pass? |
-| ✅ **Nothing forgotten?** | Any edge cases missed? |
+| **Goal met?** | Did I do exactly what user asked? |
+| **Files edited?** | Did I modify all necessary files? |
+| **Code works?** | Did I test/verify the change? |
+| **No errors?** | Lint and TypeScript pass? |
+| **Nothing forgotten?** | Any edge cases missed? |
 
-> 🔴 **Rule:** If ANY check fails, fix it before completing.
+>  **Rule:** If ANY check fails, fix it before completing.
 
 ---
 
 ## Verification Scripts (MANDATORY)
 
-> 🔴 **CRITICAL:** Each agent runs ONLY their own skill's scripts after completing work.
+>  **CRITICAL:** Each agent runs ONLY their own skill's scripts after completing work.
 
 ### Agent → Script Mapping
 
@@ -162,12 +162,12 @@ File to edit: UserService.ts
 | **Any agent** | Type Coverage | `python ~/.claude/skills/lint-and-validate/scripts/type_coverage.py .` |
 | **Any agent** | i18n Check | `python ~/.claude/skills/i18n-localization/scripts/i18n_checker.py .` |
 
-> ❌ **WRONG:** `test-engineer` running `ux_audit.py`
-> ✅ **CORRECT:** `frontend-specialist` running `ux_audit.py`
+>  **WRONG:** `test-engineer` running `ux_audit.py`
+>  **CORRECT:** `frontend-specialist` running `ux_audit.py`
 
 ---
 
-### 🔴 Script Output Handling (READ → SUMMARIZE → ASK)
+### Script Output Handling (READ → SUMMARIZE → ASK)
 
 **When running a validation script, you MUST:**
 
@@ -178,14 +178,14 @@ File to edit: UserService.ts
 ```markdown
 ## Script Results: [script_name.py]
 
-### ❌ Errors Found (X items)
+### Errors Found (X items)
 - [File:Line] Error description 1
 - [File:Line] Error description 2
 
-### ⚠️ Warnings (Y items)
+### Warnings (Y items)
 - [File:Line] Warning description
 
-### ✅ Passed (Z items)
+### Passed (Z items)
 - Check 1 passed
 - Check 2 passed
 
@@ -195,7 +195,7 @@ File to edit: UserService.ts
 4. **Wait for user confirmation** before fixing
 5. **After fixing** → Re-run script to confirm
 
-> 🔴 **VIOLATION:** Running script and ignoring output = FAILED task.
-> 🔴 **VIOLATION:** Auto-fixing without asking = Not allowed.
-> 🔴 **Rule:** Always READ output → SUMMARIZE → ASK → then fix.
+>  **VIOLATION:** Running script and ignoring output = FAILED task.
+>  **VIOLATION:** Auto-fixing without asking = Not allowed.
+>  **Rule:** Always READ output → SUMMARIZE → ASK → then fix.
 

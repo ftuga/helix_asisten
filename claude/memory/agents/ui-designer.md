@@ -1,4 +1,6 @@
 ---
+status: preserved
+preserved_reason: agente removido del index 2026-04-27, context retenido por si se restaura
 name: ui-designer
 description: Especialista en diseño visual UI, generación de código HTML/CSS de alta fidelidad y selección de dirección estética. Usa cuando se necesite crear o refinar componentes visuales, elegir un estilo estético para un proyecto, o producir interfaces de grado producción con Tailwind + Iconify.
 type: agent

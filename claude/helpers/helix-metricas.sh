@@ -137,11 +137,93 @@ if session_log.exists() and evo_log.exists():
         score_ovh -= 15
 
 # ════════════════════════════════════════════════════════════
+# DIMENSIÓN 4: ROUTING (Fase 2 — solo si hay feedback)
+# ════════════════════════════════════════════════════════════
+prob_rt = []
+score_rt = 100
+routing_metrics = {}
+
+feedback_path = global_dir / 'memory/routing-feedback.jsonl'
+if feedback_path.exists():
+    from collections import Counter
+    project_name = os.path.basename(project) if project else None
+    cutoff_30d = today - timedelta(days=30)
+    counter = Counter()
+    project_counter = Counter()
+
+    with feedback_path.open() as fh:
+        for line in fh:
+            try:
+                e = json.loads(line)
+            except Exception:
+                continue
+            ts = e.get('ts') or e.get('timestamp') or ''
+            try:
+                d = datetime.fromisoformat(ts.split(' ')[0]) if ts else None
+                if d and d < cutoff_30d:
+                    continue
+            except Exception:
+                pass
+            a = e.get('agente') or e.get('agent')
+            if not a:
+                continue
+            counter[a] += 1
+            proj = e.get('proyecto') or e.get('project') or ''
+            if project_name and proj == project_name:
+                project_counter[a] += 1
+
+    total_global = sum(counter.values())
+    if total_global > 0:
+        top3 = counter.most_common(3)
+        top3_share = sum(c for _, c in top3) / total_global
+        agentes_dir = global_dir / 'agents'
+        all_agents = [f.stem for f in agentes_dir.glob('*.md')] if agentes_dir.exists() else []
+        coverage = len(counter) / max(len(all_agents), 1)
+        never_used = len([a for a in all_agents if a not in counter])
+
+        routing_metrics['global_30d'] = {
+            'total_invocations': total_global,
+            'unique_agents': len(counter),
+            'coverage_ratio': round(coverage, 3),
+            'top3_saturation': round(top3_share, 3),
+            'top3': [{'agent': a, 'count': c} for a, c in top3],
+            'never_used_count': never_used,
+        }
+        if top3_share >= 0.5:
+            prob_rt.append(f"top-3 agentes acumulan {int(top3_share*100)}% invocaciones (BIASED — objetivo <50%)")
+            score_rt -= 25
+        if coverage < 0.3:
+            prob_rt.append(f"cobertura de catálogo {int(coverage*100)}% — {never_used} agentes nunca usados")
+            score_rt -= 20
+
+    # Stack coverage del proyecto
+    if project:
+        stack_file = Path(project) / '.claude/memory/helix-stack.md'
+        if stack_file.is_file():
+            content = stack_file.read_text()
+            def get_list_sm(key):
+                m = re.search(rf"({key}:\s*\n)((?:    - .*\n)*)", content)
+                return re.findall(r"    - (.+)", m.group(2)) if m else []
+            stack_set = set(get_list_sm('core')) | set(get_list_sm('extended'))
+            project_total = sum(project_counter.values())
+            if project_total > 0 and stack_set:
+                in_stack = sum(c for a, c in project_counter.items() if a in stack_set)
+                stack_cov = in_stack / project_total
+                routing_metrics['project_stack'] = {
+                    'project_invocations_30d': project_total,
+                    'stack_coverage': round(stack_cov, 3),
+                    'invocations_outside_stack': project_total - in_stack,
+                }
+                if stack_cov < 0.7:
+                    prob_rt.append(f"solo {int(stack_cov*100)}% de invocaciones del proyecto cayeron en stack — drift")
+                    score_rt -= 20
+
+# ════════════════════════════════════════════════════════════
 # SCORE FINAL Y ALERTA
 # ════════════════════════════════════════════════════════════
-alerta = score_ctx < 60 or score_cal < 60 or score_ovh < 60
+alerta = score_ctx < 60 or score_cal < 60 or score_ovh < 60 or score_rt < 60
 
-todos_problemas = prob_ctx + prob_cal + prob_ovh
+todos_problemas = prob_ctx + prob_cal + prob_ovh + prob_rt
 
 result = {
     "fecha":    today.strftime('%Y-%m-%d %H:%M'),
@@ -150,6 +232,7 @@ result = {
         "contexto":  {"valor": max(score_ctx, 0), "ok": score_ctx >= 60, "problemas": prob_ctx},
         "calidad":   {"valor": max(score_cal, 0), "ok": score_cal >= 60, "problemas": prob_cal},
         "overhead":  {"valor": max(score_ovh, 0), "ok": score_ovh >= 60, "problemas": prob_ovh},
+        "routing":   {"valor": max(score_rt, 0), "ok": score_rt >= 60, "problemas": prob_rt, "metrics": routing_metrics},
     },
     "alerta":          alerta,
     "total_problemas": len(todos_problemas),

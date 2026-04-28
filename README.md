@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.12.0** — [Changelog](#changelog)
+> **Current version: v3.13.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -534,6 +534,58 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.13.0 — 2026-04-27 · Project stack manifest + anti-bias routing + conversation persistence
+
+Seven coordinated changes addressing real measured pain: 24 of 35 agents never invoked, top-3 capturing 72% of routing decisions, no recovery path after WSL2 crashes, false promises in CLAUDE.md about Capa 3 implementation status.
+
+**`skills/helix-stack/` — declarative agent stack per project**
+- `helix-stack.sh detect` auto-classifies project tier (small / medium / large) from file count, LOC, presence of CI / tests / IaC.
+- Manifest at `<project>/.claude/memory/helix-stack.md` declares `core` (tech-aligned agents) and `extended` (cross-cutting roles: security, qa, ba, devops, monitoring) with mode `technical | extended | custom`.
+- Subcommands: `detect | init | show | add | remove | promote | auto-promote-check | suggest-agents | create-suggested`.
+- Universal base injected in every project (independent of language): `error-detective`, `code-reviewer`, `architect-reviewer` — process agents, not domain.
+
+**`memory/topics/specialized-agents-catalog.json` — extensible 60+ agent catalog**
+- Seven categories (`languages`, `frameworks`, `domains`, `infrastructure`, `blockchain`, `specialized`, `compliance`) with 60+ entries.
+- Nine signal types: `files`, `dirs`, `manifest`, `deps_python`, `deps_node`, `deps_ruby`, `deps_elixir`, `deps_rust`, `deps_go`, `keywords_in_readme`.
+- `helix-stack suggest-agents` walks the catalog, evaluates signals against the project, reports any specialized agent that would help but is missing. Examples validated end-to-end: Rust + actix → `rust-pro` + `actix-pro`; PyTorch + LangChain + HuggingFace → 3 expert suggestions; Terraform + Helm + k8s → 3 infra experts; Solidity + ethers → blockchain stack; HIPAA keywords in README → compliance agent.
+- Extensible without touching code — add a JSON entry, the helper picks it up next run.
+
+**`skills/helix-route/` — anti-bias routing with multi-criteria scoring**
+- Replaces bare vector search with `score = 0.50·similarity + 0.20·freshness + 0.15·skill_quality + 0.15·stack_match`.
+- Hard filter by domain catalog (testing → only `qa-expert`/`test-engineer`/`test-automator`) eliminates the structural drift detected by ERL.
+- Freshness bonus = `1 / (1 + log(invocations_30d + 1))` — agents never invoked get the maximum boost.
+- Epsilon-greedy exploration: 10% of picks ignore best score and pick randomly within `score ≥ 0.7·best_score` cohort. Diversification cements organically as exploration produces feedback.
+- Subcommands: `pick | audit | shadow-report | weights`. `--shadow` flag enables dry-run mode with a one-week shadow log to validate before activating the hook layer.
+- `helpers/helix-metricas.sh` gains a fourth dimension `routing` reporting `top3_saturation`, `coverage_ratio`, `never_used_count`, `stack_coverage`. Score routing surfaces real bias measurably.
+
+**`skills/helix-snapshot/` — conversation persistence (Fase 1)**
+- YAML snapshots at `~/.claude/snapshots/<project>/<ts>.yaml` with `chmod 600` and a project `.gitignore` that excludes everything but the README.
+- Subcommands: `capture` (stdin YAML), `resume`, `list`, `show`, `archive` (>7d), `prune` (>30d), `stale-check` (>24h or git commits posterior).
+- `session-start.sh` injects `[HELIX-SUGGEST-RESUME]` flag when a recent snapshot exists. CLAUDE.md rule #12 mandates opt-in: never auto-load to context — always ask the user (1) resume, (2) new chat, (3) view detail.
+- 100% local, no egress, no paid services, no vendor lock. Stack: YAML files + existing Qdrant + existing Ollama. Mem0 OSS evaluated and deferred to a future phase if the simple build proves insufficient.
+- Companion research dump in `memory/topics/conversation-context-research.md` covers Helix internals, LongMemEval (ICLR 2025), Mem0 paper (arXiv 2504.19413), compaction strategies (observation masking, structured summary, ACON), Anthropic prompt caching 2026.
+
+**`helpers/helix-lang-trigger-hook.sh` — auto-suggest HELIX-LANG on long prompts**
+- PreToolUse(Agent) hook fires when invoking the `Agent` tool with a prompt ≥500 tokens of natural prose without HELIX-LANG markers (`A:`, `S:`, `T:`, `R:`, `H:`).
+- Suggestion goes to stderr (non-blocking, `exit 0`) with estimated savings (`~58.7%` measured by the bench).
+- Resolves a design failure: the rule "use HELIX-LANG on large agent prompts" only worked if I remembered to follow it. Now the harness fires it independently of memory.
+
+**HELIX-LANG restored** (was deprecated 2026-04-18 prematurely)
+- Decommissioning rationale was "zero real usage post-benchmarks" — but that reflected my own neglect to use it, not protocol failure.
+- The bench measures 58.7% real token compression on output (output never hits the prompt cache, so savings are direct cost).
+- Anthropic prompt caching covers 90% of input redundancy; HELIX-LANG covers what cache cannot — they are complementary, not competitors.
+- Skill restored to `skills/helix-lang/`, helpers to `helpers/helix-lang-{state,bench}.sh`.
+
+**Capa 3 honesty fix + drift cleanup**
+- CLAUDE.md previously claimed "Agent Teams natively enabled in settings.json" — verification showed mailbox/teammates dirs absent, `TaskCreated` hook unregistered, 0 swarm/team invocations in 30 days. Now reads "NO IMPLEMENTADO" with pointer to `topics/agent-teams-status.md` documenting actual state and minimum implementation plan.
+- `agents-index.md` had 12 entries pointing to nonexistent files. After cleanup: 26 entries match 26 files exactly. `architect-review.md` renamed to `architect-reviewer.md` (typo confirmed by frontmatter). 10 orphan context files marked `status: preserved` — `helpers/helix-agents-audit.sh` now distinguishes accidental from intentional orphans.
+
+**Housekeeping helpers**
+- `helpers/helix-claude-md-prune.sh` — auto-archive evolutions older than 14 days when `CLAUDE.md` exceeds threshold 340. Idempotent, dry-run mode, ships archived rows to `topics/evolution-history.md`.
+- `helpers/helix-agents-audit.sh` — diff between `agents/*.md`, `agents-index.md`, and `memory/agents/*.md` with four orphan categories. Surfaces drift the staleness check cannot detect (which only watches git, not infrastructure).
+
+---
 
 ### v3.12.0 — 2026-04-23 · Research-first agent creation + vector store self-healing
 

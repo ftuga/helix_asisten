@@ -49,10 +49,10 @@ Estimación: `palabras × 1.3 = tokens aproximados`
 ```
 CONTEXT BUDGET REPORT — [fecha]
 ────────────────────────────────
-CLAUDE.md global:     ~2,400 tok  ✅
-Agentes activos (18): ~4,200 tok  ⚠️ (3 agentes > 300 tok c/u)
-Skills cargadas:      ~1,800 tok  ✅
-MCP servers:          ~8,500 tok  🔴 (claude-flow: 17 tools activos)
+CLAUDE.md global:     ~2,400 tok
+Agentes activos (18): ~4,200 tok   (3 agentes > 300 tok c/u)
+Skills cargadas:      ~1,800 tok
+MCP servers:          ~8,500 tok   (claude-flow: 17 tools activos)
 ────────────────────────────────
 TOTAL estimado:      ~16,900 tok
 Potencial de ahorro: ~4,200 tok  (desactivar 3 MCP tools + 2 agentes)

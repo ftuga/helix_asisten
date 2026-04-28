@@ -771,7 +771,7 @@ Attach metadata to routes for use in ancestor components:
 // Route definition
 export const handle = {
   breadcrumb: () => <Link to="/posts">Posts</Link>,
-  icon: "📝",
+  icon: "",
 };
 
 // Access in ancestor
@@ -853,12 +853,12 @@ Both React Router v7 and TanStack Router offer first-class TypeScript support:
 
 | Feature | React Router v7 | TanStack Router |
 |---------|-----------------|-----------------|
-| Route type generation | ✓ Automatic `.react-router/types/` | ✓ Automatic |
-| Param typing | ✓ Auto-inferred from path | ✓ Auto-inferred |
-| Loader data typing | ✓ Via `Route.LoaderArgs` | ✓ Via `loader()` return type |
-| Action typing | ✓ Via `Route.ActionArgs` | ✓ Via `action()` return type |
-| Search params typing | ✓ Manual with `useSearchParams` | ✓ Route-level definition |
-| Redirect typing | ✓ Standard function | ✓ Standard function |
+| Route type generation | Automatic `.react-router/types/` | Automatic |
+| Param typing | Auto-inferred from path | Auto-inferred |
+| Loader data typing | Via `Route.LoaderArgs` | Via `loader()` return type |
+| Action typing | Via `Route.ActionArgs` | Via `action()` return type |
+| Search params typing | Manual with `useSearchParams` | Route-level definition |
+| Redirect typing | Standard function | Standard function |
 
 ### Key Differences
 

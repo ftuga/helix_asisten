@@ -1,7 +1,7 @@
 # Sistema de Diseño UI — ‹entidad› IPS
 > Extraído de CLAUDE.md. Cargar cuando se trabaje en componentes frontend o páginas.
 
-## 🔗 Recursos Externos de Referencia
+## Recursos Externos de Referencia
 
 | Recurso | URL | Cuándo usar |
 |---|---|---|
@@ -14,7 +14,7 @@
 Diseño refinado y editorial — espacios con propósito, sin componentes genéricos.
 Referentes: Linear.app, Vercel Dashboard, Raycast.
 
-## ⚠️ Regla fundamental: MOBILE-FIRST SIEMPRE
+## Regla fundamental: MOBILE-FIRST SIEMPRE
 Todo componente y página se diseña primero para móvil (320px–430px) y luego escala a escritorio.
 Nunca diseñar solo para desktop y "adaptar" después — eso produce resultados mediocres.
 
@@ -166,14 +166,14 @@ Stagger en listas: delay escalonado `0.05s` por ítem. Spatial awareness: los el
 ---
 
 ## Reglas de Diseño — NO negociables
-- ❌ Nunca usar Inter, Roboto, Arial o fuentes genéricas del sistema
-- ❌ Nunca gradientes púrpura sobre fondo blanco
-- ❌ Nunca diseñar solo para desktop y adaptar después — **mobile-first siempre**
-- ❌ Nunca información accesible solo por hover
-- ✅ Micro-animaciones en hover/focus/active con `transition`
-- ✅ Inputs: borde `--border`, focus ring `--accent` con glow suave
-- ✅ Usar **Puppeteer MCP** para tomar screenshot y verificar resultado visual
-- ✅ Usar **Browser Tools MCP** para debuggear errores de consola y animaciones
+- Nunca usar Inter, Roboto, Arial o fuentes genéricas del sistema
+- Nunca gradientes púrpura sobre fondo blanco
+- Nunca diseñar solo para desktop y adaptar después — **mobile-first siempre**
+- Nunca información accesible solo por hover
+- Micro-animaciones en hover/focus/active con `transition`
+- Inputs: borde `--border`, focus ring `--accent` con glow suave
+- Usar **Puppeteer MCP** para tomar screenshot y verificar resultado visual
+- Usar **Browser Tools MCP** para debuggear errores de consola y animaciones
 
 ## Herramientas MCP para Diseño
 | MCP | Cuándo usarlo |

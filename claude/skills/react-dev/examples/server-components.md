@@ -73,7 +73,7 @@ export default async function Dashboard({ params }: DashboardProps) {
 ## Sequential vs Waterfall Fetching
 
 ```typescript
-// ❌ Waterfall - slow
+//  Waterfall - slow
 async function SlowPage() {
   const user = await fetchUser('123');
   const posts = await fetchUserPosts(user.id); // Waits for user
@@ -81,7 +81,7 @@ async function SlowPage() {
   return <div>...</div>;
 }
 
-// ✅ Parallel - fast
+//  Parallel - fast
 async function FastPage() {
   const userPromise = fetchUser('123');
   const postsPromise = fetchUserPosts('123');
@@ -502,7 +502,7 @@ export function ClientComponent({ initialData }: { initialData: Data }) {
 ## Server Component Patterns
 
 ```typescript
-// ✅ Server Component can:
+//  Server Component can:
 // - Be async
 // - Fetch data directly
 // - Access backend resources (DB, filesystem)
@@ -516,13 +516,13 @@ export default async function Page() {
   return <UserList users={users} />; // Pass serializable data
 }
 
-// ❌ Server Component cannot:
+//  Server Component cannot:
 // - Use hooks (useState, useEffect, etc)
 // - Use browser APIs (localStorage, window, etc)
 // - Add event listeners (onClick, onChange, etc)
 // - Use React Context
 
-// ✅ Client Component can:
+//  Client Component can:
 // - Use hooks
 // - Use browser APIs
 // - Add event listeners
@@ -542,7 +542,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ❌ Client Component cannot:
+//  Client Component cannot:
 // - Be async
 // - Directly access backend resources
 // - Import server-only packages

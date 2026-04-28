@@ -56,10 +56,10 @@ const [user, posts, comments] = await Promise.all([
 
 **Direct imports:**
 ```tsx
-// ❌ Loads entire library
+//  Loads entire library
 import { Check } from 'lucide-react'
 
-// ✅ Loads only what you need
+//  Loads only what you need
 import Check from 'lucide-react/dist/esm/icons/check'
 ```
 
@@ -175,7 +175,7 @@ When optimizing a React application:
 
 ## Common pitfalls to avoid
 
-❌ **Don't:**
+ **Don't:**
 - Use barrel imports from large libraries
 - Block parallel operations with sequential awaits
 - Re-render entire trees when only part needs updating
@@ -183,7 +183,7 @@ When optimizing a React application:
 - Mutate arrays with .sort() instead of .toSorted()
 - Create RegExp or heavy objects inside render
 
-✅ **Do:**
+ **Do:**
 - Import directly from source files
 - Use Promise.all() for independent operations
 - Memoize expensive components

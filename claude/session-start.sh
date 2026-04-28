@@ -350,6 +350,53 @@ if [[ -n "$PROJECT_ROOT" ]]; then
   fi
 fi
 
+# ── Detección de memoria stale vs git log ────────────────────
+if [[ -n "$PROJECT_ROOT" && -d "$PROJECT_ROOT/.git" ]]; then
+  STALENESS_SCRIPT="$HOME/.claude/helpers/helix-staleness.sh"
+  STALE_FOUND=false
+  STALE_MSGS=()
+  if [[ -f "$STALENESS_SCRIPT" ]]; then
+    while IFS= read -r -d '' mem_file; do
+      msg=$(bash "$STALENESS_SCRIPT" "$mem_file" 2>/dev/null || true)
+      if [[ -n "$msg" ]]; then
+        STALE_FOUND=true
+        STALE_MSGS+=("   $msg")
+      fi
+    done < <(find "$PROJECT_ROOT/.claude/memory" -maxdepth 1 -name "helix-*.md" -print0 2>/dev/null)
+  fi
+  if [[ "$STALE_FOUND" == "true" ]]; then
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo "[HELIX-SUGGEST-ACTUALIZA]"
+    echo "Archivos de memoria desactualizados respecto a commits recientes:"
+    for msg in "${STALE_MSGS[@]}"; do echo "$msg"; done
+    echo "Helix: antes de responder sobre estado/pendientes, verificar git log y recomendar /helix-actualiza."
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+  fi
+fi
+
+# ── Detectar snapshot conversacional reciente (HELIX-SUGGEST-RESUME) ─
+SNAPSHOT_PROJECT="${PROJECT_ROOT:+$(basename "$PROJECT_ROOT")}"
+SNAPSHOT_PROJECT="${SNAPSHOT_PROJECT:-global}"
+SNAPSHOT_DIR="$HOME/.claude/snapshots/$SNAPSHOT_PROJECT"
+if [[ -d "$SNAPSHOT_DIR" ]]; then
+  LATEST_SNAPSHOT=$(ls -t "$SNAPSHOT_DIR"/*.yaml 2>/dev/null | head -1)
+  if [[ -n "$LATEST_SNAPSHOT" ]]; then
+    SNAP_AGE_H=$(( ($(date +%s) - $(stat -c %Y "$LATEST_SNAPSHOT")) / 3600 ))
+    SNAP_SUMMARY=$(grep "^summary:" "$LATEST_SNAPSHOT" | head -1 | sed 's/^summary:\s*//' | tr -d '"' | cut -c 1-100)
+    if (( SNAP_AGE_H < 168 )); then  # <7 días, mostrar
+      echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+      echo "[HELIX-SUGGEST-RESUME]"
+      echo "Snapshot disponible — proyecto: $SNAPSHOT_PROJECT, hace ${SNAP_AGE_H}h"
+      echo "Resumen: ${SNAP_SUMMARY}"
+      echo "Helix: ofrecer al final del primer mensaje (1) retomar / (2) nuevo chat / (3) ver detalle."
+      echo "Comando detalle: bash ~/.claude/helpers/helix-snapshot.sh resume $SNAPSHOT_PROJECT"
+      echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+      echo ""
+    fi
+  fi
+fi
+
 echo -e "${GREEN}✅ Contexto cargado. Listo para trabajar.${NC}"
 echo ""
 # ── Vector memory sync (silencioso) ──────────────────────────
