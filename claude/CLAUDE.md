@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-04-27 22:40<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-05-02 23:46<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -142,6 +142,14 @@ Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público 
 
 ---
 
+## IDIOMA Y TONO
+
+- **Default global:** Helix se comunica en español neutro colombiano. Uso de "tú" o "usted" según formalidad de la conversación, sin voseo.
+- **Override por usuario:** cada instalación puede personalizar tono, registro y variante regional en `~/.claude/memory/user-profile.md`. Si el perfil declara una preferencia distinta, esa preferencia prevalece sobre el default.
+- **Aplica a:** respuestas al usuario, mensajes en commits, contenido de PRs, comentarios en código generado por Helix. No aplica a código fuente ni a citas textuales del usuario.
+
+---
+
 <!-- OPERABILITY_START -->
 ## OPERABILIDAD
 
@@ -160,6 +168,8 @@ Activas (últimos 7 días):
 - [2026-04-27] helix-agents-audit ahora distingue context_orphan accidental vs preserved (frontmatter status: preserved). 10 context files de agentes removidos marcados como preserved. Audit ahora reporta status:OK con orphans=0 accidentales y 10 preserved.
 - [2026-04-27] Backup tarball protege trabajo entre sesiones (~/.claude-backups/, exclude credentials/projects/cache/sessions/history). helix_asisten ahora tiene su stack manifest aplicado: tier=medium, core=[error-detective, code-reviewer, architect-reviewer, python-pro, harness-optimizer], extended=[security-auditor]. El detector existente helix-detect-stack.sh es ciego a proyectos sin manifest en root (helix_asisten tiene .py files dispersos pero no requirements.txt en raiz) — limitación conocida del detector.
 - [2026-04-27] Research dump completo sobre manejo de conversación y contexto en topics/conversation-context-research.md (264 líneas). Cubre: (1) inventario Helix interno (scripts sesion, skills strategic-compact/context-budget, bitacoras, 22 transcripts jsonl disponibles pero sin parser propio), (2) SOTA externo (Claude Code session format, LongMemEval ICLR 2025 con 5 abilities + 30% accuracy drop, Mem0 paper 2504.19413 con 91% latency / 90% cost reduction, compaction strategies: observation masking vs LLM summary vs structured vs ACON vs provider-native, Anthropic prompt caching 2026 workspace-isolation), (3) gaps Helix vs SOTA (snapshot persistente, resume opt-in, masking de tool results, staleness conversacional, pinning), (4) 7 decisiones de diseño abiertas con recomendaciones tentativas. NO IMPLEMENTADO — research preparatorio para discusión a fondo en próxima sesión.
+- [2026-05-02] Cuando el usuario pide expertos por nombre, NO hacer pre-validacion yo mismo. Verificar 1 vez si existen (grep al agents-index). Si faltan, preguntar (restaurar/crear/asumir). Si estan, invocar Capa 2 (paralelo) o Capa 1 (1 dominio) y dejar que ellos validen. Pre-trabajo de mi parte es ruido y delega entendimiento al reves.
+- [2026-05-02] Sub-investigacion en cascada: cuando una verificacion simple falla o devuelve poco, NO escalar a busqueda en backups/patterns multiples. Hacer 1 find acotado, si no aparece preguntar al usuario donde mirar. Tono 'Hallazgo importante' para algo que es 1 grep es señal de que estoy inflando el camino. Test: si llevo >3 tool calls de discovery sin avanzar al deliverable, parar y reportar.
 <!-- OPERABILITY_END -->
 
 ---
@@ -278,9 +288,9 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 42,
+  "total_sesiones": 44,
   "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 59,
+  "total_aprendizajes": 61,
   "total_skills_creadas": 1
 }
 ```
@@ -290,7 +300,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 ## SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
 0 |
-| #17 | 2026-04-27 | Sesión 2026-04-27: refactor masivo routing (stack manifest 7 categorías 60+ agentes, anti-bias scoring multi-criterio, hook helix-lang-trigger PreToolUse), drift cleanup agents-index (12 huérfanos removidos, architect-review→architect-reviewer, 10 contexts marcados preserved), Capa 3 honesty fix (de 'habilitada' a 'NO IMPLEMENTADO' + topics/agent-teams-status.md), HELIX-LANG restaurado tras decomiso erróneo, Helix Canon v0.1 piloto, persistencia conversacional Fase 1 implementada (helix-snapshot.sh + skill + integración session-start + regla #12 CLAUDE.md). Backups limpios sin credentials. 20 evoluciones registradas. Auto-recovery chain verificado: Qdrant restart-policy + Ollama systemd + WSL systemd habilitados, todo sobrevive reboot. | 19 | 0
+| #18 | 2026-05-02 | Sesión de meta-aprendizaje. 2 antipatterns registrados: (1) cuando usuario pide expertos por nombre, NO pre-validar yo mismo — verificar 1 vez si existen, si faltan preguntar, si están invocar; (2) sub-investigacion en cascada (>3 tool calls de discovery sin avanzar al deliverable) es señal de inflar el camino. Error adicional reconocido al cierre: bypass de arquitectura project-local vs global al inyectar archivo de agente MME como contexto en cwd equivocado. Revisión técnica del post LinkedIn descartada por hacerse desde sesión incorrecta. Próxima acción del usuario: abrir sesión en ent_tesis para invocación nativa del mme-domain-expert. | 2 | 0
 0 |
 <!-- SESSIONS_END -->
 
@@ -326,7 +336,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 34 | 2026-04-24 | docker | python:3.11-slim no trae libgomp (OpenMP). LightGBM lo requiere en runtime — si no esta, OSError libgomp.so.1 al importar. Fix: apt install libgomp1. Aplica a cualquier imagen Python slim que serve modelos sklearn/lgbm/xgb. Verificar en Dockerfile multi-stage: el stage runtime necesita libs runtime, no solo el builder. | py-slim-ml-missing-libs |
 | 35 | 2026-04-24 | testing | monkeypatch.setattr sobre submódulos mlflow puede colgar tests. Patron roto: monkeypatch.setattr('app.X.mlflow.lightgbm.load_model', ...). El acceso a mlflow.lightgbm dispara imports lazy que intentan conectar al tracking URI si no está fully mockeado. Patrón correcto: patchear el método en la clase que lo usa (monkeypatch.setattr(ModelStore, '_load_model', lambda self,*a: mock)). Evita gatillar la cadena de imports. | mlflow-submodule-mock-hang |
 | 36 | 2026-04-24 | datos | DIVIPOLA codes en parquets MME almacenados como int64 sin padding: cod_mpio=5001 para Medellín (real es 05001). Al comparar con input string del usuario (05001) fallar silencioso. Normalizar siempre en API boundary: df['cod_mpio'].astype(str).str.zfill(5) == user_input. Vale para cod_mpio (5), cod_dpto (2). No asumir que un schema 'obvio' ya está normalizado. | divipola-int-sin-padding |
-| 37 | 2026-04-25 | interfaz | Helix es de Colombia con acento neutro. Nunca usa modismos argentinos (vos/che/laburo), españoles (tío/vale), mexicanos (órale) ni otros. Aplica global a todos los proyectos. | user-feedback-identidad-colombiana |
+| 37 | 2026-04-25 | interfaz | Default global: Helix se comunica en español neutro colombiano. Configurable por usuario individual en `~/.claude/memory/user-profile.md`. Ver seccion IDIOMA Y TONO. | user-feedback-default-comunicacion |
 | 38 | 2026-04-25 | docker | Charts Bitnami pueden renombrar Service al migrar de manifest propio. Caso real: chart 'mlflow' (Bitnami) crea Service 'mlflow-tracking' en puerto 80, no 'mlflow:5000'. Toda referencia hardcoded en .env, ConfigMap y Deployment debe actualizarse — verificar con 'kubectl get svc -n <ns>' tras instalar chart Helm/Bitnami. | bitnami-svc-rename-mlflow |
 | 39 | 2026-04-25 | operatividad | WSL2 sin .wslconfig + dos stacks paralelos (Compose + microk8s) del mismo proyecto satura la RAM del host Windows. Síntoma: WSL muere y dmesg queda vacío al reboot (Windows recicla la VM completa). Diagnóstico: docker ps muestra ambos stacks; verificar con free -h. Fix: bajar uno de los dos + crear C:\Users\<user>\.wslconfig con memory/swap explícitos. | wsl-double-stack-oom |
 | 40 | 2026-04-27 | operatividad | Agentes se mejoran auditando contra documentación canónica (libros, PEPs, RFCs, papers), no por estadísticas de uso. Las rutas de alta confianza por % éxito tienen sesgo de selección — la calidad debe ser sólida por sus prácticas. Aplicar agent-create retroactivamente + diseñar Helix Canon (curriculum mensual con citas por página). | user-feedback-canon-vs-stats |
@@ -347,6 +357,8 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 55 | 2026-04-27 | operatividad | Backup tarball protege trabajo entre sesiones (~/.claude-backups/, exclude credentials/projects/cache/sessions/history). helix_asisten ahora tiene su stack manifest aplicado: tier=medium, core=[error-detective, code-reviewer, architect-reviewer, python-pro, harness-optimizer], extended=[security-auditor]. El detector existente helix-detect-stack.sh es ciego a proyectos sin manifest en root (helix_asisten tiene .py files dispersos pero no requirements.txt en raiz) — limitación conocida del detector. | self-application-stack-manifest |
 | 56 | 2026-04-27 | operatividad | Research dump completo sobre manejo de conversación y contexto en topics/conversation-context-research.md (264 líneas). Cubre: (1) inventario Helix interno (scripts sesion, skills strategic-compact/context-budget, bitacoras, 22 transcripts jsonl disponibles pero sin parser propio), (2) SOTA externo (Claude Code session format, LongMemEval ICLR 2025 con 5 abilities + 30% accuracy drop, Mem0 paper 2504.19413 con 91% latency / 90% cost reduction, compaction strategies: observation masking vs LLM summary vs structured vs ACON vs provider-native, Anthropic prompt caching 2026 workspace-isolation), (3) gaps Helix vs SOTA (snapshot persistente, resume opt-in, masking de tool results, staleness conversacional, pinning), (4) 7 decisiones de diseño abiertas con recomendaciones tentativas. NO IMPLEMENTADO — research preparatorio para discusión a fondo en próxima sesión. | conversation-context-research-dump |
 | 57 | 2026-04-27 | arquitectura | Persistencia conversacional Fase 1 implementada: helix-snapshot.sh con 7 subcomandos (capture/resume/list/show/archive/prune/stale-check), schema YAML estructurado, storage por proyecto con archive lifecycle 7d/30d, chmod 600, .gitignore protegido. Integración con session-start.sh: HELIX-SUGGEST-RESUME flag al detectar snapshot reciente. CLAUDE.md regla #12: opt-in resume con 3 opciones, NUNCA auto-load. Skill helix-snapshot registrada. Stack 100% local sin egress sin paid. Test E2E: capture sesión actual exitoso, resume funcional, stale-check OK. detect_project mejorado con 3 fallbacks (CLAUDE.md ascendente, subdirs comunes, .git/package.json/requirements.txt) + override HELIX_SNAPSHOT_PROJECT. Pendiente fase 2: hook Stop auto-capture, cron 30min, compactación inteligente. | persistence-fase1-complete |
+| 58 | 2026-05-02 | operatividad | Cuando el usuario pide expertos por nombre, NO hacer pre-validacion yo mismo. Verificar 1 vez si existen (grep al agents-index). Si faltan, preguntar (restaurar/crear/asumir). Si estan, invocar Capa 2 (paralelo) o Capa 1 (1 dominio) y dejar que ellos validen. Pre-trabajo de mi parte es ruido y delega entendimiento al reves. | user-pidio-expertos-yo-prevalide |
+| 59 | 2026-05-02 | operatividad | Sub-investigacion en cascada: cuando una verificacion simple falla o devuelve poco, NO escalar a busqueda en backups/patterns multiples. Hacer 1 find acotado, si no aparece preguntar al usuario donde mirar. Tono 'Hallazgo importante' para algo que es 1 grep es señal de que estoy inflando el camino. Test: si llevo >3 tool calls de discovery sin avanzar al deliverable, parar y reportar. | subinvestigacion-cascada-backups |
 <!-- EVOLUTION_LOG_END -->
 
 ---
