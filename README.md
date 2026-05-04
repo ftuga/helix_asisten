@@ -75,7 +75,28 @@ HELIX_FORCE=1 bash ~/helix_asisten/install_on_wsl.sh
 bash ~/helix_asisten/scripts/migrate-to-split.sh
 ```
 
-> **update.sh** keeps your Helix config in sync with the repo after the initial install — run it after pulling changes.
+**Updating an existing install** (after `git pull`):
+
+```bash
+# Linux/macOS/WSL — preserves your personal config (user-profile.md, helix-role.conf, etc.)
+bash update_local_on_wsl.sh           # interactive
+bash update_local_on_wsl.sh --dry-run # preview only
+```
+
+```powershell
+# Windows
+.\update_local_on_windows.ps1
+.\update_local_on_windows.ps1 -DryRun
+```
+
+`update_local_on_wsl.sh` (and its Windows wrapper) does `git pull` + rsync from the repo into your active Helix dir, **preserving** these files if they already exist locally:
+- `memory/user-profile.md` (your personality/profile)
+- `helix-role.conf`, `capa0-disabled`, `settings.local.json`
+- `memory/helix-{stack,bitacora,backlog,team,analysis,plan-*,alerta}.md`
+- runtime logs (`judge-decisions`, `aidefence-redactions`, `egress-audit`, etc.)
+- custom agents/skills you created locally
+
+> **`update.sh`** is the *creator* counterpart — syncs `~/.helix/` (or `~/.claude/`) → repo. Don't confuse the two.
 
 ---
 
