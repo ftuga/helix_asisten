@@ -151,6 +151,25 @@ for c in "${HELIX_COMPONENTS[@]}"; do
   fi
 done
 
+# Post-migration fixup: settings.json puede tener paths $HOME/.claude/ hardcoded
+# (instalaciones previas a v3.16). Convertir a ${CLAUDE_CONFIG_DIR:-$HOME/.claude}
+# para que los hooks resuelvan al dir nuevo (~/.helix/).
+echo ""
+echo "→ Fixup paths en settings.json..."
+if [[ -f "$HELIX_DIR/settings.json" ]] && grep -q '\$HOME/\.claude' "$HELIX_DIR/settings.json" 2>/dev/null; then
+  cp "$HELIX_DIR/settings.json" "$HELIX_DIR/settings.json.bak-pre-split"
+  sed -i 's|\$HOME/\.claude|${CLAUDE_CONFIG_DIR:-$HOME/.claude}|g' "$HELIX_DIR/settings.json"
+  if python3 -c "import json; json.load(open('$HELIX_DIR/settings.json'))" 2>/dev/null; then
+    echo -e "  ${C_GREEN}✓ paths actualizados (backup en settings.json.bak-pre-split)${C_RESET}"
+  else
+    echo -e "  ${C_RED}[!] settings.json quedó inválido tras el fixup. Restaurando backup...${C_RESET}"
+    mv "$HELIX_DIR/settings.json.bak-pre-split" "$HELIX_DIR/settings.json"
+    exit 3
+  fi
+else
+  echo -e "  ${C_DIM}(settings.json ya usa CLAUDE_CONFIG_DIR o no existe — skip)${C_RESET}"
+fi
+
 # Verificación post-migración
 echo ""
 echo "→ Verificación..."
