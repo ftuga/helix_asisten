@@ -306,7 +306,7 @@ if [[ ${#FAILS_LABELS[@]} -gt 0 ]]; then
 
     echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo -e "${RED}Corregir los prerequisitos anteriores y volver a correr install.sh${NC}"
+    echo -e "${RED}Corregir los prerequisitos anteriores y volver a correr install_on_wsl.sh${NC}"
     exit 1
 fi
 

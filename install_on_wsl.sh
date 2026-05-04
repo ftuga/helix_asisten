@@ -3,9 +3,9 @@
 # Helix — Script de instalación
 #
 # Uso:
-#   bash install.sh                       # layout split (default v3.16+)
-#   HELIX_LAYOUT=legacy bash install.sh   # mezclado en ~/.claude/ (instalaciones previas)
-#   HELIX_LAYOUT=split  bash install.sh   # explícito split en ~/.helix/
+#   bash install_on_wsl.sh                       # layout split (default v3.16+)
+#   HELIX_LAYOUT=legacy bash install_on_wsl.sh   # mezclado en ~/.claude/ (instalaciones previas)
+#   HELIX_LAYOUT=split  bash install_on_wsl.sh   # explícito split en ~/.helix/
 #
 # Layouts:
 #   split  — Helix vive en ~/.helix/. Claude Code stock queda intocado en ~/.claude/.
@@ -355,4 +355,4 @@ else
   echo "   Reinicia Claude Code para aplicar los cambios. Layout legacy: 'claude' y 'helix' son equivalentes."
 fi
 echo ""
-echo "   Para reinstalar sobreescribiendo todo: HELIX_FORCE=1 bash install.sh"
+echo "   Para reinstalar sobreescribiendo todo: HELIX_FORCE=1 bash install_on_wsl.sh"

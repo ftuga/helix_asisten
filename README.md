@@ -12,13 +12,13 @@ I have memory across sessions. I know which agent to use based on the domain. I 
 
 I can operate in four layers: from a free local model for simple tasks, to a coordinated swarm of 15 agents for features that touch the entire stack. The user never decides which layer — I evaluate and execute.
 
-This repo is my complete configuration, versioned and portable. Clone it, run `install.sh`, and you have everything I am on a new machine in minutes.
+This repo is my complete configuration, versioned and portable. Clone it, run `install_on_wsl.sh`, and you have everything I am on a new machine in minutes.
 
 ---
 
 ## Prerequisites
 
-> **v3.14.0** — `check-prereqs.sh` v2 is **blocking**. `install.sh` will refuse to proceed
+> **v3.14.0** — `check-prereqs.sh` v2 is **blocking**. `install_on_wsl.sh` will refuse to proceed
 > until every Required dependency is present. The script generates a single grouped
 > copy-paste block with only the commands you actually need.
 
@@ -38,7 +38,7 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 
 > **WSL users:** run `which node` before installing — if it points to `/mnt/c/...`, install native Linux Node first.
 
-> **Ubuntu 24.04+ users:** `install.sh` handles PEP 668 automatically (`--user --break-system-packages`).
+> **Ubuntu 24.04+ users:** `install_on_wsl.sh` handles PEP 668 automatically (`--user --break-system-packages`).
 
 ---
 
@@ -48,7 +48,7 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 
 ```bash
 git clone git@github.com:ftuga/helix_asisten.git ~/helix_asisten
-bash ~/helix_asisten/install.sh
+bash ~/helix_asisten/install_on_wsl.sh
 ```
 
 **Windows (PowerShell, requires [Git for Windows](https://git-scm.com/download/win)):**
@@ -56,20 +56,20 @@ bash ~/helix_asisten/install.sh
 ```powershell
 git clone git@github.com:ftuga/helix_asisten.git $HOME\helix_asisten
 cd $HOME\helix_asisten
-.\install.ps1
+.\install_on_windows.ps1
 ```
 
-`install.sh` verifies all prerequisites, installs Helix into `~/.helix/` (split layout, default), and auto-installs MCPs if the Claude CLI is in PATH. Run `scripts/check-prereqs.sh` standalone to diagnose missing dependencies before installing.
+`install_on_wsl.sh` verifies all prerequisites, installs Helix into `~/.helix/` (split layout, default), and auto-installs MCPs if the Claude CLI is in PATH. Run `scripts/check-prereqs.sh` standalone to diagnose missing dependencies before installing.
 
 ```bash
 # Default install: split layout in ~/.helix/  (claude command stays clean)
-bash ~/helix_asisten/install.sh
+bash ~/helix_asisten/install_on_wsl.sh
 
 # Legacy install (Helix mixed into ~/.claude/)
-HELIX_LAYOUT=legacy bash ~/helix_asisten/install.sh
+HELIX_LAYOUT=legacy bash ~/helix_asisten/install_on_wsl.sh
 
 # Force overwrite everything (memory/agents, memory/topics)
-HELIX_FORCE=1 bash ~/helix_asisten/install.sh
+HELIX_FORCE=1 bash ~/helix_asisten/install_on_wsl.sh
 
 # Migrate existing legacy install to split (non-destructive)
 bash ~/helix_asisten/scripts/migrate-to-split.sh
@@ -94,10 +94,10 @@ Switch layouts:
 
 ```bash
 # fresh install with split (default)
-bash install.sh
+bash install_on_wsl.sh
 
 # install with legacy layout (Helix mixed into ~/.claude/)
-HELIX_LAYOUT=legacy bash install.sh
+HELIX_LAYOUT=legacy bash install_on_wsl.sh
 
 # migrate existing legacy install to split (non-destructive, with backup)
 bash scripts/migrate-to-split.sh
@@ -114,12 +114,12 @@ The legacy injectable RuFlo V3 engine (`helix-engine/`) was discontinued by Heli
 
 | Platform | Status | Installer | Notes |
 |----------|--------|-----------|-------|
-| Linux    | first-class | `bash install.sh` | tested on Ubuntu 22.04+, Debian 12 |
-| macOS    | first-class | `bash install.sh` | tested on macOS 13+ (Apple Silicon and Intel) |
-| WSL2     | first-class | `bash install.sh` | Ubuntu/Debian inside WSL — same as Linux |
-| Windows native | supported via Git Bash | `.\install.ps1` (PowerShell) | requires [Git for Windows](https://git-scm.com/download/win) for the bash hooks |
+| Linux    | first-class | `bash install_on_wsl.sh` | tested on Ubuntu 22.04+, Debian 12 |
+| macOS    | first-class | `bash install_on_wsl.sh` | tested on macOS 13+ (Apple Silicon and Intel) |
+| WSL2     | first-class | `bash install_on_wsl.sh` | Ubuntu/Debian inside WSL — same as Linux |
+| Windows native | supported via Git Bash | `.\install_on_windows.ps1` (PowerShell) | requires [Git for Windows](https://git-scm.com/download/win) for the bash hooks |
 
-Windows note: Helix's hooks are bash scripts. On Windows, Git Bash provides the POSIX shim — `install.ps1` is a thin bootstrap that validates Git Bash and delegates to `install.sh`. Pure PowerShell (without Git Bash) is **not** supported.
+Windows note: Helix's hooks are bash scripts. On Windows, Git Bash provides the POSIX shim — `install_on_windows.ps1` is a thin bootstrap that validates Git Bash and delegates to `install_on_wsl.sh`. Pure PowerShell (without Git Bash) is **not** supported.
 
 ---
 
@@ -556,7 +556,7 @@ Helix stores semantic memories in [Qdrant](https://qdrant.tech/) using Ollama em
 | **Vector store** | Qdrant running in Docker on port 6333 |
 | **Override model** | `HELIX_EMBED_MODEL=<model>` env var |
 
-`install.sh` sets up both automatically. To set them up manually:
+`install_on_wsl.sh` sets up both automatically. To set them up manually:
 
 ```bash
 # Qdrant
@@ -802,7 +802,7 @@ Catches the repo up with three sessions of work that lived only in `~/.claude/`.
 - Promoted to Recommended (WARN): `nomic-embed-text` model.
 - New OS detection: only Ubuntu/Debian/WSL with `apt-get` in v1. macOS/Fedora/Arch fail early with pointer to `claude/memory/topics/install-os-support.md`.
 - Output reorganized: instead of scattered messages, a single grouped copy-paste block with only the commands you actually need (apt packages consolidated into one `apt-get install`, Docker block, Ollama block, model pulls block, etc.). Numbered steps in dependency order (apt → node → docker → ollama → claude CLI → models).
-- Solves the previous failure mode: `install.sh` proceeded with broken state when Docker or Ollama were missing.
+- Solves the previous failure mode: `install_on_wsl.sh` proceeded with broken state when Docker or Ollama were missing.
 - Smoke test: `tests/test-check-prereqs.sh` — 24 assertions across 8 scenarios (PATH-shadowed binaries to simulate missing deps).
 
 **Layer 0 manual override — for users with limited HW**
@@ -815,7 +815,7 @@ Catches the repo up with three sessions of work that lived only in `~/.claude/`.
 
 **TRANCH 1 + TRANCH 2 helpers — sync from sessions #20-#21**
 
-These were council-approved (plan v4, Helix Council #1, 2026-05-04) and implemented in `~/.claude/` but never committed. v3.14.0 brings them into the repo so `install.sh` actually deploys them on a fresh machine.
+These were council-approved (plan v4, Helix Council #1, 2026-05-04) and implemented in `~/.claude/` but never committed. v3.14.0 brings them into the repo so `install_on_wsl.sh` actually deploys them on a fresh machine.
 
 - **FASE 9 HW-aware** (`helix-hwprobe.sh`, `helix-capa0-policy.sh`, `helix-bench-capa0.sh`, `helix-models-suggest.sh`) — CPU/RAM/GPU detection, ON/OPT_IN/OFF policy by tier, empirical bench overrides heuristic.
 - **FASE 0.5 statusline** (`helix-statusline.sh`) — bash replacement for the 742-line RuFlo CJS statusline. <200ms p99.
@@ -918,7 +918,7 @@ Four changes that tighten how Helix creates experts and keeps its semantic index
 - Exit 0 immediate, `disown` so the edit workflow never blocks. Graceful skip if Qdrant is down.
 - Log: `~/.claude/memory/agents-vector-sync.log`. Manual fallback: `hv index-agents`.
 
-**`install.sh` — bootstrap of vector index on new machines**
+**`install_on_wsl.sh` — bootstrap of vector index on new machines**
 - New block after Vector Memory install: deferred background bootstrap that waits up to 180 s for the `nomic-embed-text` pull, verifies Qdrant `/healthz` and model availability, then runs `hv index-agents` + `hv index-memories`.
 - Closes the gap where a fresh install left Qdrant running with an empty collection until the user ran `hv sync` manually.
 - Idempotent: stable IDs by content hash — re-install does not duplicate points.

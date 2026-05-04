@@ -1,18 +1,18 @@
 # ============================================================
-# Helix - install.ps1 (Windows bootstrap)
+# Helix - install_on_windows.ps1 (Windows bootstrap)
 #
 # Helix usa hooks bash que requieren un entorno POSIX. En Windows hay 2
 # opciones soportadas:
 #   1. Git Bash (incluido en Git for Windows) - RECOMENDADO
 #   2. WSL2 (Ubuntu/Debian)
 #
-# Este script valida prerequisitos Windows y delega a install.sh via Git Bash.
-# Si el usuario esta en WSL, debe correr install.sh nativo (no este .ps1).
+# Este script valida prerequisitos Windows y delega a install_on_wsl.sh via Git Bash.
+# Si el usuario esta en WSL, debe correr install_on_wsl.sh nativo (no este .ps1).
 #
 # Uso (PowerShell):
 #   cd $HOME\helix_asisten
-#   .\install.ps1                # layout split (default v3.16+)
-#   $env:HELIX_LAYOUT='legacy'; .\install.ps1
+#   .\install_on_windows.ps1                # layout split (default v3.16+)
+#   $env:HELIX_LAYOUT='legacy'; .\install_on_windows.ps1
 # ============================================================
 
 [CmdletBinding()]
@@ -67,7 +67,7 @@ if (-not $GitBash) {
     Write-Host ''
     Write-Host '    2. WSL2 (Ubuntu / Debian):'
     Write-Host '       wsl --install -d Ubuntu'
-    Write-Host '       Luego ejecutar install.sh dentro de WSL.'
+    Write-Host '       Luego ejecutar install_on_wsl.sh dentro de WSL.'
     Write-Host ''
     exit 1
 }
@@ -101,7 +101,7 @@ else {
 
 Write-Host ''
 Write-Host '------------------------------------------------------------'
-Write-Host '  Delegando a install.sh via Git Bash...'
+Write-Host '  Delegando a install_on_wsl.sh via Git Bash...'
 Write-Host '------------------------------------------------------------'
 Write-Host ''
 
@@ -109,14 +109,14 @@ Write-Host ''
 $RepoDirBash = $RepoDir -replace '\\', '/' -replace '^([A-Za-z]):', '/$1'
 $RepoDirBash = $RepoDirBash.Substring(0,1).ToLower() + $RepoDirBash.Substring(1)
 
-# ── 5. Ejecutar install.sh ───────────────────────────────────
+# ── 5. Ejecutar install_on_wsl.sh ───────────────────────────────────
 $env:HELIX_LAYOUT = $Layout
-& $GitBash --login -c "cd '$RepoDirBash' && bash install.sh"
+& $GitBash --login -c "cd '$RepoDirBash' && bash install_on_wsl.sh"
 $exitCode = $LASTEXITCODE
 
 if ($exitCode -ne 0) {
     Write-Host ''
-    Write-Host "[!] install.sh termino con codigo $exitCode" -ForegroundColor Red
+    Write-Host "[!] install_on_wsl.sh termino con codigo $exitCode" -ForegroundColor Red
     exit $exitCode
 }
 

@@ -52,7 +52,7 @@ cp "$CLAUDE_DIR/memory/agents/"*.md    "$REPO_DIR/claude/memory/agents/" 2>/dev/
 cp "$CLAUDE_DIR/memory/topics/"*.md    "$REPO_DIR/claude/memory/topics/" 2>/dev/null || true
 
 # user-profile.md está en .gitignore — nunca llega al repo (contenido personal del usuario)
-# El template está en user-profile.template.md — install.sh lo copia al instalar
+# El template está en user-profile.template.md — install_on_wsl.sh lo copia al instalar
 
 # Sanitize: eliminar contexto de proyecto privado de memory/agents y topics
 echo "→ Sanitizando contexto de proyecto..."
