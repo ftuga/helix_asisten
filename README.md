@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.14.0** — [Changelog](#changelog)
+> **Current version: v3.14.1** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -69,14 +69,14 @@ Helix has two parts with distinct purposes:
 
 | Component | Lives in | Purpose |
 |-----------|----------|---------|
-| **`claude/`** | `~/.claude/` | Global config — applies to **all** your projects. Agents, skills, memory, dialogue protocol, self-evolution. |
-| **`helix-engine/`** | Inside each project | Injectable RuFlo V3 engine — swarm, HNSW, SONA, advanced hooks. Only for projects that need the full stack. |
+| **`claude/`** | `~/.claude/` | Global config — applies to **all** your projects. Agents, skills, memory, dialogue protocol, self-evolution. **The active path forward.** |
+| **`helix-engine/`** *(legacy)* | Inside each project | Injectable RuFlo V3 engine — swarm, HNSW, SONA, advanced hooks. **Deprecated since 2026-05-04 (plan v4 D1', Helix Council #1).** Kept in the repo for historical reference and any project that already injected it. New projects should not inject it. |
 
-Most projects only need `claude/`. `helix-engine/` is for your own projects where you want the full stack.
+Most projects only need `claude/`. RuFlo V3 was discontinued for orthogonal concerns (314-tool MCP noise, TS/Node lock-in, non-controllable topology) — see `claude/memory/topics/ruflo-rootcause-D.md` for the full root-cause analysis.
 
 ```bash
-# Inject helix-engine into a project
-bash ~/helix_asisten/inject-project.sh ~/my-project
+# inject-project.sh remains in the repo for backward compatibility.
+# New projects: skip this step. Use claude/ alone.
 ```
 
 ---
@@ -93,11 +93,14 @@ claude/              → ~/.claude/ (global config)
   self-check.sh      → Pre-close checklist: blocks if CLAUDE.md exceeds 220 lines
   health-check.sh    → Verifies ecosystem integrity
   compress.sh        → Archives old evolutions to keep CLAUDE.md lean
-  agents/            → 27 evolved agents (avg score 40→81/100)
+  agents/            → 28 evolved agents (avg score 40→81/100)
+                       includes 7 council-* roles (skeptic/innovator/conservative/
+                       synthesizer/researcher/devils-advocate/arbiter) for the
+                       Helix Council v1.0 decision protocol
   memory/            → design-system, agents-index, evolution-log, active-rules, topics
   memory/routing-heuristics.md  → ERL-generated routing rules (auto-updated weekly)
   memory/reflexions.jsonl       → Semantic error memory backup
-  skills/            → 28 reusable skills across projects
+  skills/            → 35 reusable skills across projects
   helpers/helix-erl.sh          → ERL heuristic extractor
   helpers/helix-reflexion.sh    → Semantic error memory (Qdrant store + search)
   helpers/helix-retrospectiva.sh → Auto-analysis at session close
@@ -105,6 +108,21 @@ claude/              → ~/.claude/ (global config)
   helpers/helix-distill.sh      → HELIX-COMPRESS: agent-specific CLAUDE.md slices + project compression
   helpers/helix-lang-state.sh   → S:hash state manager (snapshot, delta, get, gc)
   helpers/helix-lang-bench.sh   → HELIX-LANG compression benchmark
+  helpers/helix-statusline.sh   → Native bash statusline (FASE 0.5, replaces RuFlo CJS) <200ms p99
+  helpers/helix-hwprobe.sh      → CPU/RAM/GPU/disk probe → hw-profile.json
+  helpers/helix-capa0-policy.sh → Layer 0 ON/OPT_IN/OFF policy gate (HW-aware)
+  helpers/helix-capa0-toggle.sh → Layer 0 manual override (off --session|--persistent / on / status)
+  helpers/helix-bench-capa0.sh  → Empirical Layer 0 latency bench
+  helpers/helix-models-suggest.sh → Compatible Ollama models per HW tier
+  helpers/helix-multidomain-trigger.* → D1' PreToolUse(Agent) advisory trigger
+  helpers/helix-judge.py        → M1: LLM-as-judge (Ollama) for semantic conflicts
+  helpers/passive-capture-*.{py,sh} → M2: passive decision detector + review tool
+  helpers/helix-project-consolidate.py → M3: name drift detector + interactive unify
+  helpers/helix-route-recommend.py → R1: model advisor (read-only)
+  helpers/helix-cost-rollup.sh  → R2: real USD cost from JSONL transcripts
+  helpers/helix-aidefence-*.{py,sh} → SEC1: PII redactor on Helix-internal logs
+  helpers/helix-egress-audit-*.{py,sh} → SEC2: WebFetch/Search/MCP audit
+  council/log/                  → Helix Council v1.0 immutable decision audit logs
   skills/helix-lang/            → HELIX-LANG v2: universal inter-agent protocol
   skills/helix-speak/           → HELIX-SPEAK: situational output compression
   skills/_distilled/            → 15 auto-generated agent slices (78-96% savings each)
@@ -115,24 +133,19 @@ scripts/             → Helix engine scripts
   helix-agent-evolve.py → Automated agent scoring and evolution (0→100 rubric)
   helix-project-index.sh → Project indexing into vector memory
   capa0.sh           → Layer 0 dispatcher: routes to helix-coder or helix-scout
+  check-prereqs.sh   → v2 blocking prerequisites check (FAIL on docker/ollama/zstd/claude CLI)
+
+tests/               → Repo-versioned smoke tests (v3.14.0)
+  test-capa0-toggle.sh   → 19/19 PASS — Layer 0 manual override end-to-end
+  test-check-prereqs.sh  → 24/24 PASS — PATH-shadowed dep simulation
 
 template/            → ~/.claude-template/ (base for new projects)
   CLAUDE.md          → Project CLAUDE.md template
   init-project.sh    → Initialization script
 
-helix-engine/        → Injectable Helix engine for your own projects
-  .mcp.json          → claude-flow MCP with v3 + HNSW + SONA enabled
-  .claude/
-    agents/          → 26 categories: sparc, swarm, v3, github, optimization,
-                       hive-mind, consensus, sublinear, goal, dual-mode...
-    commands/        → analysis, automation, github, hooks, monitoring, sparc...
-    helpers/         → hook-handler.cjs, auto-memory-hook.mjs, router.cjs,
-                       intelligence.cjs, memory.cjs, statusline.cjs...
-    skills/          → 31 skills: v3-*, swarm-*, agentdb-*, reasoningbank-*, sparc-*
-    settings.json    → Hooks: PreToolUse, PostToolUse, UserPromptSubmit, SessionStart/End
-  .claude-flow/
-    config.yaml      → RuFlo V3: hierarchical-mesh, HNSW, SONA, ReasoningBank
-    CAPABILITIES.md  → Full capabilities reference
+helix-engine/        → Legacy injectable engine (deprecated 2026-05-04, plan v4 D1')
+                       Kept for historical reference. New projects should NOT inject it.
+                       Detail: claude/memory/topics/ruflo-rootcause-D.md
 ```
 
 ---
@@ -195,14 +208,16 @@ bash ~/.claude/evolve.sh skill "skill-name" "description"
 
 Helix evaluates each task silently and picks the right layer. The user never needs to decide.
 
-| Layer | When | What it activates |
-|-------|------|-------------------|
-| **0 — Ollama** | Logs, long text, Docker output | Free local model. If problem detected → escalates |
-| **1 — Subagents** | One concrete artifact (endpoint, component, query) | Agent tool with specialized agent |
-| **2 — Swarm** | Feature touching ≥2 stack layers | claude-flow `swarm_init` + `task_orchestrate` |
-| **3 — Agent Teams** | Active frontend+backend+tests collaboration | Agent Teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) |
+| Layer | When | What it activates | Status |
+|-------|------|-------------------|--------|
+| **0 — Ollama** | Logs, long text, Docker output, transforms | Local model (`helix-coder` / `helix-scout`). HW-aware policy gate (FASE 9). If unviable → exit 2 → escalates to Layer 1 | ✅ Active |
+| **1 — Subagents** | One concrete artifact (endpoint, component, query) | `Agent` tool with specialized agent from catalog | ✅ Active |
+| **2 — Swarm** | Feature touching ≥2 stack layers | Council-decided 2026-05-04: own minimalist Layer 2 orchestrator (TRANCH 3 candidate). The `claude-flow` MCP path is **deprecated (D1', plan v4)**. | ⏳ Trigger active, orchestrator pending |
+| **3 — Agent Teams** | Peer-to-peer collaboration between agents | Agent Teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) | ❌ **NOT IMPLEMENTED** — missing mailbox, teammates dirs, `TaskCreated` hook. See `claude/memory/topics/agent-teams-status.md` |
 
-**Escalation rule:** when in doubt between Layer 1 and 2 → Layer 1 (cheaper). Escalate only if coordination would be manual and complex.
+**Multi-domain trigger (D1', v3.14.0):** `claude/helpers/helix-multidomain-trigger.py` is a `PreToolUse(Agent)` hook that detects 2+ domain intent (11 keyword groups: backend/frontend/db/security/infra/testing/debug/ui/performance/data/mlops) — advisory-only, threshold ≥2, kill switch `HELIX_D1_TRIGGER_ENABLED=0`.
+
+**Escalation rule:** when in doubt between Layer 1 and 2 → Layer 1 (cheaper). Escalate only when the trigger advises ≥2 domains.
 
 ---
 
@@ -212,27 +227,45 @@ Declare in each project's `CLAUDE.md`: `HELIX_MODE: <mode>`
 
 | Mode | What it activates |
 |------|-------------------|
-| `helix_control_total` | All 4 layers: Ollama + Subagents + Swarm + Teams |
-| `helix_minimal` | Specialized subagents only. No claude-flow, no Agent Teams. |
+| `helix_control_total` | Layer 0 (Ollama HW-gated) + Layer 1 (subagents). Layer 2 active when its trigger fires. Layer 3 still pending. |
+| `helix_minimal` | Specialized subagents only (Layer 1). No Layer 2 orchestrator. No Agent Teams. |
 | `helix_off` | Claude responds directly, no orchestration. |
 
 If not declared → `helix_minimal` by default.
+
+### `HELIX_ROLE` — creator vs user (plan v4 D4)
+
+`~/.claude/helix-role.conf` defines the role. Default: `creator`.
+
+| Role | Behavior |
+|------|----------|
+| `creator` | META1 helix-expert always active. META2 (market-watch) and META3 (self-improve) **on-demand only** — no cron, no scheduler, no auto-trigger (D2.1). Council active. Self-modification only with explicit OK. |
+| `user` | Read-only helix-expert. No self-improve. No market-watch. Updates via `helix-update notify`. |
+
+Scripts that depend on the role must `source ~/.claude/helix-role.conf` and respect `$HELIX_ROLE`.
 
 ---
 
 ## Dialogue Protocol
 
-Helix follows these rules on every request:
+Helix follows these 12 rules on every request:
 
-| Rule | Behavior |
-|------|----------|
-| **Ask before acting** | If request is ambiguous → max 2-4 grouped questions before touching code. If concrete → proceed directly. |
-| **Visible plan** | When task touches ≥2 files → show plan A→B→C and wait for confirmation. |
-| **Confidence threshold** | Declare `high autonomy` (execute without asking) or `low autonomy` (confirm each step) at the start. |
-| **Red zone alert** | Before touching high-risk files → declare exactly which line will change and wait for OK. |
-| **Explore → Implement** | New features → propose ≤3 options and wait for choice. Bugs/concrete tasks → implement directly. |
-| **Proactive decisions** | Non-trivial design decisions → record them in `DESIGN DECISIONS` of the project's CLAUDE.md. |
-| **Silent log** | If `helix-bitacora.md` exists → record changes/recommendations/errors without asking permission. |
+| # | Rule | Behavior |
+|---|------|----------|
+| 1 | **Ask before acting** | If request is ambiguous in scope, file, or behavior → max 2-4 grouped questions in ONE message before touching code. If clear → proceed directly. |
+| 2 | **Visible plan** | When task touches ≥2 files or has non-trivial steps → show plan A→B→C and wait for OK. |
+| 3 | **Red zone alert** | Before modifying files marked  in the project risk-map → declare exact line/function and reason. Wait for OK. |
+| 4 | **Proactive decision recording** | Non-trivial design decisions → add to `## DESIGN DECISIONS` of the project CLAUDE.md without being asked. |
+| 5 | **Initial project analysis** | If `session-start` emits `[HELIX-SUGGEST-ANALYSIS]` → suggest `/helix-analiza` once at end of first message. If declined → `touch .analysis-declined`. If exists → load silently. |
+| 6 | **Continuous bitácora** | If `.claude/memory/helix-bitacora.md` exists → update it after significant changes, non-trivial recommendations, and errors. No permission needed. |
+| 7 | **"We need to talk"** | If `session-start` emits `[HELIX-NECESITAMOS-HABLAR]` → read `helix-alerta.md` and report before responding. If user declines → `rm helix-alerta.md`. |
+| 8 | **Requirement intake with visible plan** | ≥3 domains or non-trivial dependencies → generate `helix-plan-REQ-NNN.md`. 1-2 domains → execute directly. |
+| 9 | **Auto-economy by signal** | If first user request is ≤15 words, imperative verb, no file paths or stack trace → auto-apply `economy mode` silently. Heuristic, not a barrier. |
+| 10 | **Mandatory parallelism** | Independent Reads/Greps/Bash → ALWAYS in one message with multiple tool calls. Serializing without dependency is a measured antipattern (audited by self-check). |
+| 11 | **Auto-close** | If user types `exit`, `salir`, `bye`, `cerrar`, `/exit` → run `bash ~/.claude/session-end.sh "<summary>"` without asking. Generate concise session summary. |
+| 12 | **Resume opt-in** | If `session-start` emits `[HELIX-SUGGEST-RESUME]` → offer 3 options at end of first message: (1) resume context, (2) new chat, (3) detail. **NEVER load snapshot without consent.** |
+
+**HELIX-SPEAK** (output compression by type): `ultra` for inter-agent coordination, `brief` for user reports, `off` for code/commands/security.
 
 ---
 
@@ -268,6 +301,169 @@ If problems detected → writes `helix-alerta.md` → next session reports befor
 ```
 
 In economy mode: no subagents unless ≥3 simultaneous domains, no Layer 2, Grep before Read, bullet-only responses.
+
+### Refresh stale memory (`/helix-actualiza`)
+
+Refreshes `helix-analysis.md`, `helix-backlog.md`, and `helix-plan-*.md` when commits land after the last memory update. Suggested automatically when `session-start` detects staleness.
+
+### Layer 0 manual override (`/helix_desactiva_CAPA0`, `/helix_activa_CAPA0`)
+
+Layer 0 is **enabled by default** based on detected hardware (FASE 9 HW-aware). Users with limited resources can force it OFF:
+
+```
+/helix_desactiva_CAPA0   → asks: session-only or persistent?
+/helix_activa_CAPA0      → reverts to HW-based decision
+```
+
+The override beats the HW heuristic. Modes:
+- `session` — `~/.claude/capa0-disabled` cleaned automatically by `session-end.sh`.
+- `persistent` — survives across sessions until `/helix_activa_CAPA0`.
+- One-shot env var: `HELIX_CAPA0_DISABLED=1`.
+
+When OFF, `helix-capa0-policy.sh` reports `OFF` with reason "override manual del usuario", and `capa0.sh` returns exit 2 → automatic escalation to Layer 1.
+
+---
+
+## Helix Council v1.0 — Decision Protocol
+
+For non-trivial architectural decisions Helix runs a 7-agent council with a written constitution. Used to break impasses, validate large refactors, and decide between strategic alternatives without rubber-stamping.
+
+| Role | Function |
+|------|----------|
+| `council-skeptic` | Challenges assumptions, demands evidence. |
+| `council-innovator` | Proposes non-obvious alternatives. One must be radical. |
+| `council-conservative` | Defends status quo when evidence to change is weak. |
+| `council-synthesizer` | Lists trade-offs without taking sides. Drafts common position in Round 3. |
+| `council-researcher` | Gathers evidence (papers, RFCs, docs). Only role allowed to invoke expert summons. |
+| `council-devils-advocate` | Round 3 mandatory: takes the emerging decision and breaks it. Finds catastrophic failure scenarios. |
+| `council-arbiter` | Applies the constitution. Pre/post checks. Sanitizes inputs. Decides context level. Forces escalation if rules are violated. |
+
+**Constitution (R1-R9):** time-box (rounds≤3, calls≤25, wall-clock<600s), audit log immutable (`chmod 400`), context filtering by keyword, anti-injection scan, escalation to creator on no-consensus.
+
+**Audit logs:** `~/.claude/council/log/<timestamp>_<id>.yaml` (immutable).
+
+Used in v3.14.0 for plan v4 decision (TRANCH 1+2+3 structure), FASE 6 installer (4 options + creator escalation), Gate B1 closure. Topics: `claude/memory/topics/council-design.md`, `claude/memory/topics/helix-evolution-completed.md`.
+
+---
+
+## HSL v1 — Helix Security Layer
+
+Six layers active by default since v3.x. Audit (2026-05-03): covers 4/14 PII types directly + 2 partial = 32% of PII surface for Helix-internal data. Gap mitigated by SEC1 (TRANCH 2).
+
+| # | Layer | What it catches |
+|---|-------|-----------------|
+| L1 | injection | Prompt injection patterns in tool outputs |
+| L2 | egress | Unauthorized network calls — see SEC2 below |
+| L3 | secrets | Tokens / API keys / passwords in writes |
+| L4 | integrity | File checksum drift on protected paths |
+| L5 | evolve-guard | Malicious or contradictory `evolve.sh learn` calls |
+| L6 | reflexion-quarantine | Quarantines new reflexions until human review |
+
+Detail: `claude/memory/topics/hsl-v1-audit.md`. Plus the two TRANCH 2 PII features below.
+
+---
+
+## TRANCH 2 — Self-improvement Capabilities (v3.14.0)
+
+Council-approved 2026-05-04 (plan v4, Gate B1 closed 5/5). All 6 components active. None of them auto-mutates state without explicit creator confirmation.
+
+### M1 — `helix-judge` (LLM-as-judge for semantic conflicts)
+
+Local Ollama backend (`llama3.2:3b` default, override `HELIX_JUDGE_MODEL`). Static few-shot prompt embedded in code (anti-poisoning hard rule, CS1). Confidence threshold ≥0.85. 100% audit log in `judge-decisions.jsonl`. Audit feedback isolated in a separate file (only source for future calibration — no self-reinforcing loop).
+
+```bash
+bash ~/.claude/helpers/helix-judge.py judge "memory A vs memory B"
+bash ~/.claude/helpers/helix-judge.py scan
+bash ~/.claude/helpers/helix-judge.py audit-list
+```
+
+### M2 — `passive-capture` (decision detector during edits)
+
+`PostToolUse(Write|Edit|MultiEdit)` Python hook (~50ms p99). Three matchers: (A) Helix path, (B) 8 decision keywords, (C) tool. Threshold ≥2 matchers. Captures land in `passive-captures-pending.jsonl` for explicit review:
+
+```bash
+bash ~/.claude/helpers/passive-capture-review.sh list
+bash ~/.claude/helpers/passive-capture-review.sh approve <idx>
+bash ~/.claude/helpers/passive-capture-review.sh stats
+```
+
+Skill: `helix-passive-review`. Bench: `claude/memory/topics/m2-bench.md`.
+
+### M3 — `helix-project-consolidate` (name drift detector)
+
+Fuzzy-matched detection of duplicate names across helpers/skills/agents/topics using `difflib.SequenceMatcher` with strip rules (`helix-`, `helix_`, `claude-`, `-hook`, `-helper`). Threshold env var `HELIX_M3_FUZZY_THRESHOLD` (default 0.75).
+
+```bash
+bash ~/.claude/helpers/helix-project-consolidate.py scan
+bash ~/.claude/helpers/helix-project-consolidate.py unify   # interactive, requires explicit confirm
+```
+
+Reversibility: `git restore` if in a repo, backup in `~/.claude/backups/m3/` otherwise. **Never unifies without explicit creator OK.**
+
+### R1 — `helix-route-recommend` (model advisor, read-only)
+
+Recommends Claude Opus / Sonnet / Haiku per domain or per agent based on cost-by-project (R2) cross-joined with routing-feedback. **Never modifies `settings.json`.** Override via `HELIX_FORCE_MODEL=<model>`. Kill switch `HELIX_R1_ENABLED=0`. Audit log `r1-recommend-log.jsonl` 100% calls. AGENT_TO_DOMAIN and DOMAIN_RECOS mappings static in code (anti-poisoning, parallel to M1 CS1).
+
+```bash
+bash ~/.claude/helpers/helix-route-recommend.py recommend backend-developer
+bash ~/.claude/helpers/helix-route-recommend.py current
+bash ~/.claude/helpers/helix-route-recommend.py compare
+```
+
+Skill: `helix-route-recommend`.
+
+### R2 — `helix-cost-tracker` (real USD from JSONL transcripts)
+
+Processes `~/.claude/projects/*.jsonl` with Anthropic Nov 2025 pricing (Opus 4.7 $15/$75, Sonnet 4.6 $3/$15, Haiku 4.5 $1/$5, cache write 1.25×, cache read 0.10×).
+
+```bash
+bash ~/.claude/helpers/helix-cost-rollup.sh current     # current session, 30s cache
+bash ~/.claude/helpers/helix-cost-rollup.sh session <id>
+bash ~/.claude/helpers/helix-cost-rollup.sh all         # rollup
+bash ~/.claude/helpers/helix-cost-rollup.sh report      # generates topics/route-cost-audit.md
+```
+
+Wired to the bash statusline 💰 slot — shows real USD instead of placeholders.
+
+### SEC1 — `helix-aidefence` (PII redactor on Helix-internal logs)
+
+`PostToolUse(Write|Edit|MultiEdit)` Python hook with **scope limited to Helix-internal logs** (NOT user project files). Redacts 10 PII types: EMAIL, PHONE_E164, PHONE_NA, SSN_US, IBAN, IPV4/6 PUBLIC, CREDIT_CARD (Luhn-validated), PATH_USERNAME, URL_USERINFO. **Redact-no-block** hard rule. Audit log `aidefence-redactions.jsonl`.
+
+Latency: p99 77ms POS — exceeds the original <30ms criterion. Pending creator decision: accept v1.0 / re-spec to <80ms / block until native rewrite (TRANCH 3).
+
+### SEC2 — `helix-egress-audit` (network call audit)
+
+`PostToolUse(WebFetch|WebSearch|mcp__.*)` Python hook. Schema: `{ts, tool, domain, path_short, source, query_sanitized, new_domain}`. Sanitization regex strips `(api_key|token|password|secret|auth|bearer|session|sid|jwt)=val`. First-seen domain alert + spike detection (≥20 calls / 5 min). Monthly reporter on-demand only (no cron, D2.1).
+
+```bash
+bash ~/.claude/helpers/helix-egress-report.sh
+```
+
+---
+
+## Compression Systems
+
+Three orthogonal mechanisms to reduce token cost on Helix's own coordination overhead. None of them touches the user-facing response — only internal artifacts.
+
+### HELIX-LANG v2 — Universal inter-agent protocol
+
+Compressed grammar with fixed verbs / ops / temporal markers / state hashes (`S:hash`) and `FROM->TO` flows. **58.7% measured output savings.** Use when: (a) invoking `Agent` tool with structured prompt >500 tokens, (b) coordinating ≥2 agents exchanging state, (c) internal memory re-read by another agent. **Don't use** for user-facing prose, source code, shell/SQL commands.
+
+Skill: `~/.claude/skills/helix-lang/SKILL.md`. Adoption tracker: `~/.claude/helpers/helix-lang-detect.sh`.
+
+### HELIX-DISTILL — Per-agent CLAUDE.md slices
+
+Generates agent-specific slices of CLAUDE.md when invoking subagents in Layer 2 swarms with ≥8 agents. **78-96% per-agent context savings** (15 slices auto-generated in `claude/skills/_distilled/`). For normal sessions, Opus 4.7 handles long context natively — DISTILL is opt-in only.
+
+```bash
+bash ~/.claude/helpers/helix-distill.sh run
+```
+
+### HELIX-SPEAK — Situational output compression
+
+Smarter than caveman-speak: compresses output by message type. `ultra` for inter-agent coordination, `brief` for user reports, `off` for code / commands / security where compression is dangerous.
+
+Skill: `~/.claude/skills/helix-speak/SKILL.md`.
 
 ---
 
@@ -416,43 +612,64 @@ bash ~/helix_asisten/scripts/capa0.sh logs  "$(cat app.log)"
 bash ~/helix_asisten/scripts/capa0.sh code  "Debug this error..."
 ```
 
-If `ollama` is not installed, `capa0.sh` returns exit 2 → Helix automatically scales to Layer 1.
+### FASE 9 — HW-aware policy (v3.14.0)
+
+Layer 0 used to run blindly. Since v3.14.0, an HW probe gates it.
+
+```bash
+bash ~/.claude/helpers/helix-hwprobe.sh         # CPU/RAM/GPU/disk → ~/.claude/hw-profile.json
+bash ~/.claude/helpers/helix-capa0-policy.sh    # ON | OPT_IN | OFF
+bash ~/.claude/helpers/helix-bench-capa0.sh     # empirical bench (overrides heuristic)
+bash ~/.claude/helpers/helix-models-suggest.sh  # compatible models for this HW
+```
+
+| Tier | RAM / GPU | Policy |
+|------|-----------|--------|
+| `large` | ≥16 GB or NVIDIA GPU ≥4 GB VRAM | `ON` (full models) |
+| `medium` | 8–16 GB no dedicated GPU | `OPT_IN` (small models only — phi3:mini, qwen2.5:3b) |
+| `small` | <8 GB | `OFF` (Layer 0 disabled, fallback to Claude) |
+
+Empirical bench (`helix-bench-capa0.sh`) **overrides** the heuristic — if measured latency <10s → ON, 10–30s → OPT_IN, >30s → OFF. Hard 30s timeout on every Ollama call.
+
+If `ollama` is not installed (or HW policy says OFF), `capa0.sh` returns exit 2 → Helix automatically scales to Layer 1. See also `/helix_desactiva_CAPA0` for manual override above.
 
 ---
-
-## RuFlo Ecosystem
-
-> Source: https://github.com/ruvnet/ruflo  |  https://github.com/ruvnet/claude-flow
-
-**Active version: `ruflo v3.5.42`**
-
-| Package | Role |
-|---------|------|
-| `ruflo` | Main package — installs the entire ecosystem |
-| `@claude-flow/cli` | MCP server — exposes `mcp__claude-flow__*` tools |
-| `claude-flow@alpha` | CLI + `@claude-flow/memory` for memory hooks |
-| `agentic-flow@alpha` | ONNX embeddings for semantic search |
 
 ## Required MCPs
 
 ```bash
-# Main MCP
-claude mcp add claude-flow -- npx -y @claude-flow/cli@latest mcp start
-
-# Other MCPs
-claude mcp add context7 -- npx -y @upstash/context7-mcp
-claude mcp add browser-tools -- npx @agentdeskai/browser-tools-mcp@1.2.0
-claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer
-
-# Warm agentic-flow cache
-npx agentic-flow@alpha --version
+claude mcp add context7      -- npx -y @upstash/context7-mcp
+claude mcp add browser-tools -- npx    @agentdeskai/browser-tools-mcp@1.2.0
+claude mcp add puppeteer     -- npx -y @modelcontextprotocol/server-puppeteer
 ```
+
+> `claude-flow` MCP and `agentic-flow` are no longer required. They were part of the
+> RuFlo V3 ecosystem (legacy — see below).
 
 ---
 
-## Memory Layers (helix-engine)
+## Legacy: RuFlo V3 / helix-engine *(deprecated 2026-05-04)*
 
-Active when using `helix-engine/` in a project:
+> RuFlo V3 was the original injectable engine for projects that needed swarm + HNSW + SONA + ReasoningBank. **Discontinued by Helix Council #1 (plan v4 D1', 2026-05-04)** for orthogonal concerns: 314-tool MCP noise, TS/Node lock-in, non-controllable topology.
+>
+> Root-cause analysis: `claude/memory/topics/ruflo-rootcause-D.md`
+> Council decision: `claude/memory/topics/helix-evolution-completed.md`
+>
+> The `helix-engine/` directory remains in the repo as historical reference. New projects should **not** inject it. The native Helix bash statusline (FASE 0.5, `helix-statusline.sh`) replaced the RuFlo CJS panel in v3.14.0.
+
+<details>
+<summary>Click to expand the original RuFlo V3 capabilities (kept for reference)</summary>
+
+**Last active version: `ruflo v3.5.42`**
+
+| Package | Role |
+|---------|------|
+| `ruflo` | Main package — installed the entire ecosystem |
+| `@claude-flow/cli` | MCP server — exposed `mcp__claude-flow__*` tools |
+| `claude-flow@alpha` | CLI + `@claude-flow/memory` for memory hooks |
+| `agentic-flow@alpha` | ONNX embeddings for semantic search |
+
+**Memory Layers** (when `helix-engine/` was injected):
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -467,7 +684,7 @@ Active when using `helix-engine/` in a project:
 └─────────────────────────────────────────────────────┘
 ```
 
-## 3-Tier Model Routing (helix-engine)
+**3-Tier Model Routing:**
 
 | Tier | Handler | Latency | When |
 |------|---------|---------|------|
@@ -477,13 +694,15 @@ Active when using `helix-engine/` in a project:
 
 Combined token savings: **30-50%**
 
-## Status Panel (helix-engine)
+**Status Panel** (legacy, replaced by `helix-statusline.sh` in v3.14.0):
 
 ```
 ▊ RuFlo V3 ● user  │  ⏇ main  │  Claude Code
 🤖 Swarm  ○ [ 0/15]  👥 0    🪝 0/17    🔴 CVE 0/3    💾 5MB    🧠 0%
 📊 AgentDB    Vectors ●0  │  Size 0KB  │  Tests ●0
 ```
+
+</details>
 
 ---
 
@@ -541,6 +760,29 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.14.1 — 2026-05-04 · README reorganization (docs only)
+
+Documentation-only patch. No code changes. Brings the README in line with the actual state of the system after v3.14.0:
+
+- **Numerical fixes**: 27 → **28 evolved agents** (includes 7 new `council-*` roles), 28 → **35 reusable skills**.
+- **Honesty fixes**: Layer 3 (Agent Teams) marked as **NOT IMPLEMENTED** instead of presented as functional. Layer 2 marked as "trigger active, orchestrator pending" — the `claude-flow` MCP path is deprecated by D1'.
+- **Dialogue Protocol**: was 7 outdated rules → now 12 real rules from `CLAUDE.md` (initial analysis, bitácora, alerta, requirement intake, auto-economy by signal, mandatory parallelism, auto-close, resume opt-in).
+- **New documented sections** for features that existed in code but not in the README:
+  - **Helix Council v1.0** — 7-agent decision protocol with constitution + immutable audit logs.
+  - **HSL v1** — Helix Security Layer (6 layers active).
+  - **TRANCH 2** — M1 helix-judge, M2 passive-capture, M3 project-consolidate, R1 route-recommend, R2 cost-tracker, SEC1 aidefence, SEC2 egress-audit.
+  - **Compression Systems** — HELIX-LANG v2 (58.7% output savings), HELIX-DISTILL, HELIX-SPEAK.
+  - **HELIX_ROLE creator vs user** (plan v4 D4).
+  - **FASE 9 HW-aware** policy gate for Layer 0.
+  - **Layer 0 manual override** slash commands (`/helix_desactiva_CAPA0` + `/helix_activa_CAPA0`).
+  - **`/helix-actualiza`** maintenance command.
+- **Legacy section reorganized**: RuFlo V3 / helix-engine moved under a single collapsed `<details>` block at the end. `claude-flow` MCP removed from Required MCPs.
+- **Structure tree updated** with all new helpers (capa0-toggle, hwprobe, judge, passive-capture, project-consolidate, route-recommend, cost-rollup, aidefence, egress-audit, statusline) and the new `tests/` directory.
+
+Net README change: +225 lines, no information removed (legacy preserved, rephrased as deprecated).
+
+---
 
 ### v3.14.0 — 2026-05-04 · Blocking prereqs + Layer 0 manual override + TRANCH 1+2 sync
 
