@@ -11,6 +11,15 @@ GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 mkdir -p "$GLOBAL_MEMORY_DIR"
 
+# ── Cleanup override Capa 0 mode:session ─────────────────────
+CAPA0_OVERRIDE="$HOME/.claude/capa0-disabled"
+if [[ -f "$CAPA0_OVERRIDE" ]]; then
+  if grep -qE '^mode:[[:space:]]*session' "$CAPA0_OVERRIDE" 2>/dev/null; then
+    rm -f "$CAPA0_OVERRIDE"
+    echo -e "${BLUE}→${NC} Capa 0 reactivada (override mode:session expiró con la sesión)."
+  fi
+fi
+
 RESUMEN="${1:-Sin resumen proporcionado}"
 shift || true
 PENDIENTES=("$@")

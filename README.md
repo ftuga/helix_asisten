@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.13.0** — [Changelog](#changelog)
+> **Current version: v3.14.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -18,16 +18,23 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 
 ## Prerequisites
 
+> **v3.14.0** — `check-prereqs.sh` v2 is **blocking**. `install.sh` will refuse to proceed
+> until every Required dependency is present. The script generates a single grouped
+> copy-paste block with only the commands you actually need.
+
 | Requirement | Type | Notes |
 |-------------|------|-------|
 | [Claude Code CLI](https://docs.anthropic.com/claude-code) | Required | `npm install -g @anthropic-ai/claude-code` |
 | Node.js ≥ 18 **native Linux** | Required | MCPs fail if Node points to a Windows path in WSL — install via NodeSource, not Windows |
 | Python ≥ 3.9 + pip3 | Required | `sudo apt-get install -y python3 python3-pip` |
 | git, curl, rsync | Required | `sudo apt-get install -y git curl rsync` |
-| zstd | Required by Ollama | `sudo apt-get install -y zstd` |
-| Docker | Optional | Qdrant vector memory. `sudo service docker start` in WSL |
+| zstd | Required (Ollama) | `sudo apt-get install -y zstd` |
+| Docker (binary + active daemon) | **Required** | Qdrant vector memory. `curl -fsSL https://get.docker.com \| sh` |
+| [Ollama](https://ollama.com/download) | **Required** | Layer 0 + helix-judge + nomic-embed-text. `curl -fsSL https://ollama.com/install.sh \| sh` |
+| `nomic-embed-text` model | Recommended | `ollama pull nomic-embed-text` (vector memory degraded without it) |
 | chromium-browser | Optional | Required by puppeteer MCP — without it, MCP shows "Failed to connect" |
-| [Ollama](https://ollama.com/download) | Optional | Layer 0 (free local models) |
+
+> **OS support (v1):** Ubuntu / Debian / WSL with `apt-get`. `check-prereqs.sh` exits early on macOS, Fedora, Arch with a pointer to `claude/memory/topics/install-os-support.md` (manual install commands per OS).
 
 > **WSL users:** run `which node` before installing — if it points to `/mnt/c/...`, install native Linux Node first.
 
@@ -534,6 +541,60 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 ---
 
 ## Changelog
+
+### v3.14.0 — 2026-05-04 · Blocking prereqs + Layer 0 manual override + TRANCH 1+2 sync
+
+Catches the repo up with three sessions of work that lived only in `~/.claude/`. Two new user-facing features (FASE 6 OPCIÓN E + Layer 0 manual disable) plus the helpers from TRANCH 1+2 (council-decided plan v4) that were never committed.
+
+**`scripts/check-prereqs.sh` v2 — blocking prerequisites with grouped copy-paste output**
+- Promoted to **Required (FAIL)**: Docker (binary + active daemon), Ollama, zstd, Claude Code CLI. Previously WARN-only or unchecked.
+- Promoted to Recommended (WARN): `nomic-embed-text` model.
+- New OS detection: only Ubuntu/Debian/WSL with `apt-get` in v1. macOS/Fedora/Arch fail early with pointer to `claude/memory/topics/install-os-support.md`.
+- Output reorganized: instead of scattered messages, a single grouped copy-paste block with only the commands you actually need (apt packages consolidated into one `apt-get install`, Docker block, Ollama block, model pulls block, etc.). Numbered steps in dependency order (apt → node → docker → ollama → claude CLI → models).
+- Solves the previous failure mode: `install.sh` proceeded with broken state when Docker or Ollama were missing.
+- Smoke test: `tests/test-check-prereqs.sh` — 24 assertions across 8 scenarios (PATH-shadowed binaries to simulate missing deps).
+
+**Layer 0 manual override — for users with limited HW**
+- `/helix_desactiva_CAPA0` and `/helix_activa_CAPA0` slash commands. The disable command **asks the user** whether to apply it to the current session only or persistently across sessions.
+- `claude/helpers/helix-capa0-toggle.sh` — `off --session | off --persistent | on | status`. Writes `~/.claude/capa0-disabled` with YAML metadata (mode, created_at).
+- `claude/helpers/helix-capa0-policy.sh` — early check that wins over the HW heuristic. The override applies via the file, the env var `HELIX_CAPA0_DISABLED=1`, or both.
+- `session-end.sh` — auto-cleanup of `mode:session` overrides at session close. `mode:persistent` survives.
+- Default: Layer 0 stays **enabled by default** based on detected HW (FASE 9). The override only disables — it never forces enable.
+- Smoke test: `tests/test-capa0-toggle.sh` — 19 assertions across 9 scenarios (env var, file, modes, errors).
+
+**TRANCH 1 + TRANCH 2 helpers — sync from sessions #20-#21**
+
+These were council-approved (plan v4, Helix Council #1, 2026-05-04) and implemented in `~/.claude/` but never committed. v3.14.0 brings them into the repo so `install.sh` actually deploys them on a fresh machine.
+
+- **FASE 9 HW-aware** (`helix-hwprobe.sh`, `helix-capa0-policy.sh`, `helix-bench-capa0.sh`, `helix-models-suggest.sh`) — CPU/RAM/GPU detection, ON/OPT_IN/OFF policy by tier, empirical bench overrides heuristic.
+- **FASE 0.5 statusline** (`helix-statusline.sh`) — bash replacement for the 742-line RuFlo CJS statusline. <200ms p99.
+- **D1' multi-domain trigger** (`helix-multidomain-trigger.py/sh`) — PreToolUse(Agent) hook detecting 2+ domain intent, advisory-only.
+- **M1 helix-judge** (`helix-judge.py`) — LLM-as-judge for semantic conflicts. Ollama backend (`llama3.2:3b` default). Static few-shot prompt (anti-poisoning hard rule). Confidence ≥0.85, 100% audit log.
+- **M2 passive-capture** (`passive-capture-hook.py/sh`, `passive-capture-review.sh`) — PostToolUse hook detecting non-trivial decisions during edits. Three-bucket JSONL (pending/approved/rejected). Review tool requires explicit approve/reject.
+- **M3 helix-project-consolidate** (`helix-project-consolidate.py`) — fuzzy-matched name drift detection across helpers/skills/agents/topics. Threshold env var `HELIX_M3_FUZZY_THRESHOLD` (default 0.75). Interactive unify only with explicit confirmation.
+- **R1 helix-route-recommend** (`helix-route-recommend.py`, `helix-route-cost-audit.py`) — model recommendation advisor (Opus/Sonnet/Haiku) by domain. **Read-only** — never modifies `settings.json`. Override via `HELIX_FORCE_MODEL`. Kill switch `HELIX_R1_ENABLED=0`.
+- **R2 helix-cost-tracker** (`helix-cost-rollup.sh`) — real USD cost from JSONL transcripts using Anthropic Nov 2025 pricing. Modes: current/session/all/report. Wired to statusline 💰 slot.
+- **SEC1 helix-aidefence** (`helix-aidefence-hook.py/sh`) — PostToolUse PII redactor on Helix-internal logs (10 PII types: EMAIL, PHONE, SSN, IBAN, IPV4/6, CREDIT_CARD-Luhn, PATH_USERNAME, URL_USERINFO). Redact-no-block.
+- **SEC2 helix-egress-audit** (`helix-egress-audit-hook.py/sh`, `helix-egress-report.sh`) — PostToolUse audit on WebFetch/WebSearch/MCP. Logs domain + sanitized query. First-seen domain alert + spike detection.
+
+**`tests/` — repo-versioned smoke tests (new directory)**
+- `test-capa0-toggle.sh` — 19/19 PASS
+- `test-check-prereqs.sh` — 24/24 PASS
+
+**Documentation**
+- `claude/memory/topics/install-os-support.md` — OS support matrix + manual install commands for macOS, Fedora/RHEL, Arch.
+- `claude/memory/topics/fase-6-installer-decision.md` — council #4 decision record (4 options, OPTION E selected).
+- 18 additional bench/decision topics from TRANCH 1+2 (M1-M3, R1, SEC1-2, B-gates, council design, FASE 9 HW-aware, statusline v0.1, plan v4 completed).
+
+**Privacy fixes**
+- Removed two hardcoded user paths (`/home/lfrontuso/`) from `passive-capture-review.sh` and `helix-cost-rollup.sh`. Replaced with `os.path.expanduser('~/')` and dynamic prefix from `HOME`.
+
+**Migration notes**
+- After `git pull`, run `bash update.sh` to copy the new helpers into `~/.claude/`.
+- Existing installs: Capa 0 keeps its current behavior. New slash commands available immediately after sync.
+- New installs on machines without Docker or Ollama: `check-prereqs.sh` will block and print exactly what to run.
+
+---
 
 ### v3.13.0 — 2026-04-27 · Project stack manifest + anti-bias routing + conversation persistence
 

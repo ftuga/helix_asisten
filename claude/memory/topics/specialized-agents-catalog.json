@@ -1,0 +1,104 @@
+{
+  "_meta": {
+    "version": "0.1",
+    "updated": "2026-04-27",
+    "description": "Catálogo de agentes especializados por categoría con señales de detección. Consumido por helix-stack.sh detect/suggest-agents. Extensible sin tocar código.",
+    "signal_types": {
+      "files": "globs de archivos en el proyecto (find -name)",
+      "dirs": "directorios presentes",
+      "deps_python": "deps en requirements.txt o pyproject.toml",
+      "deps_node": "deps en package.json (dependencies + devDependencies)",
+      "manifest": "archivos manifesto específicos en la raíz",
+      "keywords_in_readme": "tokens en README.md (case-insensitive)"
+    }
+  },
+
+  "languages": {
+    "rust":    { "agent": "rust-pro",    "signals": { "manifest": ["Cargo.toml"], "files": ["*.rs"] } },
+    "go":      { "agent": "go-pro",      "signals": { "manifest": ["go.mod"],    "files": ["*.go"] } },
+    "kotlin":  { "agent": "kotlin-pro",  "signals": { "files": ["*.kt", "build.gradle.kts"] } },
+    "swift":   { "agent": "swift-pro",   "signals": { "files": ["*.swift", "Package.swift"] } },
+    "elixir":  { "agent": "elixir-pro",  "signals": { "manifest": ["mix.exs"], "files": ["*.ex", "*.exs"] } },
+    "ruby":    { "agent": "ruby-pro",    "signals": { "manifest": ["Gemfile"], "files": ["*.rb"] } },
+    "scala":   { "agent": "scala-pro",   "signals": { "manifest": ["build.sbt"], "files": ["*.scala"] } },
+    "php":     { "agent": "php-pro",     "signals": { "manifest": ["composer.json"], "files": ["*.php"] } },
+    "dart":    { "agent": "dart-pro",    "signals": { "manifest": ["pubspec.yaml"], "files": ["*.dart"] } },
+    "csharp":  { "agent": "csharp-pro",  "signals": { "files": ["*.cs", "*.csproj", "*.sln"] } },
+    "haskell": { "agent": "haskell-pro", "signals": { "manifest": ["stack.yaml", "package.yaml"], "files": ["*.hs"] } }
+  },
+
+  "frameworks": {
+    "vue":     { "agent": "vue-pro",     "signals": { "deps_node": ["vue"] } },
+    "svelte":  { "agent": "svelte-pro",  "signals": { "files": ["*.svelte"], "deps_node": ["svelte"] } },
+    "astro":   { "agent": "astro-pro",   "signals": { "files": ["*.astro"], "deps_node": ["astro"] } },
+    "remix":   { "agent": "remix-pro",   "signals": { "deps_node": ["@remix-run/react"] } },
+    "nuxt":    { "agent": "nuxt-pro",    "signals": { "deps_node": ["nuxt"], "manifest": ["nuxt.config.ts", "nuxt.config.js"] } },
+    "solid":   { "agent": "solid-pro",   "signals": { "deps_node": ["solid-js"] } },
+    "qwik":    { "agent": "qwik-pro",    "signals": { "deps_node": ["@builder.io/qwik"] } },
+    "nestjs":  { "agent": "nestjs-expert", "signals": { "deps_node": ["@nestjs/core"] } },
+    "fastify": { "agent": "fastify-pro", "signals": { "deps_node": ["fastify"] } },
+    "rails":   { "agent": "rails-pro",   "signals": { "deps_ruby": ["rails"], "manifest": ["config/application.rb"] } },
+    "spring":  { "agent": "spring-boot-expert", "signals": { "files": ["pom.xml", "build.gradle"] } },
+    "phoenix": { "agent": "phoenix-pro", "signals": { "deps_elixir": ["phoenix"] } },
+    "actix":   { "agent": "actix-pro",   "signals": { "deps_rust": ["actix-web"] } },
+    "gin":     { "agent": "gin-pro",     "signals": { "deps_go": ["github.com/gin-gonic/gin"] } }
+  },
+
+  "domains": {
+    "ml-pytorch":      { "agent": "pytorch-expert",     "signals": { "deps_python": ["torch", "pytorch", "torchvision"] } },
+    "ml-tensorflow":   { "agent": "tensorflow-expert",  "signals": { "deps_python": ["tensorflow", "keras"] } },
+    "ml-langchain":    { "agent": "langchain-expert",   "signals": { "deps_python": ["langchain", "langchain-core"], "deps_node": ["langchain"] } },
+    "ml-llamaindex":   { "agent": "llamaindex-expert",  "signals": { "deps_python": ["llama-index"] } },
+    "ml-huggingface":  { "agent": "huggingface-expert", "signals": { "deps_python": ["transformers", "datasets", "diffusers"] } },
+    "ml-scikit":       { "agent": "ml-scikit-expert",   "signals": { "deps_python": ["scikit-learn", "lightgbm", "xgboost"] } },
+    "data-spark":      { "agent": "spark-expert",       "signals": { "deps_python": ["pyspark"], "files": ["*.scala"] } },
+    "data-dbt":        { "agent": "dbt-expert",         "signals": { "manifest": ["dbt_project.yml"] } },
+    "data-kafka":      { "agent": "kafka-expert",       "signals": { "deps_python": ["confluent-kafka", "kafka-python"], "deps_node": ["kafkajs"] } },
+    "data-airflow":    { "agent": "airflow-dag-expert", "signals": { "deps_python": ["apache-airflow"], "dirs": ["dags"] } },
+    "data-mlflow":     { "agent": "mlflow-expert",      "signals": { "deps_python": ["mlflow"] } },
+    "vector-db":       { "agent": "vector-db-expert",   "signals": { "deps_python": ["qdrant-client", "pinecone-client", "chromadb", "weaviate-client"] } },
+    "graphql":         { "agent": "graphql-expert",     "signals": { "deps_node": ["graphql", "@apollo/server", "@apollo/client", "graphql-yoga"] } },
+    "prisma":          { "agent": "prisma-expert",      "signals": { "files": ["prisma/schema.prisma"], "deps_node": ["@prisma/client", "prisma"] } },
+    "trpc":            { "agent": "trpc-expert",        "signals": { "deps_node": ["@trpc/server", "@trpc/client"] } },
+    "redis":           { "agent": "redis-expert",       "signals": { "deps_python": ["redis", "aioredis"], "deps_node": ["ioredis", "redis"] } },
+    "mongodb":         { "agent": "mongodb-expert",     "signals": { "deps_python": ["pymongo", "motor"], "deps_node": ["mongodb", "mongoose"] } },
+    "elasticsearch":   { "agent": "elasticsearch-expert", "signals": { "deps_python": ["elasticsearch"], "deps_node": ["@elastic/elasticsearch"] } }
+  },
+
+  "infrastructure": {
+    "terraform":  { "agent": "terraform-expert", "signals": { "files": ["*.tf", "main.tf", "terraform.tfvars"] } },
+    "ansible":    { "agent": "ansible-expert",   "signals": { "files": ["ansible.cfg", "playbook.yml"], "dirs": ["roles", "playbooks"] } },
+    "pulumi":     { "agent": "pulumi-expert",    "signals": { "manifest": ["Pulumi.yaml"] } },
+    "helm":       { "agent": "helm-expert",      "signals": { "manifest": ["Chart.yaml"], "files": ["values.yaml"] } },
+    "kubernetes": { "agent": "k8s-expert",       "signals": { "dirs": ["k8s", "kubernetes", "manifests"], "files": ["kustomization.yaml"] } },
+    "argocd":     { "agent": "argocd-expert",    "signals": { "files": ["application.yaml"], "dirs": ["argo-cd", "argocd"] } },
+    "github-actions": { "agent": "github-actions-expert", "signals": { "dirs": [".github/workflows"] } },
+    "gitlab-ci":  { "agent": "gitlab-ci-expert", "signals": { "files": [".gitlab-ci.yml"] } },
+    "azure-devops": { "agent": "azure-infra-engineer", "signals": { "files": ["azure-pipelines.yml"] } }
+  },
+
+  "blockchain": {
+    "solidity":  { "agent": "solidity-expert",  "signals": { "files": ["*.sol"], "manifest": ["hardhat.config.js", "hardhat.config.ts", "foundry.toml"] } },
+    "anchor":    { "agent": "anchor-expert",    "signals": { "files": ["Anchor.toml"], "deps_rust": ["anchor-lang"] } },
+    "ethers":    { "agent": "ethers-expert",    "signals": { "deps_node": ["ethers", "web3", "viem"] } }
+  },
+
+  "specialized": {
+    "unity":         { "agent": "unity-expert",         "signals": { "dirs": ["Assets", "ProjectSettings"], "files": ["*.unity"] } },
+    "godot":         { "agent": "godot-expert",         "signals": { "manifest": ["project.godot"], "files": ["*.gd"] } },
+    "unreal":        { "agent": "unreal-expert",        "signals": { "files": ["*.uproject"] } },
+    "flutter":       { "agent": "flutter-pro",          "signals": { "manifest": ["pubspec.yaml"], "files": ["*.dart"], "dirs": ["lib", "android", "ios"] } },
+    "react-native":  { "agent": "react-native-pro",     "signals": { "deps_node": ["react-native"], "files": ["metro.config.js"] } },
+    "openapi":       { "agent": "openapi-expert",       "signals": { "files": ["openapi.yaml", "openapi.json", "swagger.yaml"] } },
+    "asyncapi":      { "agent": "asyncapi-expert",      "signals": { "files": ["asyncapi.yaml", "asyncapi.json"] } },
+    "opentelemetry": { "agent": "opentelemetry-expert", "signals": { "deps_python": ["opentelemetry-api"], "deps_node": ["@opentelemetry/api"] } }
+  },
+
+  "compliance": {
+    "hipaa":    { "agent": "hipaa-compliance-expert",  "signals": { "keywords_in_readme": ["HIPAA", "PHI", "BAA"] } },
+    "gdpr":     { "agent": "gdpr-compliance-expert",   "signals": { "keywords_in_readme": ["GDPR", "data subject", "DPA"] } },
+    "pci-dss":  { "agent": "pci-dss-compliance-expert","signals": { "keywords_in_readme": ["PCI-DSS", "PCI DSS", "cardholder data"] } },
+    "soc2":     { "agent": "soc2-compliance-expert",   "signals": { "keywords_in_readme": ["SOC 2", "SOC2", "Type II"] } },
+    "iso27001": { "agent": "iso27001-expert",          "signals": { "keywords_in_readme": ["ISO 27001", "ISMS"] } }
+  }
+}
