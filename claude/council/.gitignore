@@ -1,0 +1,9 @@
+# Runs locales — no versionar
+log/*.yaml
+context-pack/*/
+frequency.log
+
+# Mantener estructura de carpetas
+!log/.gitkeep
+!context-pack/.gitkeep
+!roles/.gitkeep
