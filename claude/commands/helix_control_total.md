@@ -1,64 +1,52 @@
 ---
 name: helix_control_total
-description: Activa el modo helix_control_total — 4 capas de orquestación, swarm RuFlo V3, memoria HNSW y auto-evolución. Ejecutar al inicio de cualquier sesión de trabajo.
+description: Activa el modo helix_control_total — 4 capas de orquestación (Ollama + Subagents + Swarm + Agent Teams) con auto-evolución. Ejecutar al inicio de sesiones de trabajo.
 ---
 
-# ⚡ HELIX — Modo Control Total
+# HELIX — Modo Control Total
 
-Activando todas las capas de orquestación de Helix.
+Activando todas las capas de orquestación.
 
 ## Estado de activación
-
-Helix evalúa en este orden:
 
 ```
 Capa 0 — Ollama        → logs, texto largo, salida Docker
 Capa 1 — Subagents     → artefacto concreto (endpoint, componente, query)
-Capa 2 — Swarm RuFlo   → feature ≥2 capas del stack
-Capa 3 — Agent Teams   → colaboración frontend+backend+tests
+Capa 2 — Swarm         → feature ≥2 dominios en paralelo
+Capa 3 — Agent Teams   → colaboración peer-to-peer (NO IMPLEMENTADO, ver topics/agent-teams-status.md)
 ```
-
-## Verificación del motor
-
-$CLAUDE_PROJECT_DIR/.claude/helpers/hook-handler.cjs status
 
 ## Capacidades activas
 
 | Sistema | Estado |
 |---------|--------|
-| Hooks (11 tipos) | ✓ PreToolUse / PostToolUse / UserPromptSubmit / SessionStart/End / Stop / PreCompact / SubagentStart/Stop / Notification |
-| Memoria HNSW | ✓ hybrid backend — `.claude-flow/data/` |
-| SONA Learning | ✓ LearningBridge activo |
-| Swarm | ✓ hierarchical-mesh — máx 15 agentes |
-| Daemon Workers | ✓ audit(1h) / optimize(30m) / ultralearn(1h) |
-| Agent Teams | ✓ CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 |
-| 3-Tier Routing | ✓ WASM(<1ms) → Haiku → Sonnet/Opus |
-
-## Catálogo de agentes disponibles
-
-**En este proyecto (.claude/agents/):** 99 agentes RuFlo en 23 categorías
-**Globales (~/.claude/agents/):** 18 activos + 17 deshabilitados
-
-Para buscar/instalar agentes faltantes: skill `helix-agent-manager`
+| Hooks PreToolUse / PostToolUse / UserPromptSubmit / SessionStart/End | activos |
+| Cost tracker (R2) | $/sesión real desde transcripts JSONL |
+| Routing advisor (R1) | recomendación de modelo por dominio (read-only) |
+| Multi-domain trigger (D1') | detecta 2+ dominios en prompts a `Agent` |
+| Council v1.0 | 7 roles disponibles para deliberaciones críticas |
+| HSL v1 | 6 capas de seguridad (injection, egress, secrets, integrity, evolve-guard, reflexion-quarantine) |
+| Capa 0 HW-aware | ON / OPT_IN / OFF según hw-profile.json |
 
 ## Regla de routing (automático — no preguntar al usuario)
 
-| Señal | Acción |
-|-------|--------|
-| Log / texto largo / Docker output | Capa 0: Ollama |
-| Un artefacto concreto | Capa 1: agente especializado correcto |
-| Feature que toca ≥2 capas | Capa 2: swarm_init + task_orchestrate |
-| Frontend+backend+tests simultáneo | Capa 3: Agent Teams |
+| Señal | Capa |
+|-------|------|
+| Log / texto largo / Docker output | 0 (Ollama) |
+| Un artefacto concreto | 1 (Agent tool con agente del catálogo) |
+| Feature que toca ≥2 dominios | 2 (swarm_init + agent_spawn) |
+| Diálogo peer-to-peer entre agentes | 3 (Agent Teams — pendiente) |
+
+## Catálogo de agentes
+
+- Globales: `~/.claude/agents/` + índice en `~/.claude/memory/agents-index.md`
+- Council: 7 agentes `council-*` para deliberaciones de alto impacto
+- Para buscar/instalar agentes faltantes: skill `helix-agent-manager`
 
 ## Protocolo anti-drift
 
-Para tareas complejas (≥3 archivos):
-```
-swarm_init(topology="hierarchical", maxAgents=8, strategy="specialized")
-→ coordinator + architect + coder + tester en paralelo
-```
+Tareas complejas (≥3 archivos): preferir swarm Capa 2 sobre múltiples Agent en paralelo (antipattern evolution #58 — invisible en swarm panel).
 
 ---
 
-**Helix está activo. El usuario solo ve resultados.**
-Máximo paralelismo. Si un agente falla → Helix corrige y registra en evolution-log.
+**Helix está activo. El usuario solo ve resultados.** Si un agente falla → registrar en evolution-log y corregir.

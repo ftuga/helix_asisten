@@ -61,28 +61,14 @@ fi
 # Helpers globales (sync completo)
 rsync -a --delete "$CLAUDE_DIR/helpers/" "$REPO_DIR/claude/helpers/"
 
-# Statusline global (también en helix-engine)
-[[ -f "$CLAUDE_DIR/helpers/statusline.cjs" ]] && \
-  cp "$CLAUDE_DIR/helpers/statusline.cjs" "$REPO_DIR/helix-engine/.claude/helpers/"
-
-# ── helix-engine (fuente: proyecto local con helix-engine inyectado) ────────
-# Configurar HELIX_ENGINE_SRC en ~/.claude/session-env o exportar antes de correr
-PROJECT_SRC="${HELIX_ENGINE_SRC:-}"
-if [[ -d "$PROJECT_SRC/.claude" ]]; then
-  echo "→ Sincronizando helix-engine..."
-  cp "$PROJECT_SRC/.mcp.json" "$REPO_DIR/helix-engine/" 2>/dev/null || true
-  rsync -a --delete "$PROJECT_SRC/.claude/agents/"   "$REPO_DIR/helix-engine/.claude/agents/"
-  rsync -a --delete "$PROJECT_SRC/.claude/commands/" "$REPO_DIR/helix-engine/.claude/commands/"
-  rsync -a --delete "$PROJECT_SRC/.claude/helpers/"  "$REPO_DIR/helix-engine/.claude/helpers/"
-  rsync -a --delete "$PROJECT_SRC/.claude/skills/"   "$REPO_DIR/helix-engine/.claude/skills/"
-  cp "$PROJECT_SRC/.claude/settings.json"  "$REPO_DIR/helix-engine/.claude/" 2>/dev/null || true
-  cp "$PROJECT_SRC/.claude/statusline.mjs" "$REPO_DIR/helix-engine/.claude/" 2>/dev/null || true
-  cp "$PROJECT_SRC/.claude/statusline.sh"  "$REPO_DIR/helix-engine/.claude/" 2>/dev/null || true
-  cp "$PROJECT_SRC/.claude-flow/config.yaml"     "$REPO_DIR/helix-engine/.claude-flow/" 2>/dev/null || true
-  cp "$PROJECT_SRC/.claude-flow/CAPABILITIES.md" "$REPO_DIR/helix-engine/.claude-flow/" 2>/dev/null || true
-  # security (no runtime)
-  [[ -f "$PROJECT_SRC/.claude-flow/security/audit-status.json" ]] && \
-    cp "$PROJECT_SRC/.claude-flow/security/audit-status.json" "$REPO_DIR/helix-engine/.claude-flow/security/" 2>/dev/null || true
+# Council (constitución + scripts; runs locales excluidos por .gitignore del council)
+if [[ -d "$CLAUDE_DIR/council" ]]; then
+  mkdir -p "$REPO_DIR/claude/council/scripts"
+  [[ -f "$CLAUDE_DIR/council/constitution.md" ]] && \
+    cp "$CLAUDE_DIR/council/constitution.md" "$REPO_DIR/claude/council/"
+  [[ -f "$CLAUDE_DIR/council/inter-agent-language.md" ]] && \
+    cp "$CLAUDE_DIR/council/inter-agent-language.md" "$REPO_DIR/claude/council/"
+  rsync -a "$CLAUDE_DIR/council/scripts/" "$REPO_DIR/claude/council/scripts/" 2>/dev/null || true
 fi
 
 # Template

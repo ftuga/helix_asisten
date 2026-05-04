@@ -176,6 +176,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node \"$HOME/.claude/helpers/statusline.cjs\""
+    "command": "bash \"$HOME/.claude/helpers/helix-statusline.sh\""
   }
 }

@@ -63,21 +63,11 @@ HELIX_FORCE=1 bash ~/helix_asisten/install.sh
 
 ---
 
-## Two Components: Global vs. Per-Project
+## Component
 
-Helix has two parts with distinct purposes:
+Helix lives entirely in `~/.claude/` (global config — applies to all your projects). Agents, skills, memory, dialogue protocol, self-evolution.
 
-| Component | Lives in | Purpose |
-|-----------|----------|---------|
-| **`claude/`** | `~/.claude/` | Global config — applies to **all** your projects. Agents, skills, memory, dialogue protocol, self-evolution. **The active path forward.** |
-| **`helix-engine/`** *(legacy)* | Inside each project | Injectable RuFlo V3 engine — swarm, HNSW, SONA, advanced hooks. **Deprecated since 2026-05-04 (plan v4 D1', Helix Council #1).** Kept in the repo for historical reference and any project that already injected it. New projects should not inject it. |
-
-Most projects only need `claude/`. RuFlo V3 was discontinued for orthogonal concerns (314-tool MCP noise, TS/Node lock-in, non-controllable topology) — see `claude/memory/topics/ruflo-rootcause-D.md` for the full root-cause analysis.
-
-```bash
-# inject-project.sh remains in the repo for backward compatibility.
-# New projects: skip this step. Use claude/ alone.
-```
+The legacy injectable RuFlo V3 engine (`helix-engine/`) was discontinued by Helix Council #1 (plan v4 D1', 2026-05-04) for orthogonal concerns: 314-tool MCP noise, TS/Node lock-in, non-controllable topology. Root-cause analysis at `claude/memory/topics/ruflo-rootcause-D.md`. The native bash statusline (`helix-statusline.sh`, FASE 0.5) replaced the RuFlo CJS panel in v3.14.0.
 
 ---
 
@@ -108,7 +98,7 @@ claude/              → ~/.claude/ (global config)
   helpers/helix-distill.sh      → HELIX-COMPRESS: agent-specific CLAUDE.md slices + project compression
   helpers/helix-lang-state.sh   → S:hash state manager (snapshot, delta, get, gc)
   helpers/helix-lang-bench.sh   → HELIX-LANG compression benchmark
-  helpers/helix-statusline.sh   → Native bash statusline (FASE 0.5, replaces RuFlo CJS) <200ms p99
+  helpers/helix-statusline.sh   → Native bash statusline (FASE 0.5) <200ms p99
   helpers/helix-hwprobe.sh      → CPU/RAM/GPU/disk probe → hw-profile.json
   helpers/helix-capa0-policy.sh → Layer 0 ON/OPT_IN/OFF policy gate (HW-aware)
   helpers/helix-capa0-toggle.sh → Layer 0 manual override (off --session|--persistent / on / status)
@@ -643,67 +633,6 @@ claude mcp add browser-tools -- npx    @agentdeskai/browser-tools-mcp@1.2.0
 claude mcp add puppeteer     -- npx -y @modelcontextprotocol/server-puppeteer
 ```
 
-> `claude-flow` MCP and `agentic-flow` are no longer required. They were part of the
-> RuFlo V3 ecosystem (legacy — see below).
-
----
-
-## Legacy: RuFlo V3 / helix-engine *(deprecated 2026-05-04)*
-
-> RuFlo V3 was the original injectable engine for projects that needed swarm + HNSW + SONA + ReasoningBank. **Discontinued by Helix Council #1 (plan v4 D1', 2026-05-04)** for orthogonal concerns: 314-tool MCP noise, TS/Node lock-in, non-controllable topology.
->
-> Root-cause analysis: `claude/memory/topics/ruflo-rootcause-D.md`
-> Council decision: `claude/memory/topics/helix-evolution-completed.md`
->
-> The `helix-engine/` directory remains in the repo as historical reference. New projects should **not** inject it. The native Helix bash statusline (FASE 0.5, `helix-statusline.sh`) replaced the RuFlo CJS panel in v3.14.0.
-
-<details>
-<summary>Click to expand the original RuFlo V3 capabilities (kept for reference)</summary>
-
-**Last active version: `ruflo v3.5.42`**
-
-| Package | Role |
-|---------|------|
-| `ruflo` | Main package — installed the entire ecosystem |
-| `@claude-flow/cli` | MCP server — exposed `mcp__claude-flow__*` tools |
-| `claude-flow@alpha` | CLI + `@claude-flow/memory` for memory hooks |
-| `agentic-flow@alpha` | ONNX embeddings for semantic search |
-
-**Memory Layers** (when `helix-engine/` was injected):
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Layer 1: Working Memory (RAM cache, 100 entries)    │
-│     ↓ overflows to                                   │
-│  Layer 2: HNSW Vector Store (semantic search)        │
-│     150x-12500x faster than linear search            │
-│     ↓ connected to                                   │
-│  Layer 3: Memory Graph (PageRank, max 5000 nodes)    │
-│     ↓ learns with                                    │
-│  Layer 4: LearningBridge (SONA + ReasoningBank)      │
-└─────────────────────────────────────────────────────┘
-```
-
-**3-Tier Model Routing:**
-
-| Tier | Handler | Latency | When |
-|------|---------|---------|------|
-| **1** | Agent Booster (WASM) | <1ms | Simple transforms: var→const, add-types |
-| **2** | Claude Haiku | ~500ms | Low complexity (<30%) |
-| **3** | Claude Sonnet/Opus | 2-5s | Complex reasoning (>30%) |
-
-Combined token savings: **30-50%**
-
-**Status Panel** (legacy, replaced by `helix-statusline.sh` in v3.14.0):
-
-```
-▊ RuFlo V3 ● user  │  ⏇ main  │  Claude Code
-🤖 Swarm  ○ [ 0/15]  👥 0    🪝 0/17    🔴 CVE 0/3    💾 5MB    🧠 0%
-📊 AgentDB    Vectors ●0  │  Size 0KB  │  Tests ●0
-```
-
-</details>
-
 ---
 
 ## Syncing the Repo
@@ -714,17 +643,6 @@ bash update.sh        # sync + automatic private context sanitize
 git add -A && git commit -m "sync: $(date +%Y-%m-%d)"
 git push
 ```
-
-### helix-engine source
-
-`update.sh` uses `$HELIX_ENGINE_SRC` to know which project to copy `helix-engine/` from. Set it locally (not committed to the repo):
-
-```bash
-# ~/.claude/session-env/helix-engine-src.sh (gitignored)
-export HELIX_ENGINE_SRC="$HOME/path/to/your/project"
-```
-
-If the variable is not defined, the helix-engine step is silently skipped.
 
 ---
 

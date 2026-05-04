@@ -1,112 +1,26 @@
 #!/usr/bin/env bash
 # ============================================================
-# Helix — Inyectar motor Helix en un proyecto existente
-# Uso: bash ~/helix_asisten/inject-project.sh [ruta-proyecto]
-# Si no se pasa ruta, usa el directorio actual.
+# Helix — inject-project.sh (DEPRECATED)
+#
+# El motor inyectable `helix-engine/` fue descontinuado por Helix Council #1
+# (plan v4 D1', 2026-05-04). Helix ahora vive solo en ~/.claude/ (global).
+# Para nuevos proyectos no es necesario inyectar nada.
+#
+# Si necesitás referenciar el motor histórico:
+#   git checkout 9b4be73 -- helix-engine/
 # ============================================================
-set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENGINE="$REPO_DIR/helix-engine"
-PROJECT_DIR="${1:-$(pwd)}"
+cat <<'EOF'
+[!] inject-project.sh está deprecated desde v3.15.0.
 
-if [[ ! -d "$PROJECT_DIR" ]]; then
-  echo "❌ Directorio no existe: $PROJECT_DIR"
-  exit 1
-fi
+    helix-engine/ se eliminó del repo (plan v4 D1' — Helix Council #1, 2026-05-04).
+    Helix ahora vive solo en ~/.claude/ y aplica a todos tus proyectos.
 
-echo "🔷 Inyectando Helix en: $PROJECT_DIR"
+    Nuevos proyectos: no requieren inyección. Abrí Claude Code en el directorio
+    y Helix se activa automáticamente desde ~/.claude/.
 
-# ── .mcp.json ───────────────────────────────────────────────
-if [[ ! -f "$PROJECT_DIR/.mcp.json" ]]; then
-  cp "$ENGINE/.mcp.json" "$PROJECT_DIR/"
-  echo "  ✓ .mcp.json creado"
-else
-  echo "  ⚠️  .mcp.json ya existe — no sobreescrito"
-fi
-
-# ── .claude/ ────────────────────────────────────────────────
-mkdir -p "$PROJECT_DIR/.claude/memory"
-
-# agents, commands, helpers, skills (sobreescribir OK — son templates)
-for dir in agents commands helpers skills; do
-  cp -r "$ENGINE/.claude/$dir" "$PROJECT_DIR/.claude/"
-done
-
-cp "$ENGINE/.claude/settings.json"  "$PROJECT_DIR/.claude/"
-cp "$ENGINE/.claude/statusline.mjs" "$PROJECT_DIR/.claude/" 2>/dev/null || true
-cp "$ENGINE/.claude/statusline.sh"  "$PROJECT_DIR/.claude/" 2>/dev/null || true
-
-echo "  ✓ .claude/ inyectado"
-
-# settings.local.json — solo si no existe (tiene permisos acumulados)
-if [[ ! -f "$PROJECT_DIR/.claude/settings.local.json" ]]; then
-  echo '{"permissions":{"allow":[],"deny":[]}}' > "$PROJECT_DIR/.claude/settings.local.json"
-  echo "  ✓ settings.local.json creado (vacío)"
-fi
-
-# ── .claude-flow/ ───────────────────────────────────────────
-mkdir -p "$PROJECT_DIR/.claude-flow/data" \
-         "$PROJECT_DIR/.claude-flow/sessions" \
-         "$PROJECT_DIR/.claude-flow/logs" \
-         "$PROJECT_DIR/.claude-flow/metrics" \
-         "$PROJECT_DIR/.claude-flow/neural"
-
-cp "$ENGINE/.claude-flow/config.yaml"      "$PROJECT_DIR/.claude-flow/"
-cp "$ENGINE/.claude-flow/CAPABILITIES.md"  "$PROJECT_DIR/.claude-flow/"
-
-[[ -d "$ENGINE/.claude-flow/security" ]] && \
-  cp -r "$ENGINE/.claude-flow/security" "$PROJECT_DIR/.claude-flow/"
-
-echo "  ✓ .claude-flow/ inyectado"
-
-# ── .gitignore — agregar entradas de Helix ──────────────────
-GITIGNORE="$PROJECT_DIR/.gitignore"
-HELIX_IGNORES=(
-  ".claude-flow/data/"
-  ".claude-flow/sessions/"
-  ".claude-flow/logs/"
-  ".claude-flow/neural/"
-  ".claude/settings.local.json"
-)
-for entry in "${HELIX_IGNORES[@]}"; do
-  if [[ -f "$GITIGNORE" ]] && grep -qF "$entry" "$GITIGNORE"; then
-    true
-  else
-    echo "$entry" >> "$GITIGNORE"
-  fi
-done
-echo "  ✓ .gitignore actualizado"
-
-# ── CLAUDE.md — insertar HELIX_MODE si falta ────────────────
-CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
-if [[ -f "$CLAUDE_MD" ]]; then
-  if ! grep -q "HELIX_MODE:" "$CLAUDE_MD"; then
-    # Insertar después de la primera línea (título)
-    sed -i '1a\\n> HELIX_MODE: helix_control_total' "$CLAUDE_MD"
-    echo "  ✓ HELIX_MODE: helix_control_total insertado en CLAUDE.md"
-  else
-    echo "  ⚠️  HELIX_MODE ya declarado en CLAUDE.md"
-  fi
-else
-  # Crear CLAUDE.md mínimo si no existe
-  cat > "$CLAUDE_MD" <<'EOF'
-# CLAUDE.md
-
-> HELIX_MODE: helix_control_total
-
-Proyecto inicializado con Helix engine.
-Ver reglas universales en `~/.claude/CLAUDE.md`.
+    Para recuperar el motor histórico (si tenés un proyecto que dependía de él):
+      git -C ~/helix_asisten checkout 9b4be73 -- helix-engine/
 EOF
-  echo "  ✓ CLAUDE.md creado con HELIX_MODE: helix_control_total"
-fi
 
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Helix engine inyectado en $PROJECT_DIR"
-echo ""
-echo "   Próximos pasos:"
-echo "   1. HELIX_MODE ya declarado en CLAUDE.md ✓"
-echo "   2. Instala MCPs si no están (ver install.sh)"
-echo "   3. Abre Claude Code en el proyecto"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+exit 1

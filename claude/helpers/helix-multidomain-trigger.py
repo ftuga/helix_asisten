@@ -10,7 +10,7 @@ Closes the TRANCH 1 caveat from plan v4 D1':
 Detects multi-domain intent in an `Agent` tool prompt. If ≥2 domains
 match keyword groups, emits a stderr advisory suggesting Capa 2 propia
 (swarm minimalista) instead of multiple parallel Agent tool calls
-(antipattern from evolution #58: invisible in ruflow).
+(antipattern from evolution #58: invisible in swarm panel).
 
 Advisory mode in v1.0 — does NOT enforce. Future versions can escalate
 to enforcement if metrics confirm low false-positive rate.
@@ -169,7 +169,7 @@ def main() -> int:
         f"[D1' multi-domain] Agent prompt touches {len(domains)} dominios: {domains_str}\n"
         f"   sub-agent: {subagent or '(unset)'}\n"
         f"   → Considera Capa 2 (swarm propio minimalista) en lugar de un solo Agent tool\n"
-        f"     o múltiples Agent en paralelo (antipattern evolution #58 — invisible en ruflow).\n"
+        f"     o múltiples Agent en paralelo (antipattern evolution #58 — invisible en swarm panel).\n"
         f"   → Override: HELIX_D1_TRIGGER_ENABLED=0",
         file=sys.stderr,
     )

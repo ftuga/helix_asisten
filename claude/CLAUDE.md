@@ -92,11 +92,11 @@ Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir
 |---|---|
 | Log / texto largo / salida Docker | **Capa 0** — Ollama (`capa0.sh logs\|code\|transform`). Si responde "no sé" → escalar |
 | 1 dominio (un endpoint, componente, bug, query) | **Capa 1** — `Agent tool` con agente del catálogo |
-| 2+ dominios en paralelo (sin diálogo entre agentes) | **Capa 2** — `mcp__claude-flow__swarm_init` + `agent_spawn`. Visible en ruflow |
+| 2+ dominios en paralelo (sin diálogo entre agentes) | **Capa 2** — `mcp__claude-flow__swarm_init` + `agent_spawn`. Visible en swarm panel |
 | Agentes que necesitan hablarse peer-to-peer | **Capa 3** — Agent Teams. NO IMPLEMENTADO (faltan mailbox + teammates dirs + hook TaskCreated). Status: `topics/agent-teams-status.md` |
 
 **Reglas duras:**
-- NUNCA múltiples `Agent tool` en paralelo para 2+ dominios — son invisibles en ruflow. Usar Capa 2.
+- NUNCA múltiples `Agent tool` en paralelo para 2+ dominios — son invisibles en swarm panel. Usar Capa 2.
 - Bug o error inesperado → `error-detective` PRIMERO, siempre.
 - Antes de declarar tarea completa → `code-reviewer`.
 - Endpoint nuevo / cambio de auth → `security-auditor` + `api-security-audit`.

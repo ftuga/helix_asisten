@@ -99,8 +99,11 @@ echo "→ Instalando helpers globales..."
 mkdir -p "$CLAUDE_DIR/helpers"
 rsync -a "$REPO_DIR/claude/helpers/" "$CLAUDE_DIR/helpers/"
 chmod +x "$CLAUDE_DIR/helpers/"*.sh 2>/dev/null || true
-# statusline también en helix-engine
-cp "$REPO_DIR/helix-engine/.claude/helpers/statusline.cjs" "$CLAUDE_DIR/helpers/"
+# Validar statusline post-install
+STATUSLINE_PATH="$CLAUDE_DIR/helpers/helix-statusline.sh"
+if [[ ! -x "$STATUSLINE_PATH" ]]; then
+  INSTALL_WARNINGS+=("helix-statusline.sh no instalado — el statusline en settings.json fallará silenciosamente")
+fi
 
 # ── 6c. Launcher helix + alias ──────────────────────────────
 echo "→ Instalando launcher helix..."
@@ -239,7 +242,6 @@ if command -v claude &>/dev/null; then
   }
 
   _mcp_add context7 npx -y @upstash/context7-mcp
-  _mcp_add claude-flow npx -y @claude-flow/cli@3.5.41 mcp start
   _mcp_add browser-tools npx @agentdeskai/browser-tools-mcp@1.2.0
 
   # Puppeteer: advertir sobre Chromium antes de instalar
@@ -261,7 +263,6 @@ else
   echo "   (claude CLI no encontrado en PATH)"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  claude mcp add context7 -- npx -y @upstash/context7-mcp"
-  echo "  claude mcp add claude-flow -- npx -y @claude-flow/cli@3.5.41 mcp start"
   echo "  claude mcp add browser-tools -- npx @agentdeskai/browser-tools-mcp@1.2.0"
   echo ""
   echo "  # Puppeteer requiere Chromium:"
