@@ -25,20 +25,46 @@ case "$HELIX_LAYOUT" in
   *)      echo "❌ HELIX_LAYOUT debe ser 'split' o 'legacy' (recibido: '$HELIX_LAYOUT')"; exit 1 ;;
 esac
 
-# Si layout=split y existe instalación legacy en ~/.claude, advertir y ofrecer migrar
+# Si layout=split y existe instalación legacy en ~/.claude, ofrecer migrar antes de continuar
 if [[ "$HELIX_LAYOUT" == "split" ]] && [[ -f "$HOME/.claude/CLAUDE.md" ]] && grep -q "Helix" "$HOME/.claude/CLAUDE.md" 2>/dev/null && [[ ! -d "$HOME/.helix" ]]; then
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "⚠️  Detecté Helix instalado en ~/.claude/ (layout legacy)."
   echo ""
-  echo "   Para migrar a layout split (Claude Code stock + Helix aislado):"
-  echo "     bash $REPO_DIR/scripts/migrate-to-split.sh"
+  echo "   Para que 'claude' (stock) y 'helix' queden separados, hay que"
+  echo "   migrar Helix de ~/.claude/ a ~/.helix/ antes de continuar."
   echo ""
-  echo "   O instalar split en paralelo (no toca ~/.claude/):"
-  echo "     [Enter] continuar con HELIX_LAYOUT=split en ~/.helix/"
-  echo "     [c]    cancelar"
+  echo "   La migración es no-destructiva (hace backup completo de ~/.claude/)."
+  echo ""
+  echo "   Opciones:"
+  echo "     [m]  migrar a split (recomendado)"
+  echo "     [k]  mantener legacy (HELIX_LAYOUT=legacy, claude=helix)"
+  echo "     [c]  cancelar"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   read -r -p "> " _ans
-  [[ "${_ans,,}" == "c" ]] && exit 0
+  case "${_ans,,}" in
+    c|cancel|cancelar)
+      echo "Cancelado."
+      exit 0
+      ;;
+    k|keep|legacy)
+      HELIX_LAYOUT=legacy
+      CLAUDE_DIR="$HOME/.claude"
+      echo "→ Continuando con layout=legacy (Helix sigue en ~/.claude/)"
+      ;;
+    m|migrate|migrar|"")
+      echo ""
+      echo "→ Ejecutando migrate-to-split.sh..."
+      if ! bash "$REPO_DIR/scripts/migrate-to-split.sh" --yes; then
+        echo "❌ La migración falló. Aborto el install."
+        exit 1
+      fi
+      echo ""
+      ;;
+    *)
+      echo "Opción desconocida: '$_ans'. Aborto."
+      exit 1
+      ;;
+  esac
 fi
 
 INSTALL_WARNINGS=()

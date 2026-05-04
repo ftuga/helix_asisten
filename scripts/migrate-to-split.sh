@@ -12,6 +12,7 @@
 # Uso:
 #   bash migrate-to-split.sh             # interactivo, pregunta antes de mover
 #   bash migrate-to-split.sh --dry-run   # solo muestra qué haría
+#   bash migrate-to-split.sh --yes       # no preguntar (CI / install_on_wsl.sh)
 # ============================================================
 set -euo pipefail
 
@@ -19,7 +20,13 @@ CLAUDE_DIR="$HOME/.claude"
 HELIX_DIR="$HOME/.helix"
 BACKUP_DIR="$HOME/.claude.backup-$(date +%Y%m%d-%H%M%S)"
 DRY_RUN=0
-[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+ASSUME_YES=0
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    --yes|-y)  ASSUME_YES=1 ;;
+  esac
+done
 
 C_RED='\033[0;31m'
 C_GREEN='\033[0;32m'
@@ -120,8 +127,10 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   exit 0
 fi
 
-read -r -p "Proceder con la migración? [y/N] " _ans
-[[ "${_ans,,}" != "y" ]] && { echo "Aborted."; exit 0; }
+if [[ "$ASSUME_YES" -eq 0 ]]; then
+  read -r -p "Proceder con la migración? [y/N] " _ans
+  [[ "${_ans,,}" != "y" ]] && { echo "Aborted."; exit 0; }
+fi
 echo ""
 
 # 1. Backup
