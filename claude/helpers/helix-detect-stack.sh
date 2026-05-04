@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-detect-stack.sh — Detección determinista de stack
 # Uso: bash helix-detect-stack.sh [PROJECT_ROOT]
 # Imprime JSON estructurado con el stack detectado
@@ -9,7 +10,7 @@ PROJECT="${1:-$PWD}"
 # ── Helpers ───────────────────────────────────────────────────
 has_file()  { [[ -f "$PROJECT/$1" ]]; }
 has_dir()   { [[ -d "$PROJECT/$1" ]]; }
-read_json() { python3 -c "import json,sys; d=json.load(open('$PROJECT/$1')); print(d.get('$2',''))" 2>/dev/null || echo ""; }
+read_json() { "${HELIX_PYTHON:-python3}" -c "import json,sys; d=json.load(open('$PROJECT/$1')); print(d.get('$2',''))" 2>/dev/null || echo ""; }
 count_files() { find "$PROJECT" -name "$1" -not -path "*/node_modules/*" -not -path "*/__pycache__/*" 2>/dev/null | wc -l | tr -d ' '; }
 
 # ── Backend ───────────────────────────────────────────────────
@@ -66,7 +67,7 @@ TSX_FILES=$(count_files "*.tsx")
 # ── Servicios Docker ──────────────────────────────────────────
 SERVICES="none"
 if has_file "compose.yml"; then
-  SERVICES=$(python3 -c "
+  SERVICES=$("${HELIX_PYTHON:-python3}" -c "
 import yaml, sys
 try:
   with open('$PROJECT/compose.yml') as f:
@@ -77,7 +78,7 @@ except: print('parse-error')
 fi
 
 # ── Output JSON ───────────────────────────────────────────────
-python3 - <<PYEOF
+"${HELIX_PYTHON:-python3}" - <<PYEOF
 import json
 print(json.dumps({
   "backend": "$BACKEND",

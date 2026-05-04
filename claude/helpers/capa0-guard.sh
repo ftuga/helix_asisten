@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # capa0-guard.sh — PreToolUse(Bash/Read): sugiere Capa 0 cuando el input es costoso
 # Recibe JSON por stdin con: tool_name, tool_input, cwd
 set -uo pipefail
@@ -6,7 +7,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, sys
 
 payload_str = os.environ.get("HOOK_PAYLOAD", "")

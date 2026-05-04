@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # secrets-scanner-hook.sh — PreToolUse(Write|Edit|MultiEdit|Bash):
 # Detecta secretos antes de escribir a disco. Exit 2 bloquea.
 # Regex: AWS, GCP, GitHub tokens, JWT largos, SSH privados, .env values comunes.
@@ -7,7 +8,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import sys, json, os, re
 
 raw = os.environ.get("HOOK_PAYLOAD", "")

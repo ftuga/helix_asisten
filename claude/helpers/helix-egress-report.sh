@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-egress-report.sh — SEC2 monthly report
 # Aggregates ~/.claude/memory/egress-audit.jsonl into a markdown summary.
 # Default scope: current calendar month (UTC). Overridable via --month YYYY-MM.
@@ -38,7 +39,7 @@ if ! [[ "$MONTH" =~ ^[0-9]{4}-[0-9]{2}$ ]]; then
   exit 2
 fi
 
-REPORT=$(MONTH="$MONTH" LOG="$LOG" python3 <<'PYEOF'
+REPORT=$(MONTH="$MONTH" LOG="$LOG" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import json, os, sys, collections, datetime as dt
 
 month = os.environ['MONTH']

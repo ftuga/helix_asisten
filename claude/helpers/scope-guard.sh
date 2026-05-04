@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # scope-guard.sh — Guardia de scope para Helix
 # Disparado por PreToolUse(Write|Edit|MultiEdit)
 # Avisa cuando se edita un archivo fuera del proyecto activo.
@@ -9,7 +10,7 @@ set -uo pipefail
 export HELIX_PAYLOAD
 HELIX_PAYLOAD=$(cat 2>/dev/null || echo "{}")
 
-FILE_PATH=$(python3 -c "
+FILE_PATH=$("${HELIX_PYTHON:-python3}" -c "
 import os, json
 try:
     data = json.loads(os.environ.get('HELIX_PAYLOAD', '{}'))
@@ -43,7 +44,7 @@ if [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then
   PROJECT_ROOT="$CLAUDE_PROJECT_DIR"
 else
   # 2. Auto-detectar desde el directorio del archivo
-  dir=$(python3 -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
+  dir=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
   while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
     if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME_CLAUDE" ]]; then
       PROJECT_ROOT="$dir"
@@ -57,8 +58,8 @@ fi
 [[ -z "$PROJECT_ROOT" ]] && exit 0
 
 # ── Verificar si el archivo está en scope ────────────────────
-ABS_FILE=$(python3 -c "import os; print(os.path.abspath('$FILE_PATH'))" 2>/dev/null || echo "$FILE_PATH")
-ABS_PROJECT=$(python3 -c "import os; print(os.path.abspath('$PROJECT_ROOT'))" 2>/dev/null || echo "$PROJECT_ROOT")
+ABS_FILE=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.abspath('$FILE_PATH'))" 2>/dev/null || echo "$FILE_PATH")
+ABS_PROJECT=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.abspath('$PROJECT_ROOT'))" 2>/dev/null || echo "$PROJECT_ROOT")
 
 if [[ "$ABS_FILE" == "$ABS_PROJECT"/* ]]; then
   exit 0  # En scope — silencioso

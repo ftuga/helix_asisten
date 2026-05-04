@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-read-staleness-hook.sh — PreToolUse(Read):
 # Advierte si un helix-*.md de memoria esta desactualizado vs git log.
 # NUNCA bloquea (exit 0 siempre). Solo emite warning a stderr.
@@ -8,7 +9,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, sys, json
 
 raw = os.environ.get("HOOK_PAYLOAD", "")
@@ -44,7 +45,7 @@ PY_EXIT=$?
 [[ "$PY_EXIT" -ne 42 ]] && exit 0
 
 # Extraer file_path para pasarlo al script de staleness
-FILE_PATH=$(HOOK_PAYLOAD="$PAYLOAD" python3 -c "
+FILE_PATH=$(HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" -c "
 import os, json
 data = json.loads(os.environ.get('HOOK_PAYLOAD','{}'))
 print(data.get('tool_input',{}).get('file_path',''))

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-lang-trigger-hook.sh — PreToolUse(Agent): advierte cuando prompt >500 tokens sin HELIX-LANG
 # Objetivo Helix: maximizar contexto, reducir costos. Output NO se cachea → comprimirlo es ahorro real.
 # No bloqueante (exit 0 + stderr). Cementa el hábito sin requerir que el usuario recuerde.
@@ -7,7 +8,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import sys, json, os, re
 
 payload_str = os.environ.get("HOOK_PAYLOAD", "")

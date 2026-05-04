@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-stack.sh - Stack manifest manager para proyectos Helix
 # Subcomandos: detect | init [mode] | show | add <agent> | remove <agent> | promote <agent>
 # Diseño: ~/.claude/memory/topics/stack-manifest.md
@@ -80,7 +81,7 @@ cmd_detect() {
     fi
 
     # 4. Recomendaciones de agentes (lookup en catálogos)
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json, os, re
 
 stack_base = json.loads('''${stack_json}''') if '''${stack_json}'''.strip() else {}
@@ -369,7 +370,7 @@ cmd_init() {
     cmd_detect > "$tmpfile"
 
     # Generar manifest
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json, os
 with open("${tmpfile}") as f:
     d = json.load(f)
@@ -471,7 +472,7 @@ cmd_modify() {
         echo "WARN: agente '$agent' no existe en $AGENTS_DIR. Continuando de todos modos."
     fi
 
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import re, sys
 agent = "${agent}"
 action = "${action}"
@@ -549,7 +550,7 @@ cmd_auto_promote_check() {
         exit 1
     fi
 
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json, os, re
 from datetime import datetime, timedelta
 from collections import Counter
@@ -627,7 +628,7 @@ cmd_suggest_agents() {
     tmpfile=$(mktemp)
     cmd_detect > "$tmpfile"
 
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json
 with open("${tmpfile}") as f:
     d = json.load(f)
@@ -664,7 +665,7 @@ cmd_create_suggested() {
     tmpfile=$(mktemp)
     cmd_detect > "$tmpfile"
 
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json, sys
 with open("${tmpfile}") as f:
     d = json.load(f)

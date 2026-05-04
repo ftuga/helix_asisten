@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-swarm-panel.sh v2.0 — Barra de estado inferior para Helix
 # Layout: ancho completo, ~7 líneas. Ejecutado via: watch -n 2 -t '...'
 # Secciones: costo · tool calls · top routing agent · última evolución
@@ -38,7 +39,7 @@ fi
 
 if [[ -n "$COST_FILE" && -f "$COST_FILE" ]]; then
   CALLS=$(tr -d '[:space:]' < "$COST_FILE" 2>/dev/null || echo "0")
-  COST=$(python3 -c "n=int('$CALLS') if '$CALLS'.isdigit() else 0; print(f'\${n*0.014:.2f}')" 2>/dev/null || echo "?")
+  COST=$("${HELIX_PYTHON:-python3}" -c "n=int('$CALLS') if '$CALLS'.isdigit() else 0; print(f'\${n*0.014:.2f}')" 2>/dev/null || echo "?")
   printf " ${GREEN}💰 ~\$${COST}${NC}"
 else
   printf " ${DIM}💰 sin sesión${NC}"
@@ -63,7 +64,7 @@ printf "  ${DIM}│${NC}  "
 
 # ── Sección: top routing agent ────────────────────────────────
 if [[ -f "$FEEDBACK_FILE" ]]; then
-  python3 -q -c "
+  "${HELIX_PYTHON:-python3}" -q -c "
 import json, sys
 from collections import Counter
 hits = []

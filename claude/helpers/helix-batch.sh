@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-batch.sh — Worktree batch dispatcher (patrón /batch del ecosistema Claude Code).
 # Crea git worktrees aislados para N tareas independientes, ejecuta en paralelo y consolida resultados.
 #
@@ -33,7 +34,7 @@ _parse_spec() {
     [[ ! -f "$spec" ]] && { echo "Spec no encontrado: $spec" >&2; return 1; }
 
     # Salida: ID|branch|prompt (una línea por tarea)
-    python3 - "$spec" <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - "$spec" <<'PYEOF'
 import sys, re
 spec = open(sys.argv[1]).read()
 pattern = re.compile(r"^\s*-\s*\[\s*\]\s*ID:(\S+)\s*\|\s*branch:(\S+)\s*\|\s*prompt:\s*['\"](.+?)['\"]\s*$", re.M)

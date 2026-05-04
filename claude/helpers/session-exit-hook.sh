@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # session-exit-hook.sh — UserPromptSubmit: detecta "exit" y cierra sesión automáticamente
 # Recibe JSON por stdin: { "prompt": "...", "cwd": "..." }
 set -uo pipefail
@@ -6,7 +7,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 - <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, sys, json, subprocess
 from pathlib import Path
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-routing-fix.sh — Auto-corrección del catálogo de agentes desde ERL+ExpeL
 # Lee routing-heuristics.md, detecta mismatches, propone y aplica correcciones
 # a agents-index.md
@@ -26,7 +27,7 @@ export HELIX_HEURISTICS="$HEURISTICS_FILE"
 export HELIX_AGENTS_INDEX="$AGENTS_INDEX"
 export HELIX_APPLY="$APPLY"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re
 from pathlib import Path
 from datetime import datetime

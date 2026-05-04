@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-lang-bench.sh — Benchmark y análisis de efectividad de HELIX-LANG
 # Uso:
 #   log    "NL message" "HL message"        → registra un par para análisis
@@ -17,7 +18,7 @@ shift || true
 # ─── Estimación de tokens (aproximación BPE) ──────────────────────────────
 _estimate_tokens() {
   local text="$1"
-  python3 - "$text" <<'PYEOF'
+  "${HELIX_PYTHON:-python3}" - "$text" <<'PYEOF'
 import sys, re
 
 text = sys.argv[1]
@@ -54,7 +55,7 @@ if [[ "$cmd" == "log" ]]; then
   nl_chars=${#NL}
   hl_chars=${#HL}
 
-  ratio=$(python3 -c "
+  ratio=$("${HELIX_PYTHON:-python3}" -c "
 nl=$nl_tokens; hl=$hl_tokens
 if nl > 0:
     ratio = (nl - hl) / nl * 100
@@ -66,7 +67,7 @@ else:
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   session="${HELIX_SESSION_ID:-$(date +%s)}"
 
-  entry=$(python3 -c "
+  entry=$("${HELIX_PYTHON:-python3}" -c "
 import json, sys
 print(json.dumps({
     'ts': '$ts',
@@ -98,7 +99,7 @@ elif [[ "$cmd" == "decode" ]]; then
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   session="${HELIX_SESSION_ID:-$(date +%s)}"
 
-  entry=$(python3 -c "
+  entry=$("${HELIX_PYTHON:-python3}" -c "
 import json, sys
 print(json.dumps({
     'ts': '$ts',
@@ -127,7 +128,7 @@ elif [[ "$cmd" == "test" ]]; then
   echo ""
   echo -e "  Proyección de ahorro (basado en promedios históricos):"
 
-  python3 - "$nl_tokens" "$BENCH_LOG" <<'PYEOF'
+  "${HELIX_PYTHON:-python3}" - "$nl_tokens" "$BENCH_LOG" <<'PYEOF'
 import sys, json
 from pathlib import Path
 
@@ -162,7 +163,7 @@ elif [[ "$cmd" == "report" ]]; then
     exit 0
   fi
 
-  python3 - "$BENCH_LOG" "$limit" "$detail" <<'PYEOF'
+  "${HELIX_PYTHON:-python3}" - "$BENCH_LOG" "$limit" "$detail" <<'PYEOF'
 import sys, json, statistics
 from pathlib import Path
 from datetime import datetime, timezone
@@ -279,7 +280,7 @@ elif [[ "$cmd" == "report-hash" ]]; then
     exit 0
   fi
 
-  python3 - "$BENCH_LOG" <<'PYEOF'
+  "${HELIX_PYTHON:-python3}" - "$BENCH_LOG" <<'PYEOF'
 import sys, json, statistics
 from pathlib import Path
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-distill.sh — HELIX-COMPRESS: Compresión de contexto adaptativa
 # Tres targets: CLAUDE.md por agente, archivos de proyecto, archivos de código.
 #
@@ -53,7 +54,7 @@ _extract_by_headers() {
 
   [[ "$keywords" == "*" ]] && cat "$source" && return
 
-  PYVAR_KW="$keywords" python3 - "$source" <<'PYEOF'
+  PYVAR_KW="$keywords" "${HELIX_PYTHON:-python3}" - "$source" <<'PYEOF'
 import sys, re, os
 from pathlib import Path
 
@@ -87,7 +88,7 @@ PYEOF
 
 # ─── Compresor lingüístico (prose sections dentro de markdown) ───────────────
 _compress_linguistic() {
-  PYVAR_TEXT="$1" python3 - <<'PYEOF'
+  PYVAR_TEXT="$1" "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import re, os
 
 text = os.environ.get('PYVAR_TEXT', '')
@@ -204,7 +205,7 @@ if [[ "$cmd" == "run" ]]; then
   fi
 
   # Guardar metadata (PYVAR evita conflicto pipe vs heredoc stdin)
-  PYVAR_RESULTS=$(printf '%s\n' "${results[@]}") python3 - "$DATA_FILE" <<'PYEOF'
+  PYVAR_RESULTS=$(printf '%s\n' "${results[@]}") "${HELIX_PYTHON:-python3}" - "$DATA_FILE" <<'PYEOF'
 import json, sys, os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -262,7 +263,7 @@ elif [[ "$cmd" == "compress-project" ]]; then
       # Extracción por sección: mantener solo Stack + Agentes + Riesgo + primera línea del Resumen
       file_lines=$(wc -l < "$filepath" | tr -d '[:space:]')
       if [[ "$file_lines" -gt 150 ]]; then
-        compressed=$(PYVAR_CONTENT="$(cat "$filepath")" python3 - <<'PYEOF'
+        compressed=$(PYVAR_CONTENT="$(cat "$filepath")" "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re
 
 content = os.environ.get('PYVAR_CONTENT', '')
@@ -311,7 +312,7 @@ PYEOF
 
     elif [[ "$filename" == "helix-roadmap.md" ]]; then
       # Archivar milestones completados cuando superan 10 entradas
-      compressed=$(PYVAR_CONTENT="$(cat "$filepath")" python3 - <<'PYEOF'
+      compressed=$(PYVAR_CONTENT="$(cat "$filepath")" "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re
 
 content = os.environ.get('PYVAR_CONTENT', '')
@@ -374,7 +375,7 @@ PYEOF
 
     elif [[ "$filename" == "helix-bitacora.md" ]]; then
       # Preservar solo últimas N entradas de tabla
-      compressed=$(PYVAR_CONTENT="$(cat "$filepath")" python3 - <<'PYEOF'
+      compressed=$(PYVAR_CONTENT="$(cat "$filepath")" "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re
 
 content = os.environ.get('PYVAR_CONTENT', '')
@@ -441,7 +442,7 @@ elif [[ "$cmd" == "compress-file" ]]; then
   [[ -n "$task" ]] && echo -e "  Tarea: ${task}" >&2
 
   # Single Python run: capture output, display it, measure it
-  _compressed_output=$(PYVAR_FILE="$filepath" PYVAR_TASK="$task" PYVAR_EXT="$ext" python3 - <<'PYEOF'
+  _compressed_output=$(PYVAR_FILE="$filepath" PYVAR_TASK="$task" PYVAR_EXT="$ext" "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re
 from pathlib import Path
 
@@ -519,7 +520,7 @@ elif [[ "$cmd" == "compress-bitacora" ]]; then
   backup="${filepath%.md}.original.md"
   [[ ! -f "$backup" ]] && cp "$filepath" "$backup"
 
-  PYVAR_FILE="$filepath" PYVAR_KEEP="$keep" python3 - <<'PYEOF' > "${filepath}.tmp"
+  PYVAR_FILE="$filepath" PYVAR_KEEP="$keep" "${HELIX_PYTHON:-python3}" - <<'PYEOF' > "${filepath}.tmp"
 import os, re
 from pathlib import Path
 
@@ -568,7 +569,7 @@ elif [[ "$cmd" == "report" ]]; then
 
   full_tokens=$(( $(wc -c < "$CLAUDE_MD") / 4 ))
 
-  python3 - "$DATA_FILE" "$full_tokens" <<'PYEOF'
+  "${HELIX_PYTHON:-python3}" - "$DATA_FILE" "$full_tokens" <<'PYEOF'
 import json, sys
 from pathlib import Path
 

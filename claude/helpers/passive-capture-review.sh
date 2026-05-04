@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # passive-capture-review.sh — M2 review tool
 # Lists pending captures and lets the creator approve/reject explicitly.
 # NEVER auto-classifies. Each entry requires explicit action.
@@ -36,7 +37,7 @@ case "$CMD" in
       echo "(no pending captures)"
       exit 0
     fi
-    python3 - "$PENDING" <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - "$PENDING" <<'PYEOF'
 import json, sys, os
 HOME = os.path.expanduser('~/.claude/')
 with open(sys.argv[1], 'r', encoding='utf-8') as f:
@@ -64,7 +65,7 @@ PYEOF
     [[ "$CMD" == "reject" ]] && DEST="$REJECTED"
     {
       command -v flock >/dev/null && flock -w 2 9
-      python3 - "$PENDING" "$DEST" "$ARG" <<'PYEOF'
+      "${HELIX_PYTHON:-python3}" - "$PENDING" "$DEST" "$ARG" <<'PYEOF'
 import json, sys, os
 pending_path, dest_path, key = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(pending_path, 'r', encoding='utf-8') as f:
@@ -125,7 +126,7 @@ PYEOF
       echo "no reviewed entries yet (pending=$P)"
       exit 0
     fi
-    python3 - "$A" "$R" "$P" <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - "$A" "$R" "$P" <<'PYEOF'
 import sys
 a, r, p = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])
 total = a + r
@@ -141,7 +142,7 @@ PYEOF
     [[ -z "$ARG" ]] && { echo "usage: $0 $CMD <days>"; exit 2; }
     {
       command -v flock >/dev/null && flock -w 2 9
-      python3 - "$APPROVED" "$ARG" <<'PYEOF'
+      "${HELIX_PYTHON:-python3}" - "$APPROVED" "$ARG" <<'PYEOF'
 import json, sys, time
 path, days = sys.argv[1], int(sys.argv[2])
 cutoff = time.time() - days * 86400

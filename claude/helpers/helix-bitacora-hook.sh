@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-bitacora-hook.sh — Registrar cambios significativos en bitácora
 # Disparado por PostToolUse(Write|Edit|MultiEdit)
 # Recibe JSON en stdin. Siempre exit 0 — nunca bloquea a Helix.
@@ -10,7 +11,7 @@ DATE=$(date '+%Y-%m-%d %H:%M')
 export HELIX_PAYLOAD
 HELIX_PAYLOAD=$(cat 2>/dev/null || echo "{}")
 
-FILE_PATH=$(python3 -c "
+FILE_PATH=$("${HELIX_PYTHON:-python3}" -c "
 import os, json
 try:
     data = json.loads(os.environ.get('HELIX_PAYLOAD', '{}'))
@@ -35,7 +36,7 @@ is_trivial "$FILE_PATH" && exit 0
 # ── Encontrar raíz del proyecto ───────────────────────────────
 find_project_root() {
   local dir
-  dir=$(python3 -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
+  dir=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
   while [[ "$dir" != "/" ]]; do
     [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]] && echo "$dir" && return 0
     dir=$(dirname "$dir")
@@ -58,7 +59,7 @@ SESSION=$(date '+%Y-%m-%d')
 export HELIX_ROW="| $DATE | \`$SHORT_FILE\` | modificado | $SESSION |"
 export HELIX_BITACORA="$BITACORA"
 
-python3 -c "
+"${HELIX_PYTHON:-python3}" -c "
 import os
 
 file = os.environ['HELIX_BITACORA']

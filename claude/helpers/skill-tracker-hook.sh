@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # skill-tracker-hook.sh — PostToolUse(Skill): registra uso real de skills
 # Recibe JSON por stdin: { tool_input: { skill, args }, tool_name, cwd, ... }
 set -uo pipefail
@@ -9,7 +10,7 @@ mkdir -p "$HOME/.claude/memory"
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 - "$USAGE_LOG" <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" - "$USAGE_LOG" <<'PYEOF'
 import sys, json, os
 from datetime import datetime
 from pathlib import Path

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # agent-routing-hook.sh — PostToolUse(Agent): captura routing automáticamente
 # Recibe JSON por stdin: { tool_input, tool_response, tool_name, cwd, ... }
 set -uo pipefail
@@ -10,7 +11,7 @@ mkdir -p "$HOME/.claude/memory"
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 - "$FEEDBACK" <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" - "$FEEDBACK" <<'PYEOF'
 import sys, json, os
 from datetime import datetime
 from pathlib import Path

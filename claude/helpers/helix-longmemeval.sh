@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-longmemeval.sh — Probe de recall para helix_reflexions (Qdrant).
 # Inspirado en LongMemEval: mide precision@k, MRR y recall de memoria semántica.
 # Uso:
@@ -29,7 +30,7 @@ build)
     [[ ! -f "$REFLEXIONS" ]] && { echo "Sin reflexions.jsonl para construir dataset"; exit 1; }
 
     export HV_REFLEXIONS="$REFLEXIONS" HV_DATASET="$DATASET"
-    python3 <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json
 from pathlib import Path
 
@@ -71,7 +72,7 @@ run)
     _qdrant_up || { echo "Qdrant DOWN"; exit 1; }
 
     export HV_DATASET="$DATASET" HV_THRESHOLD="$THRESHOLD" HV_TOP_K="$TOP_K" HV_SCRIPT="$HV"
-    python3 <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, subprocess, sys, time
 
 dataset_path = os.environ["HV_DATASET"]
@@ -96,7 +97,7 @@ for i, q in enumerate(queries):
     t0 = time.time()
     try:
         r = subprocess.run(
-            ["python3", hv, "search", "helix_reflexions", query, "--top-k", top_k, "--threshold", threshold],
+            [os.environ.get("HELIX_PYTHON", "python3"), hv, "search", "helix_reflexions", query, "--top-k", top_k, "--threshold", threshold],
             capture_output=True, text=True, timeout=15
         )
         data = json.loads(r.stdout) if r.stdout else {"results": []}

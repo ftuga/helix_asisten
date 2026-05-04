@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-decay.sh — Confidence decay para evolution-log entries
 # Calcula score de vigencia 0-100 para cada aprendizaje registrado
 # Factores: recencia, confirmaciones, importancia del patrón, tipo de entrada
@@ -23,7 +24,7 @@ export HELIX_DECAY_FILE="$DECAY_FILE"
 export HELIX_OBSOLETE="$OBSOLETE_FILE"
 export HELIX_MODE="$MODE"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re, json
 from datetime import datetime, timedelta
 from pathlib import Path

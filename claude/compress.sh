@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # .claude/compress.sh — Compresión de memoria de Helix
 # Mantiene CLAUDE.md liviano archivando historial a ~/.claude/memory/topics/
 # Uso: bash ~/.claude/compress.sh [--dry-run]
@@ -35,7 +36,7 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 $DRY_RUN && echo -e "\033[1;33m  MODO DRY-RUN — no se escribirá nada\033[0m" && echo ""
 
-python3 "$SCRIPT" \
+"${HELIX_PYTHON:-python3}" "$SCRIPT" \
   "$GLOBAL_CLAUDE_MD" \
   "${PROJECT_CLAUDE_MD:-}" \
   "$TOPICS_DIR" \

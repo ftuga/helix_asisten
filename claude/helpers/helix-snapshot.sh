@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-snapshot.sh — Persistencia conversacional + resume opt-in
 # Stack: 100% local, sin egress, sin deps externas.
 # Diseño: ~/.claude/memory/topics/conversation-context-research.md
@@ -134,7 +135,7 @@ cmd_resume() {
     echo "Hace: ${age_h}h"
     echo
     # Solo imprimir summary, current_task, pending — el ejecutivo
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import re
 with open("$latest") as f:
     content = f.read()

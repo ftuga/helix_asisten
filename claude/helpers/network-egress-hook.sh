@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # network-egress-hook.sh — PreToolUse(Bash):
 # Bloquea curl|wget|nc|ssh|scp a dominios fuera del allowlist.
 # Allowlist: ~/.claude/config/network-allowlist.txt (un dominio por línea, # para comentarios)
@@ -38,7 +39,7 @@ localhost
 EOF
 fi
 
-HOOK_PAYLOAD="$PAYLOAD" HOOK_ALLOW="$ALLOWLIST" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" HOOK_ALLOW="$ALLOWLIST" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import sys, json, os, re
 
 raw = os.environ.get("HOOK_PAYLOAD", "")

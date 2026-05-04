@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-lang-state.sh — Gestión de snapshots de estado para S:hash
 # El corazón del ahorro real de HELIX-LANG: contexto por referencia, no por re-envío.
 #
@@ -22,7 +23,7 @@ shift || true
 
 # ─── Helper: estimar tokens via python (recibe texto por stdin) ─────────────
 _tokens() {
-  python3 - <<PYEOF
+  "${HELIX_PYTHON:-python3}" - <<PYEOF
 import re, sys
 text = """$1"""
 hl_p = len(re.findall(r'(->|<-|=>|<>|:\w|%\d+|\.\w{2,6}|@\w+)', text))
@@ -51,7 +52,7 @@ if [[ "$cmd" == "vocab" ]]; then
   tokens=$(_tokens "$vocab_str")
 
   PYVAR_STATE="$vocab_str" PYVAR_HASH="$hash" PYVAR_TS="$ts" PYVAR_TOKENS="$tokens" \
-  python3 - <<'PYEOF' > "$state_file"
+  "${HELIX_PYTHON:-python3}" - <<'PYEOF' > "$state_file"
 import json, os
 print(json.dumps({
     'hash':       os.environ['PYVAR_HASH'],
@@ -83,7 +84,7 @@ elif [[ "$cmd" == "snapshot" ]]; then
   tokens=$(_tokens "$state")
 
   PYVAR_STATE="$state" PYVAR_HASH="$hash" PYVAR_TS="$ts" PYVAR_TOKENS="$tokens" \
-  python3 - <<'PYEOF' > "$state_file"
+  "${HELIX_PYTHON:-python3}" - <<'PYEOF' > "$state_file"
 import json, os
 print(json.dumps({
     'hash': os.environ['PYVAR_HASH'],
@@ -112,7 +113,7 @@ elif [[ "$cmd" == "get" ]]; then
     exit 1
   fi
 
-  python3 -c "import json; print(json.load(open('$state_file'))['state'])"
+  "${HELIX_PYTHON:-python3}" -c "import json; print(json.load(open('$state_file'))['state'])"
 
 # ─── Comando: delta ────────────────────────────────────────────────────────
 elif [[ "$cmd" == "delta" ]]; then
@@ -132,7 +133,7 @@ elif [[ "$cmd" == "delta" ]]; then
     exit 1
   fi
 
-  parent_state=$(python3 -c "import json; print(json.load(open('$state_file'))['state'])")
+  parent_state=$("${HELIX_PYTHON:-python3}" -c "import json; print(json.load(open('$state_file'))['state'])")
   new_state="${parent_state} ${delta}"
   new_hash=$(echo -n "$new_state" | sha1sum | cut -c1-8)
   ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -142,7 +143,7 @@ elif [[ "$cmd" == "delta" ]]; then
 
   PYVAR_STATE="$new_state" PYVAR_HASH="$new_hash" PYVAR_TS="$ts" \
   PYVAR_TOKENS="$tokens" PYVAR_PARENT="$hash_parent" PYVAR_DELTA="$delta" \
-  python3 - <<'PYEOF' > "$new_file"
+  "${HELIX_PYTHON:-python3}" - <<'PYEOF' > "$new_file"
 import json, os
 print(json.dumps({
     'hash':       os.environ['PYVAR_HASH'],
@@ -173,7 +174,7 @@ elif [[ "$cmd" == "list" ]]; then
 
   echo -e "\n${BOLD}  HELIX-STATE — ${#files[@]} snapshots${NC}\n"
   for f in "${files[@]}"; do
-    python3 - "$f" <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - "$f" <<'PYEOF'
 import json, sys
 d = json.load(open(sys.argv[1]))
 parent = f"← S:{d['parent'][:6]}" if d.get('parent') else "(root)"
@@ -190,9 +191,9 @@ elif [[ "$cmd" == "diff" ]]; then
   hash1="${ref1#S:}"
   hash2="${ref2#S:}"
 
-  state1=$(python3 -c "import json; print(json.load(open('$STATES_DIR/$hash1.json'))['state'])" 2>/dev/null || echo "NOT FOUND")
-  state2=$(python3 -c "import json; print(json.load(open('$STATES_DIR/$hash2.json'))['state'])" 2>/dev/null || echo "NOT FOUND")
-  delta=$(python3 -c "import json; print(json.load(open('$STATES_DIR/$hash2.json')).get('delta','(snapshot raíz)'))" 2>/dev/null || echo "?")
+  state1=$("${HELIX_PYTHON:-python3}" -c "import json; print(json.load(open('$STATES_DIR/$hash1.json'))['state'])" 2>/dev/null || echo "NOT FOUND")
+  state2=$("${HELIX_PYTHON:-python3}" -c "import json; print(json.load(open('$STATES_DIR/$hash2.json'))['state'])" 2>/dev/null || echo "NOT FOUND")
+  delta=$("${HELIX_PYTHON:-python3}" -c "import json; print(json.load(open('$STATES_DIR/$hash2.json')).get('delta','(snapshot raíz)'))" 2>/dev/null || echo "?")
 
   echo -e "\n${BOLD}  Diff: S:${hash1} → S:${hash2}${NC}"
   echo -e "  ${GRAY}Base:${NC}  $state1"
@@ -208,7 +209,7 @@ elif [[ "$cmd" == "gc" ]]; then
 
   shopt -s nullglob
   for f in "$STATES_DIR"/*.json; do
-    age=$(python3 - "$f" <<'PYEOF'
+    age=$("${HELIX_PYTHON:-python3}" - "$f" <<'PYEOF'
 import json, datetime, sys
 d = json.load(open(sys.argv[1]))
 ts = datetime.datetime.fromisoformat(d['ts'].replace('Z',''))

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # agents-vector-sync-hook.sh — Re-indexar helix_agents al editar un agente
 # Disparado por PostToolUse(Write|Edit|MultiEdit).
 # No bloquea: exit 0 inmediato, el sync corre en background con debounce.
@@ -7,7 +8,7 @@ set -uo pipefail
 export HELIX_PAYLOAD
 HELIX_PAYLOAD=$(cat 2>/dev/null || echo "{}")
 
-FILE_PATH=$(python3 -c "
+FILE_PATH=$("${HELIX_PYTHON:-python3}" -c "
 import os, json
 try:
     d = json.loads(os.environ.get('HELIX_PAYLOAD', '{}'))

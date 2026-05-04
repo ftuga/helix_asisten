@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # skill-tracker.sh — Registrar uso real de skills, agentes y MCPs por sesión
 # Uso:
 #   log    "<nombre>" "<tipo: skill|agent|mcp>" [proyecto]
@@ -62,7 +63,7 @@ log)
         done
     fi
 
-    python3 -c "
+    "${HELIX_PYTHON:-python3}" -c "
 import json, sys
 entry = {'ts': sys.argv[1], 'date': sys.argv[2], 'name': sys.argv[3], 'tipo': sys.argv[4], 'proyecto': sys.argv[5]}
 with open('$USAGE_LOG', 'a') as f:
@@ -82,7 +83,7 @@ report)
     echo -e "${BLUE}⬡ Helix Usage Report${NC}"
     echo ""
 
-    python3 - "$USAGE_LOG" "$SKILLS_DIR" "$LIMIT" <<PYEOF
+    "${HELIX_PYTHON:-python3}" - "$USAGE_LOG" "$SKILLS_DIR" "$LIMIT" <<PYEOF
 import json, sys, os
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -164,7 +165,7 @@ prune)
     echo -e "${BLUE}⬡ Helix Prune Analysis${NC}"
     echo ""
 
-    CANDIDATES=$(python3 - "$USAGE_LOG" "$SKILLS_DIR" <<'PYEOF'
+    CANDIDATES=$("${HELIX_PYTHON:-python3}" - "$USAGE_LOG" "$SKILLS_DIR" <<'PYEOF'
 import json, sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -260,7 +261,7 @@ quality)
     QUALITY_LOG="$GLOBAL_DIR/memory/skill-quality.jsonl"
     DATE=$(date '+%Y-%m-%d %H:%M')
 
-    python3 -c "
+    "${HELIX_PYTHON:-python3}" -c "
 import json, sys
 entry = {'ts': sys.argv[1], 'name': sys.argv[2], 'score': int(sys.argv[3]), 'reason': sys.argv[4]}
 with open('$QUALITY_LOG', 'a') as f:
@@ -277,7 +278,7 @@ quality-report)
     echo -e "${BLUE}⬡ Quality Report${NC}"
     echo ""
 
-    python3 - "$QUALITY_LOG" <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - "$QUALITY_LOG" <<'PYEOF'
 import json, sys
 from pathlib import Path
 from collections import defaultdict

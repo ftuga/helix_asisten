@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Auto-detect Python binary on first run (handles Windows where `python3` is the MS Store stub)
+if [[ ! -f "$HOME/.claude/helix-python.conf" && -x "$HOME/.claude/helpers/helix-python-detect.sh" ]]; then
+    bash "$HOME/.claude/helpers/helix-python-detect.sh" >/dev/null 2>&1 || true
+fi
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # .claude/session-start.sh — Ejecutar al inicio de cada sesión
 # Auto-detecta proyecto, carga contexto global + proyecto
 set -euo pipefail
@@ -84,7 +89,7 @@ if [[ -n "$RIESGOS" ]]; then
 fi
 
 # ── Última evolución (desde global) ──────────────────────────
-LAST=$(python3 -c "
+LAST=$("${HELIX_PYTHON:-python3}" -c "
 import re
 with open('$HOME/.claude/CLAUDE.md') as f:
     content = f.read()
@@ -119,7 +124,7 @@ fi
 # ── User profile — contexto de quién trabaja con Helix ───────
 USER_PROFILE="$GLOBAL_MEMORY_DIR/user-profile.md"
 if [[ -f "$USER_PROFILE" ]]; then
-  PROFILE_CONTENT=$(python3 -c "
+  PROFILE_CONTENT=$("${HELIX_PYTHON:-python3}" -c "
 from pathlib import Path
 content = Path('$USER_PROFILE').read_text()
 lines = content.splitlines()
@@ -158,7 +163,7 @@ if [[ -n "$PROJECT_ROOT" ]]; then
     echo ""
   elif [[ -f "$ANALYSIS_FILE" ]]; then
     # Verificar obsolescencia (>30 días)
-    ANALYSIS_AGE=$(python3 -c "
+    ANALYSIS_AGE=$("${HELIX_PYTHON:-python3}" -c "
 import os, time
 mtime = os.path.getmtime('$ANALYSIS_FILE')
 days = (time.time() - mtime) / 86400
@@ -187,7 +192,7 @@ fi
 # ── Contexto rápido del proyecto (si hay análisis) ────────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-analysis.md" ]]; then
   echo -e "${GREEN}📋 Contexto del proyecto:${NC}"
-  python3 -c "
+  "${HELIX_PYTHON:-python3}" -c "
 from pathlib import Path
 content = Path('$PROJECT_ROOT/.claude/memory/helix-analysis.md').read_text()
 # Extraer sección de resumen o primeras líneas con contenido
@@ -200,7 +205,7 @@ fi
 
 # ── Roadmap — milestone activo ───────────────────────────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-roadmap.md" ]]; then
-  MILESTONE=$(python3 -c "
+  MILESTONE=$("${HELIX_PYTHON:-python3}" -c "
 from pathlib import Path
 content = Path('$PROJECT_ROOT/.claude/memory/helix-roadmap.md').read_text()
 lines = content.splitlines()
@@ -222,7 +227,7 @@ fi
 
 # ── Backlog del proyecto (en progreso + bloqueados) ──────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-backlog.md" ]]; then
-  BACKLOG_ITEMS=$(python3 -c "
+  BACKLOG_ITEMS=$("${HELIX_PYTHON:-python3}" -c "
 from pathlib import Path
 content = Path('$PROJECT_ROOT/.claude/memory/helix-backlog.md').read_text()
 lines = content.splitlines()
@@ -250,7 +255,7 @@ fi
 
 # ── Bitácora reciente del proyecto ───────────────────────────
 if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/.claude/memory/helix-bitacora.md" ]]; then
-  BITACORA_ROWS=$(python3 -c "
+  BITACORA_ROWS=$("${HELIX_PYTHON:-python3}" -c "
 from pathlib import Path
 content = Path('$PROJECT_ROOT/.claude/memory/helix-bitacora.md').read_text()
 # Extraer filas de tabla con datos (no headers ni separadores)
@@ -276,7 +281,7 @@ fi
 # ── Alerta de calidad — agentes problemáticos ─────────────────
 QUALITY_LOG="$GLOBAL_MEMORY_DIR/skill-quality.jsonl"
 if [[ -f "$QUALITY_LOG" ]]; then
-  PROBLEMATIC=$(python3 -c "
+  PROBLEMATIC=$("${HELIX_PYTHON:-python3}" -c "
 import json
 from collections import defaultdict
 scores = defaultdict(list)
@@ -303,7 +308,7 @@ if [[ -f "$FEEDBACK_FILE" ]]; then
   FEEDBACK_COUNT=$(wc -l < "$FEEDBACK_FILE" 2>/dev/null | tr -d ' ' || echo "0")
   if [[ "$FEEDBACK_COUNT" -gt 5 ]]; then
     echo -e "${GREEN}🎯 Routing aprendido ($FEEDBACK_COUNT decisiones registradas):${NC}"
-    python3 -c "
+    "${HELIX_PYTHON:-python3}" -c "
 import json
 from collections import Counter
 hits = []

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # routing-learn.sh — Registrar decisiones de routing para aprendizaje
 # Uso: bash ~/.claude/helpers/routing-learn.sh "<tarea>" "<agente>" "<resultado>"
 # Resultado: success | partial | failed
@@ -35,7 +36,7 @@ done
 DOMINIO=$(echo "$TAREA" | tr '[:upper:]' '[:lower:]' | grep -oE '[a-z]+' | head -2 | tr '\n' '_' | sed 's/_$//')
 
 # Escribir entrada JSONL
-python3 -c "
+"${HELIX_PYTHON:-python3}" -c "
 import json, sys
 entry = {
     'ts': '$DATE',
@@ -55,7 +56,7 @@ COUNT=$(grep -c "\"dominio\": \"$DOMINIO\"" "$FEEDBACK_FILE" 2>/dev/null || echo
 if [[ "$COUNT" -ge 3 ]]; then
   echo ""
   echo "📊 Historial para dominio '$DOMINIO' ($COUNT registros):"
-  python3 -c "
+  "${HELIX_PYTHON:-python3}" -c "
 import json
 from collections import Counter
 hits = []

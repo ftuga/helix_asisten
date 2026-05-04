@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-retrospectiva.sh — Análisis automático al cierre de sesión
 # Detecta aprendizajes no registrados, patrones de uso, gaps y genera reflexiones
 # Uso: bash helix-retrospectiva.sh "<resumen_sesion>" [PROJECT_ROOT]
@@ -34,7 +35,7 @@ export HELIX_RESUMEN="$RESUMEN"
 export HELIX_PROJECT="$PROJECT"
 export HELIX_GLOBAL="$GLOBAL_DIR"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, json, re
 from datetime import datetime, timedelta
 from pathlib import Path

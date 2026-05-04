@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # evolve-flush.sh — Procesa la cola de evoluciones al final de cada turno (Stop hook)
 # No falla aunque la cola esté vacía o haya errores individuales.
 set -uo pipefail
@@ -19,7 +20,7 @@ failed=0
 while IFS= read -r line; do
   [[ -z "$line" ]] && continue
 
-  CAT=$(echo "$line" | python3 -c "
+  CAT=$(echo "$line" | "${HELIX_PYTHON:-python3}" -c "
 import sys, json
 try:
     d = json.loads(sys.stdin.read())
@@ -28,7 +29,7 @@ except:
     print('funcionalidad')
 " 2>/dev/null || echo "funcionalidad")
 
-  APRENDIZAJE=$(echo "$line" | python3 -c "
+  APRENDIZAJE=$(echo "$line" | "${HELIX_PYTHON:-python3}" -c "
 import sys, json
 try:
     d = json.loads(sys.stdin.read())
@@ -37,7 +38,7 @@ except:
     print('')
 " 2>/dev/null || echo "")
 
-  TRIGGER=$(echo "$line" | python3 -c "
+  TRIGGER=$(echo "$line" | "${HELIX_PYTHON:-python3}" -c "
 import sys, json
 try:
     d = json.loads(sys.stdin.read())

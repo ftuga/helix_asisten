@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # .claude/health-check.sh — Diagnóstico de integridad del ecosistema Helix
 # Verifica scripts, archivos, markers y estructura de memoria
 # Uso: bash ~/.claude/health-check.sh
@@ -99,7 +100,7 @@ fi
 section "INTEGRIDAD DE CLAUDE.md GLOBAL"
 # ════════════════════════════════════════════════════════════
 
-python3 - "$GLOBAL_MD" << 'PYEOF'
+"${HELIX_PYTHON:-python3}" - "$GLOBAL_MD" << 'PYEOF'
 import sys, re
 
 file = sys.argv[1]
@@ -182,7 +183,7 @@ fi
 section "PESO DE CONTEXTO (proxy de tokens)"
 # ════════════════════════════════════════════════════════════
 
-python3 - "$GLOBAL_MD" "$MEMORY_DIR" << 'PYEOF'
+"${HELIX_PYTHON:-python3}" - "$GLOBAL_MD" "$MEMORY_DIR" << 'PYEOF'
 import sys, os
 from pathlib import Path
 

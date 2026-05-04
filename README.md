@@ -761,6 +761,45 @@ Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag ove
 
 ## Changelog
 
+### v3.14.2 — 2026-05-04 · Cross-platform Python detection (Windows fix)
+
+Fixes a Windows-specific failure where every `Bash` tool call triggered `PreToolUse:Bash hook error` and opened the Microsoft Store. Root cause: 3 PreToolUse hooks (`capa0-guard.sh`, `network-egress-hook.sh`, `secrets-scanner-hook.sh`) called `python3` directly. On Windows, `python3.exe` is a Microsoft Store stub when only `python` (3.10) and `py` (Python launcher) are installed — invoking it from bash silently fails the hook and pops the Store.
+
+**Fix:** introduce a per-machine Python detector + global env var consumed by all helpers.
+
+**New files**
+
+- `claude/helpers/helix-python-detect.sh` — probes `python3 → python → py` (skipping the MS Store stub by checking `--version` output for "was not found" / "Microsoft Store") and writes `~/.claude/helix-python.conf` with `export HELIX_PYTHON=<cmd>`. One-shot, idempotent.
+- `claude/helpers/helix-python-patcher.sh` — one-shot migration tool. Backs up each `.sh` to `*.pybak`, replaces bare `python3` with `"${HELIX_PYTHON:-python3}"` (skipping comment lines), inserts the source line after the shebang, syntax-checks each file with `bash -n`, restores from backup on any syntax failure. Preserves CRLF line endings (uses Python for the edit, not sed). Excludes the detector and itself.
+
+**Auto-detect on first session**
+
+`claude/session-start.sh` now runs `helix-python-detect.sh` if `~/.claude/helix-python.conf` is absent, then sources it. Future sessions reuse the cached config.
+
+**Migrated callers**
+
+54 helper `.sh` files migrated. The bash command `python3` is now `"${HELIX_PYTHON:-python3}"` and each file sources `helix-python.conf` near the top — so the env var is available even when the hook runs in a fresh shell spawned by Claude Code.
+
+Two files needed manual fixes because `python3` appears as a string literal *inside* a single-quoted Python heredoc (`<<'PYEOF'`), where bash variables don't expand:
+
+- `claude/helpers/helix-longmemeval.sh:100` — `subprocess.run([os.environ.get("HELIX_PYTHON", "python3"), …])`
+- `claude/helpers/helix-reflexion.sh:162` — same pattern.
+
+The bash export from `helix-python.conf` (`export HELIX_PYTHON=…`) propagates to the Python subprocess, so `os.environ.get("HELIX_PYTHON")` returns the detected binary inside the heredoc.
+
+**No behavior change on Linux/macOS**
+
+When `python3` is the real Python (the common case), the detector picks it first and `HELIX_PYTHON=python3` — identical to pre-patch behavior. The fallback `${HELIX_PYTHON:-python3}` keeps the system working even if the conf file is missing.
+
+**Reverting**
+
+```bash
+find ~/.claude -name '*.pybak' -exec sh -c 'mv "$0" "${0%.pybak}"' {} \;
+rm ~/.claude/helix-python.conf
+```
+
+---
+
 ### v3.14.1 — 2026-05-04 · README reorganization (docs only)
 
 Documentation-only patch. No code changes. Brings the README in line with the actual state of the system after v3.14.0:

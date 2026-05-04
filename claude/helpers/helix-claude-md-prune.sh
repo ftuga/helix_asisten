@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-claude-md-prune.sh — Auto-archiva evoluciones >14d cuando CLAUDE.md > umbral
 # Idempotente. Diseñado para correr en cron, session-start o post-evolve.
 # Uso: bash helix-claude-md-prune.sh [--dry-run] [--threshold N]
@@ -35,7 +36,7 @@ fi
 if [[ "$DRY_RUN" == "true" ]]; then DRY_RUN_PY="True"; else DRY_RUN_PY="False"; fi
 
 # Archivar evoluciones con fecha >$DAYS_KEEP días
-python3 <<PYEOF
+"${HELIX_PYTHON:-python3}" <<PYEOF
 import re, sys, os, json
 from datetime import datetime, timedelta
 from pathlib import Path

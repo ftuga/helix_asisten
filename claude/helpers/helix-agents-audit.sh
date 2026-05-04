@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-agents-audit.sh — Diff entre ~/.claude/agents/*.md y agents-index.md
 # Detecta orphans en ambos lados.
 # Output JSON. Útil al inicio de sesión o como hook.
@@ -8,7 +9,7 @@ set -euo pipefail
 AGENTS_DIR="$HOME/.claude/agents"
 INDEX_FILE="$HOME/.claude/memory/agents-index.md"
 
-python3 <<'PYEOF'
+"${HELIX_PYTHON:-python3}" <<'PYEOF'
 import json, os, re
 from pathlib import Path
 

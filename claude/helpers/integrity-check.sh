@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # integrity-check.sh — Verifica que hooks/settings/CLAUDE.md no fueron alterados sin autorización.
 # Mantiene manifest en ~/.claude/data/integrity-manifest.json
 # Uso:
@@ -12,7 +13,7 @@ mkdir -p "$(dirname "$MANIFEST")"
 
 cmd="${1:-verify}"
 
-HOOK_CMD="$cmd" HOOK_MANIFEST="$MANIFEST" python3 <<'PYEOF'
+HOOK_CMD="$cmd" HOOK_MANIFEST="$MANIFEST" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, hashlib, sys
 from datetime import datetime
 from pathlib import Path

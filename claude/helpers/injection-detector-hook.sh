@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # injection-detector-hook.sh — PostToolUse(WebFetch|WebSearch|Read):
 # Detecta patrones de prompt injection en contenido externo y alerta a stderr.
 # No bloquea (exit 0) — solo señaliza para que el asistente trate el contenido como untrusted.
@@ -11,7 +12,7 @@ PAYLOAD=$(cat)
 LOG="$HOME/.claude/memory/injection-alerts.jsonl"
 mkdir -p "$HOME/.claude/memory"
 
-HOOK_PAYLOAD="$PAYLOAD" HOOK_LOG="$LOG" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" HOOK_LOG="$LOG" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import sys, json, os, re
 from datetime import datetime
 

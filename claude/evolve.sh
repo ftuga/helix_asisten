@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # ============================================================
 # .claude/evolve.sh — Orquestador de Auto-Evolución
 # Uso:
@@ -72,7 +73,7 @@ fi
 py_insert() {
   local file="$1"
   [[ -f "$file" ]] || return 0
-  PYINSERT_MARKER="$2" PYINSERT_CONTENT="$3" python3 - "$file" <<'PYEOF'
+  PYINSERT_MARKER="$2" PYINSERT_CONTENT="$3" "${HELIX_PYTHON:-python3}" - "$file" <<'PYEOF'
 import os, sys
 file = sys.argv[1]
 marker = os.environ['PYINSERT_MARKER']
@@ -101,7 +102,7 @@ update_last_evolution() {
   _update_last_in() {
     local file="$1"
     [[ -f "$file" ]] || return 0
-    PYDATE="$DATE" python3 - "$file" <<'PYEOF'
+    PYDATE="$DATE" "${HELIX_PYTHON:-python3}" - "$file" <<'PYEOF'
 import os, re, sys
 file = sys.argv[1]
 date = os.environ['PYDATE']
@@ -125,7 +126,7 @@ PYEOF
 # ── Helper: incrementar métrica (solo en CLAUDE.md global) ───
 increment_metric() {
   local categoria="$1"
-  PYCAT="$categoria" python3 - "$GLOBAL_CLAUDE_MD" <<'PYEOF'
+  PYCAT="$categoria" "${HELIX_PYTHON:-python3}" - "$GLOBAL_CLAUDE_MD" <<'PYEOF'
 import os, re, json, sys
 file = sys.argv[1]
 cat = os.environ['PYCAT']
@@ -163,7 +164,7 @@ cmd_learn() {
 
   # ── Evolve guard — rechazar aprendizajes con instrucciones ejecutables ──
   # Protege contra prompt injection que usa evolve.sh como vector persistente
-  if GUARD_TEXT="$aprendizaje" python3 - <<'PYGUARD'
+  if GUARD_TEXT="$aprendizaje" "${HELIX_PYTHON:-python3}" - <<'PYGUARD'
 import os, re, sys
 text = os.environ.get("GUARD_TEXT", "")
 BAD = [
@@ -217,7 +218,7 @@ PYGUARD
   # Calcular numero de entrada para el log de evoluciones (monotónico global)
   # Lee el maximo existente en la tabla y hace +1. Nunca repite ni reinicia.
   local num
-  num=$(python3 - "$GLOBAL_CLAUDE_MD" <<'PYNUMEOF'
+  num=$("${HELIX_PYTHON:-python3}" - "$GLOBAL_CLAUDE_MD" <<'PYNUMEOF'
 import sys, re
 try:
     content = open(sys.argv[1]).read()
@@ -243,7 +244,7 @@ PYNUMEOF
 
   # ── Instalar como regla activa en active-rules.md ────────────
   ACTIVE_RULES_FILE="$GLOBAL_MEMORY_DIR/active-rules.md"
-  PYLEARN="$aprendizaje" PYCAT="$categoria" PYDATE="$SHORT_DATE" python3 - "$ACTIVE_RULES_FILE" <<'PYEOF'
+  PYLEARN="$aprendizaje" PYCAT="$categoria" PYDATE="$SHORT_DATE" "${HELIX_PYTHON:-python3}" - "$ACTIVE_RULES_FILE" <<'PYEOF'
 import os, sys
 from pathlib import Path
 
@@ -320,7 +321,7 @@ SKILLEOF
     py_insert_both "<!-- SKILLS_INDEX_END -->" "$index_entry"
 
     # Incrementar métrica de skills (solo global)
-    PYCAT="$nombre" python3 - "$GLOBAL_CLAUDE_MD" <<'PYEOF'
+    PYCAT="$nombre" "${HELIX_PYTHON:-python3}" - "$GLOBAL_CLAUDE_MD" <<'PYEOF'
 import os, re, json, sys
 file = sys.argv[1]
 with open(file, 'r') as f:
@@ -428,7 +429,7 @@ cmd_codemap() {
 
   # codemap solo aplica al proyecto (es específico de cada codebase)
   if [[ -n "$PROJECT_CLAUDE_MD" ]]; then
-    PYARCHIVO="$archivo" PYFRAGILIDAD="$fragilidad" PYDATE="$SHORT_DATE" python3 - "$PROJECT_CLAUDE_MD" <<'PYEOF'
+    PYARCHIVO="$archivo" PYFRAGILIDAD="$fragilidad" PYDATE="$SHORT_DATE" "${HELIX_PYTHON:-python3}" - "$PROJECT_CLAUDE_MD" <<'PYEOF'
 import os, re, sys
 file = sys.argv[1]
 archivo = os.environ['PYARCHIVO']
@@ -472,7 +473,7 @@ cmd_forget() {
     [[ -f "$file" ]] || return 0
 
     PYTERM="$termino" PYREASON="$razon" PYDATE="$DATE" PYOBSOLETE="$obsolete_file" \
-    python3 - "$file" <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - "$file" <<'PYEOF'
 import os, re, sys
 
 file      = sys.argv[1]
@@ -564,7 +565,7 @@ cmd_validate() {
   _validate_in_file() {
     local file="$1"
     [[ -f "$file" ]] || return 0
-    PYTERM="$termino" PYCTX="$contexto" PYDATE="$SHORT_DATE" python3 - "$file" <<'PYEOF'
+    PYTERM="$termino" PYCTX="$contexto" PYDATE="$SHORT_DATE" "${HELIX_PYTHON:-python3}" - "$file" <<'PYEOF'
 import os, re, sys
 
 file    = sys.argv[1]
@@ -629,7 +630,7 @@ cmd_queue() {
   mkdir -p "$GLOBAL_MEMORY_DIR"
 
   # Escribir entrada JSON en la cola
-  PYCAT="$categoria" PYLEARN="$aprendizaje" PYTRIGGER="$trigger" python3 - "$queue_file" <<'PYEOF'
+  PYCAT="$categoria" PYLEARN="$aprendizaje" PYTRIGGER="$trigger" "${HELIX_PYTHON:-python3}" - "$queue_file" <<'PYEOF'
 import os, json, sys
 from pathlib import Path
 entry = {

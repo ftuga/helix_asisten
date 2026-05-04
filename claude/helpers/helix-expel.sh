@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-expel.sh — ExpeL: Experiential Policy Learning
 # Analiza trayectorias en routing-feedback.jsonl para extraer reglas contrastivas
 # Compara agentes que compiten en el mismo dominio y abstrae políticas generalizables
@@ -20,7 +21,7 @@ export HELIX_HEURISTICS="$HEURISTICS_FILE"
 export HELIX_AGENTS_INDEX="$AGENTS_INDEX"
 export HELIX_MIN_CONTRAST="$MIN_CONTRAST"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, json, re
 from datetime import datetime, timedelta
 from pathlib import Path

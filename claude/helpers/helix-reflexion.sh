@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-reflexion.sh — Memoria semántica de errores y resoluciones (Reflexion pattern)
 # Almacena patrones de error resueltos en Qdrant y los recupera por similitud
 #
@@ -62,7 +63,7 @@ store)
     done
 
     # Scanner de contenido malicioso antes de indexar
-    if GUARD_TEXT="$ERROR_DESC||$RESOLUTION" python3 - <<'PYSCAN'
+    if GUARD_TEXT="$ERROR_DESC||$RESOLUTION" "${HELIX_PYTHON:-python3}" - <<'PYSCAN'
 import os, re, sys
 text = os.environ.get("GUARD_TEXT", "")
 BAD = [
@@ -80,7 +81,7 @@ PYSCAN
         exit 1
     fi
 
-    RESULT=$(python3 "$HV" store helix_reflexions "$EMBED_TEXT" \
+    RESULT=$("${HELIX_PYTHON:-python3}" "$HV" store helix_reflexions "$EMBED_TEXT" \
         --meta \
             "error=$SAFE_ERROR" \
             "resolution=$SAFE_RESOL" \
@@ -94,13 +95,13 @@ PYSCAN
             "type=reflexion" \
         2>/dev/null)
 
-    if echo "$RESULT" | python3 -c "import json,sys; d=json.load(sys.stdin); exit(0 if d.get('status')=='ok' else 1)" 2>/dev/null; then
+    if echo "$RESULT" | "${HELIX_PYTHON:-python3}" -c "import json,sys; d=json.load(sys.stdin); exit(0 if d.get('status')=='ok' else 1)" 2>/dev/null; then
         echo -e "${GREEN}✅ Reflexión almacenada${NC}"
         echo "   Error: ${ERROR_DESC:0:70}"
         echo "   Resolución: ${RESOLUTION:0:80}"
 
         # Backup JSONL local
-        python3 -c "
+        "${HELIX_PYTHON:-python3}" -c "
 import json, sys
 entry = {
     'ts': '$(date +%Y-%m-%d\ %H:%M)',
@@ -114,7 +115,7 @@ with open('$REFLEXIONS_LOG', 'a') as f:
 " "$ERROR_DESC" "$RESOLUTION" "$CATEGORIA" "$PROYECTO"
     else
         echo "⚠️  No se pudo almacenar en Qdrant. Guardado solo en JSONL local."
-        python3 -c "
+        "${HELIX_PYTHON:-python3}" -c "
 import json, sys
 entry = {'ts': '$(date +%Y-%m-%d\ %H:%M)', 'error': sys.argv[1], 'resolution': sys.argv[2], 'categoria': sys.argv[3], 'proyecto': sys.argv[4]}
 with open('$REFLEXIONS_LOG', 'a') as f:
@@ -149,7 +150,7 @@ search)
     export HV_SEARCH_THRESHOLD="$THRESHOLD"
     export HV_SCRIPT_PATH="$HV"
 
-    python3 - <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import json, sys, os, subprocess
 
 hv    = os.environ['HV_SCRIPT_PATH']
@@ -158,7 +159,7 @@ topk  = os.environ['HV_SEARCH_TOPK']
 thr   = os.environ['HV_SEARCH_THRESHOLD']
 
 result = subprocess.run(
-    ['python3', hv, 'search', 'helix_reflexions', query, '--top-k', topk, '--threshold', thr],
+    [os.environ.get('HELIX_PYTHON', 'python3'), hv, 'search', 'helix_reflexions', query, '--top-k', topk, '--threshold', thr],
     capture_output=True, text=True
 )
 
@@ -247,7 +248,7 @@ feedback)
     _ensure_qdrant || exit 1
 
     export HV_PID="$POINT_ID" HV_VERDICT="$VERDICT" HV_URL="$QDRANT_URL"
-    python3 <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, urllib.request
 URL = os.environ['HV_URL']; pid = os.environ['HV_PID']; verdict = os.environ['HV_VERDICT']
 
@@ -291,7 +292,7 @@ prune)
     _ensure_qdrant || exit 1
 
     export HV_OLDER="$OLDER_DAYS" HV_URL="$QDRANT_URL" HV_DRY="$DRY_RUN"
-    python3 <<'PYEOF'
+    "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, urllib.request
 from datetime import datetime, timedelta, timezone
 URL = os.environ['HV_URL']; older = int(os.environ['HV_OLDER']); dry = os.environ.get('HV_DRY') == '--dry-run'
@@ -351,7 +352,7 @@ list)
     LIMIT="${1:-15}"
     if [[ -f "$REFLEXIONS_LOG" ]]; then
         echo -e "${BLUE}Reflexiones almacenadas (últimas $LIMIT):${NC}"
-        python3 -c "
+        "${HELIX_PYTHON:-python3}" -c "
 import json
 lines = open('$REFLEXIONS_LOG').readlines()[-$LIMIT:]
 for l in lines:

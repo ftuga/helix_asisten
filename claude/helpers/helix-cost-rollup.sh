@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-cost-rollup.sh — R2 cost-tracker v0.1
 #
 # Procesa transcripts JSONL de ~/.claude/projects/ y calcula USD real por
@@ -54,7 +55,7 @@ calc_transcript_cost() {
     local transcript="$1"
     [[ -f "$transcript" ]] || { echo "0.00|unknown|0|0|0|0"; return; }
 
-    HELIX_TRANSCRIPT="$transcript" python3 <<'PYEOF'
+    HELIX_TRANSCRIPT="$transcript" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import json, os, sys
 from pathlib import Path
 
@@ -154,7 +155,7 @@ mode_current() {
 
 mode_all() {
     # Procesa TODOS los transcripts, agrupa por modelo + project
-    HELIX_PROJECTS_DIR="$PROJECTS_DIR" python3 <<'PYEOF'
+    HELIX_PROJECTS_DIR="$PROJECTS_DIR" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import json, os, sys
 from pathlib import Path
 from collections import defaultdict

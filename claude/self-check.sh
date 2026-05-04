@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # .claude/self-check.sh — Checklist pre-cierre de tarea de Helix
 # Stack-aware: detecta el tipo de proyecto y activa solo los checks relevantes
 set -uo pipefail
@@ -208,7 +209,7 @@ if [[ -n "${TEAM_FILE:-}" && -f "$TEAM_FILE" ]]; then
 
   BITACORA="$PROJECT_ROOT/.claude/memory/helix-bitacora.md"
   if [[ -f "$BITACORA" ]]; then
-    BITACORA_AGE=$(python3 -c "import os,time; print('ok' if (time.time()-os.path.getmtime('$BITACORA'))/3600 < 2 else 'stale')" 2>/dev/null || echo "unknown")
+    BITACORA_AGE=$("${HELIX_PYTHON:-python3}" -c "import os,time; print('ok' if (time.time()-os.path.getmtime('$BITACORA'))/3600 < 2 else 'stale')" 2>/dev/null || echo "unknown")
     [[ "$BITACORA_AGE" == "ok" ]] && check "DoD: bitácora actualizada" || warn "DoD: bitácora no actualizada en las últimas 2h"
   fi
 
@@ -227,7 +228,7 @@ if [[ -n "$PROJECT_ROOT" ]]; then
 
   if [[ -f "$BACKLOG" ]]; then
     # Detectar IDs en "Completado" del backlog
-    COMPLETED_IDS=$(python3 -c "
+    COMPLETED_IDS=$("${HELIX_PYTHON:-python3}" -c "
 from pathlib import Path
 content = Path('$BACKLOG').read_text()
 lines = content.splitlines()

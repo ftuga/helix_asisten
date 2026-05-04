@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-cache-metrics.sh — Mide cache-hit rate del prompt cache de Anthropic.
 # Lee logs de Claude Code (~/.claude/projects/*/*.jsonl) y calcula ratios.
 # Uso: bash helix-cache-metrics.sh [--last-n 100] [--project <name>]
@@ -18,7 +19,7 @@ done
 
 export HELIX_LAST_N="$LAST_N" HELIX_PROJECT="$FILTER_PROJECT"
 
-python3 <<'PYEOF'
+"${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, glob
 from pathlib import Path
 from collections import defaultdict

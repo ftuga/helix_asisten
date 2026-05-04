@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-erl.sh — Experiential Reflective Learning
 # Analiza routing-feedback.jsonl y extrae heurísticas reutilizables
 # Uso: bash helix-erl.sh [--min-samples N] [--force]
@@ -22,7 +23,7 @@ export HELIX_OUTPUT="$HEURISTICS_FILE"
 export HELIX_TOPICS="$TOPICS_DIR"
 export HELIX_GLOBAL="$GLOBAL_DIR"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, json, re
 from datetime import datetime, timedelta
 from pathlib import Path

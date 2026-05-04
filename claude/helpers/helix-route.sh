@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-route.sh - Routing con anti-bias y stack-aware
 # Subcomandos: pick <domain> "<query>" [--epsilon N] | audit | weights
 # Diseño: ~/.claude/memory/topics/routing-anti-bias.md
@@ -63,7 +64,7 @@ cmd_pick() {
     w_stack=${w_stack:-0.15}
 
     # 5. Re-rank en Python
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json, math, random, os, sys, time
 from datetime import datetime, timedelta
 
@@ -262,7 +263,7 @@ cmd_shadow_report() {
         echo "Sin shadow log. Ejecutar pick con --shadow primero."
         exit 0
     fi
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json
 from collections import Counter
 from datetime import datetime, timedelta
@@ -311,7 +312,7 @@ PYEOF
 }
 
 cmd_audit() {
-    python3 <<PYEOF
+    "${HELIX_PYTHON:-python3}" <<PYEOF
 import json, os
 from datetime import datetime, timedelta
 from collections import Counter

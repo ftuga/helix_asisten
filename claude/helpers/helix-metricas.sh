@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-metricas.sh — Evaluar salud de Helix desde señales observables
 # Uso: bash helix-metricas.sh [PROJECT_ROOT]
 # Output: JSON con scores, problemas y flag de alerta
@@ -22,7 +23,7 @@ fi
 export HELIX_PROJECT="$PROJECT"
 export HELIX_GLOBAL="$GLOBAL_DIR"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, json, re
 from datetime import datetime, timedelta
 from pathlib import Path

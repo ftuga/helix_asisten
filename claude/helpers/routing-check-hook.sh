@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # routing-check-hook.sh — PreToolUse(Agent): valida dominio↔agente antes de invocar.
 # Bloquea mismatches de alta confianza (exit 2). Advierte en ambiguos (exit 0 + stderr).
 # Payload stdin: { tool_input: { subagent_type, prompt, description }, ... }
@@ -7,7 +8,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-HOOK_PAYLOAD="$PAYLOAD" python3 <<'PYEOF'
+HOOK_PAYLOAD="$PAYLOAD" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import sys, json, os
 
 payload_str = os.environ.get("HOOK_PAYLOAD", "")

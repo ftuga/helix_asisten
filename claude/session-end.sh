@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # .claude/session-end.sh — Cerrar sesión de Helix
 # Registra resumen, pendientes y comprime memoria si es necesario
 set -euo pipefail
@@ -61,7 +62,7 @@ SESSION_ROW="| #$SESSION_NUM | $SHORT_DATE | $RESUMEN | $SESSION_LEARNS | $SESSI
 _register_session() {
   local file="$1"
   [[ -f "$file" ]] || return 0
-  PYINSERT_MARKER="<!-- SESSIONS_END -->" PYINSERT_CONTENT="$SESSION_ROW" python3 - "$file" << 'PYEOF'
+  PYINSERT_MARKER="<!-- SESSIONS_END -->" PYINSERT_CONTENT="$SESSION_ROW" "${HELIX_PYTHON:-python3}" - "$file" << 'PYEOF'
 import os, sys
 file = sys.argv[1]
 marker = os.environ['PYINSERT_MARKER']
@@ -81,7 +82,7 @@ if [[ -n "$PROJECT_CLAUDE_MD" ]]; then
 fi
 
 # ── Actualizar métricas (solo global) ────────────────────────
-python3 - "$GLOBAL_CLAUDE_MD" << 'PYEOF'
+"${HELIX_PYTHON:-python3}" - "$GLOBAL_CLAUDE_MD" << 'PYEOF'
 import re, json, sys
 file = sys.argv[1]
 with open(file, 'r') as f:
@@ -158,7 +159,7 @@ fi
 
 if [[ -n "$COST_FILE" && -f "$COST_FILE" ]]; then
   TOOL_CALLS=$(tr -d '[:space:]' < "$COST_FILE" 2>/dev/null || echo "0")
-  python3 -c "
+  "${HELIX_PYTHON:-python3}" -c "
 n = int('$TOOL_CALLS') if '$TOOL_CALLS'.isdigit() else 0
 # Estimación Sonnet 4.6: ~\$3/M input + ~\$15/M output
 # Por tool call promedio: ~2000 tokens input + ~500 output
@@ -217,10 +218,10 @@ ALERTA_FILE="${PROJECT_MEMORY_DIR:-$GLOBAL_MEMORY_DIR}/helix-alerta.md"
 METRICS=$(bash "$HOME/.claude/helpers/helix-metricas.sh" "${PROJECT_ROOT:-}" 2>/dev/null || echo "")
 
 if [[ -n "$METRICS" ]]; then
-  TIENE_ALERTA=$(echo "$METRICS" | python3 -c "import sys,json; d=json.load(sys.stdin); print('si' if d.get('alerta') else 'no')" 2>/dev/null || echo "no")
+  TIENE_ALERTA=$(echo "$METRICS" | "${HELIX_PYTHON:-python3}" -c "import sys,json; d=json.load(sys.stdin); print('si' if d.get('alerta') else 'no')" 2>/dev/null || echo "no")
 
   if [[ "$TIENE_ALERTA" == "si" ]]; then
-    echo "$METRICS" | python3 - "$ALERTA_FILE" <<'PYEOF'
+    echo "$METRICS" | "${HELIX_PYTHON:-python3}" - "$ALERTA_FILE" <<'PYEOF'
 import sys, json
 from pathlib import Path
 

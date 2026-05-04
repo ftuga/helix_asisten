@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
 # helix-knowledge-map.sh — Mapa de confianza cross-dominio
 # Cruza: learnings × heurísticas confirmadas × reflexiones en Qdrant × decay scores
 # Genera coverage matrix: si un dominio es crítico pero tiene 0 reflexiones → visible
@@ -30,7 +31,7 @@ if curl -sf "http://localhost:6333/healthz" &>/dev/null; then
 fi
 export HELIX_QDRANT_AVAILABLE="$QDRANT_AVAILABLE"
 
-python3 - <<'PYEOF'
+"${HELIX_PYTHON:-python3}" - <<'PYEOF'
 import os, re, json, subprocess
 from pathlib import Path
 from collections import defaultdict, Counter
