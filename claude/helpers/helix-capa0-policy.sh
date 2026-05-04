@@ -17,9 +17,9 @@
 
 set -uo pipefail
 
-readonly PROFILE="${HOME}/.claude/hw-profile.json"
-readonly BENCH_FILE="${HOME}/.claude/cache/capa0-bench.json"
-readonly OVERRIDE_FILE="${HOME}/.claude/capa0-disabled"
+readonly PROFILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hw-profile.json"
+readonly BENCH_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/cache/capa0-bench.json"
+readonly OVERRIDE_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/capa0-disabled"
 readonly CAPA0_TIMEOUT_SEC=30
 
 OUTPUT_MODE="text"
@@ -35,14 +35,14 @@ done
 # ─────────────────────────────────────────────────────────────
 ensure_profile() {
     if [[ ! -f "$PROFILE" ]]; then
-        bash "${HOME}/.claude/helpers/helix-hwprobe.sh" --quiet
+        bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-hwprobe.sh" --quiet
     else
         local mtime now age
         mtime=$(stat -c %Y "$PROFILE" 2>/dev/null || echo 0)
         now=$(date +%s)
         age=$((now - mtime))
         if [[ $age -gt 86400 ]]; then
-            bash "${HOME}/.claude/helpers/helix-hwprobe.sh" --quiet
+            bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-hwprobe.sh" --quiet
         fi
     fi
 }

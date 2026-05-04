@@ -17,8 +17,8 @@
 
 set -uo pipefail
 
-readonly OVERRIDE_FILE="${HOME}/.claude/capa0-disabled"
-readonly POLICY_HELPER="${HOME}/.claude/helpers/helix-capa0-policy.sh"
+readonly OVERRIDE_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/capa0-disabled"
+readonly POLICY_HELPER="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-capa0-policy.sh"
 
 ACTION="${1:-status}"
 MODE_FLAG="${2:-}"

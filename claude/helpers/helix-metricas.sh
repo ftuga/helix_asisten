@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-metricas.sh — Evaluar salud de Helix desde señales observables
 # Uso: bash helix-metricas.sh [PROJECT_ROOT]
 # Output: JSON con scores, problemas y flag de alerta
 set -uo pipefail
 
 PROJECT="${1:-}"
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 # Detectar proyecto si no se pasó
 if [[ -z "$PROJECT" ]]; then

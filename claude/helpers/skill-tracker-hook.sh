@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # skill-tracker-hook.sh — PostToolUse(Skill): registra uso real de skills
 # Recibe JSON por stdin: { tool_input: { skill, args }, tool_name, cwd, ... }
 set -uo pipefail
 
-USAGE_LOG="$HOME/.claude/memory/skill-usage.jsonl"
-mkdir -p "$HOME/.claude/memory"
+USAGE_LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/skill-usage.jsonl"
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0

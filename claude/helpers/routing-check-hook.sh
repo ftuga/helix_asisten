@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # routing-check-hook.sh — PreToolUse(Agent): valida dominio↔agente antes de invocar.
 # Bloquea mismatches de alta confianza (exit 2). Advierte en ambiguos (exit 0 + stderr).
 # Payload stdin: { tool_input: { subagent_type, prompt, description }, ... }

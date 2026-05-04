@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # agents-vector-sync-hook.sh — Re-indexar helix_agents al editar un agente
 # Disparado por PostToolUse(Write|Edit|MultiEdit).
 # No bloquea: exit 0 inmediato, el sync corre en background con debounce.
@@ -21,12 +21,12 @@ except Exception:
 
 # Solo reaccionar a agentes globales o sus descriptions on-demand
 case "$FILE_PATH" in
-  "$HOME/.claude/agents/"*.md) ;;
-  "$HOME/.claude/memory/agents/"*.md) ;;
+  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents/"*.md) ;;
+  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/agents/"*.md) ;;
   *) exit 0 ;;
 esac
 
-LOG="$HOME/.claude/memory/agents-vector-sync.log"
+LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/agents-vector-sync.log"
 LOCK="/tmp/helix-agents-vector-sync.lock"
 DEBOUNCE_SECS=8
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-batch.sh — Worktree batch dispatcher (patrón /batch del ecosistema Claude Code).
 # Crea git worktrees aislados para N tareas independientes, ejecuta en paralelo y consolida resultados.
 #

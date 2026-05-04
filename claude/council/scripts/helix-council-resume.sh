@@ -7,8 +7,8 @@
 
 set -uo pipefail
 
-COUNCIL_DIR="$HOME/.claude/council"
-AGENTS_DIR="$HOME/.claude/agents"
+COUNCIL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/council"
+AGENTS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents"
 LOG_DIR="$COUNCIL_DIR/log"
 
 echo "════════════════════════════════════════════════════════════════"
@@ -20,8 +20,8 @@ echo ""
 echo "[1/5] Verificando artifacts..."
 ok=0; missing=0
 for f in \
-  "$HOME/.claude/memory/topics/helix-evolution-plan.md" \
-  "$HOME/.claude/memory/topics/council-design.md" \
+  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/topics/helix-evolution-plan.md" \
+  "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/topics/council-design.md" \
   "$COUNCIL_DIR/constitution.md" \
   "$COUNCIL_DIR/scripts/helix-council.sh" \
   "$COUNCIL_DIR/scripts/helix-council-context.sh" \
@@ -47,7 +47,7 @@ echo ""
 echo "[2/5] Verificando context files on-demand..."
 ctx_ok=0
 for role in arbiter skeptic innovator conservative synthesizer researcher devils-advocate; do
-  if [[ -f "$HOME/.claude/memory/agents/council-$role.md" ]]; then
+  if [[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/agents/council-$role.md" ]]; then
     ctx_ok=$((ctx_ok+1))
   fi
 done
@@ -56,13 +56,13 @@ echo ""
 
 # 3. Verificar entries en agents-index
 echo "[3/5] Verificando entries en agents-index..."
-idx_count=$(grep -cE '^\| `council-' "$HOME/.claude/memory/agents-index.md" 2>/dev/null || echo 0)
+idx_count=$(grep -cE '^\| `council-' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/agents-index.md" 2>/dev/null || echo 0)
 echo "  Entries indexadas: $idx_count / 7"
 echo ""
 
 # 4. Verificar routing-check exception
 echo "[4/5] Verificando bypass del routing-check para council-*..."
-if grep -q 'agent.startswith("council-")' "$HOME/.claude/helpers/routing-check-hook.sh" 2>/dev/null; then
+if grep -q 'agent.startswith("council-")' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/routing-check-hook.sh" 2>/dev/null; then
   echo "  Bypass: OK"
 else
   echo "  Bypass: MISSING (ejecutar fix manual)"

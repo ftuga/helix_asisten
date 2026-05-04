@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-snapshot.sh — Persistencia conversacional + resume opt-in
 # Stack: 100% local, sin egress, sin deps externas.
 # Diseño: ~/.claude/memory/topics/conversation-context-research.md
@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-SNAPSHOTS_DIR="$HOME/.claude/snapshots"
+SNAPSHOTS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/snapshots"
 mkdir -p "$SNAPSHOTS_DIR"
 
 # Auto-detección de proyecto (varios fallbacks)
@@ -31,7 +31,7 @@ detect_project() {
 
     # Búsqueda 1: ascender buscando CLAUDE.md en root
     while [[ "$dir" != "/" ]]; do
-        if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]]; then
+        if [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]]; then
             basename "$dir"
             return 0
         fi

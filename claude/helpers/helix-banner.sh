@@ -8,7 +8,7 @@
 
 set -uo pipefail
 
-readonly HELIX_DIR="${HOME}/.claude"
+readonly HELIX_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 readonly AXOLOTL_FILE="${HELIX_DIR}/helpers/banner-axolotl.txt"
 readonly HELIX_VERSION="${HELIX_VERSION:-v3.13}"
 

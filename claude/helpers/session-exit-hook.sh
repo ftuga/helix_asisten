@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # session-exit-hook.sh — UserPromptSubmit: detecta "exit" y cierra sesión automáticamente
 # Recibe JSON por stdin: { "prompt": "...", "cwd": "..." }
 set -uo pipefail

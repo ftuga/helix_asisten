@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # .claude/session-end.sh — Cerrar sesión de Helix
 # Registra resumen, pendientes y comprime memoria si es necesario
 set -euo pipefail
 
-GLOBAL_CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-GLOBAL_MEMORY_DIR="$HOME/.claude/memory"
+GLOBAL_CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+GLOBAL_MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 DATE=$(date '+%Y-%m-%d %H:%M')
 SHORT_DATE=$(date '+%Y-%m-%d')
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
@@ -13,7 +13,7 @@ GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 mkdir -p "$GLOBAL_MEMORY_DIR"
 
 # ── Cleanup override Capa 0 mode:session ─────────────────────
-CAPA0_OVERRIDE="$HOME/.claude/capa0-disabled"
+CAPA0_OVERRIDE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/capa0-disabled"
 if [[ -f "$CAPA0_OVERRIDE" ]]; then
   if grep -qE '^mode:[[:space:]]*session' "$CAPA0_OVERRIDE" 2>/dev/null; then
     rm -f "$CAPA0_OVERRIDE"
@@ -29,7 +29,7 @@ PENDIENTES=("$@")
 find_project_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]] && echo "$dir" && return 0
+    [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && echo "$dir" && return 0
     dir="$(dirname "$dir")"
   done
   return 1
@@ -127,7 +127,7 @@ echo "$DATE — SESION #$SESSION_NUM CERRADA — $RESUMEN" >> "$GLOBAL_MEMORY_DI
 echo -e "${GREEN}Sesion #$SESSION_NUM registrada.${NC}"
 
 # ── Retrospectiva automática ──────────────────────────────────
-RETRO_SCRIPT="$HOME/.claude/helpers/helix-retrospectiva.sh"
+RETRO_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-retrospectiva.sh"
 if [[ -f "$RETRO_SCRIPT" ]]; then
   bash "$RETRO_SCRIPT" "$RESUMEN" "${PROJECT_ROOT:-}" 2>/dev/null || true
 fi
@@ -135,9 +135,9 @@ echo "   Resumen: $RESUMEN"
 echo "   Aprendizajes: $SESSION_LEARNS | Skills: $SESSION_SKILLS"
 
 # ── ERL + ExpeL — aprendizaje de routing ─────────────────────
-ERL_SCRIPT="$HOME/.claude/helpers/helix-erl.sh"
-EXPEL_SCRIPT="$HOME/.claude/helpers/helix-expel.sh"
-FIX_SCRIPT="$HOME/.claude/helpers/helix-routing-fix.sh"
+ERL_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-erl.sh"
+EXPEL_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-expel.sh"
+FIX_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-routing-fix.sh"
 
 if [[ -f "$ERL_SCRIPT" && -f "$EXPEL_SCRIPT" ]]; then
   bash "$ERL_SCRIPT" 2>/dev/null || true
@@ -172,13 +172,13 @@ fi
 echo ""
 
 # ── Decay scoring — actualizar vigencia de evolution-log ─────
-DECAY_SCRIPT="$HOME/.claude/helpers/helix-decay.sh"
+DECAY_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-decay.sh"
 if [[ -f "$DECAY_SCRIPT" ]]; then
   bash "$DECAY_SCRIPT" --stale 2>/dev/null || true
 fi
 
 # ── Knowledge map — actualizar mapa de cobertura ─────────────
-MAP_SCRIPT="$HOME/.claude/helpers/helix-knowledge-map.sh"
+MAP_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-knowledge-map.sh"
 if [[ -f "$MAP_SCRIPT" ]]; then
   bash "$MAP_SCRIPT" --gaps 2>/dev/null || true
 fi
@@ -187,7 +187,7 @@ fi
 LINES=$(wc -l < "$GLOBAL_CLAUDE_MD")
 if [[ "$LINES" -gt 200 ]]; then
   echo -e "\033[1;33mCLAUDE.md tiene $LINES lineas — comprimiendo memoria...\033[0m"
-  bash "$HOME/.claude/compress.sh"
+  bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/compress.sh"
 fi
 
 # ── Auto-compress archivos de proyecto cuando superan umbral ──
@@ -199,7 +199,7 @@ if [[ -n "${PROJECT_ROOT:-}" && -d "${PROJECT_ROOT}/.claude/memory" ]]; then
   if [[ -f "$BITACORA_FILE" ]]; then
     BITA_ROWS=$(grep -c "^|" "$BITACORA_FILE" 2>/dev/null | tr -d '[:space:]' || echo "0")
     if [[ "$BITA_ROWS" -gt 100 ]]; then
-      bash "$HOME/.claude/helpers/helix-distill.sh" compress-bitacora "$BITACORA_FILE" 2>/dev/null || true
+      bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-distill.sh" compress-bitacora "$BITACORA_FILE" 2>/dev/null || true
     fi
   fi
 
@@ -208,14 +208,14 @@ if [[ -n "${PROJECT_ROOT:-}" && -d "${PROJECT_ROOT}/.claude/memory" ]]; then
   if [[ -f "$ANALYSIS_FILE" ]]; then
     ANALYSIS_LINES=$(wc -l < "$ANALYSIS_FILE" | tr -d '[:space:]')
     if [[ "$ANALYSIS_LINES" -gt 150 ]]; then
-      bash "$HOME/.claude/helpers/helix-distill.sh" compress-project "${PROJECT_ROOT}" 2>/dev/null || true
+      bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-distill.sh" compress-project "${PROJECT_ROOT}" 2>/dev/null || true
     fi
   fi
 fi
 
 # ── Evaluar salud de Helix — escribir alerta si hay problemas ─
 ALERTA_FILE="${PROJECT_MEMORY_DIR:-$GLOBAL_MEMORY_DIR}/helix-alerta.md"
-METRICS=$(bash "$HOME/.claude/helpers/helix-metricas.sh" "${PROJECT_ROOT:-}" 2>/dev/null || echo "")
+METRICS=$(bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-metricas.sh" "${PROJECT_ROOT:-}" 2>/dev/null || echo "")
 
 if [[ -n "$METRICS" ]]; then
   TIENE_ALERTA=$(echo "$METRICS" | "${HELIX_PYTHON:-python3}" -c "import sys,json; d=json.load(sys.stdin); print('si' if d.get('alerta') else 'no')" 2>/dev/null || echo "no")

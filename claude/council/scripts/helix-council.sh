@@ -25,7 +25,7 @@
 
 set -euo pipefail
 
-COUNCIL_DIR="$HOME/.claude/council"
+COUNCIL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/council"
 LOG_DIR="$COUNCIL_DIR/log"
 SESSIONS_DIR="$COUNCIL_DIR/context-pack"
 SCRIPT_DIR="$COUNCIL_DIR/scripts"

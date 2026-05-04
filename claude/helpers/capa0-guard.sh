@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # capa0-guard.sh — PreToolUse(Bash/Read): sugiere Capa 0 cuando el input es costoso
 # Recibe JSON por stdin con: tool_name, tool_input, cwd
 set -uo pipefail

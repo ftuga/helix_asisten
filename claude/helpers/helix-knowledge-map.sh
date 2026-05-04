@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-knowledge-map.sh — Mapa de confianza cross-dominio
 # Cruza: learnings × heurísticas confirmadas × reflexiones en Qdrant × decay scores
 # Genera coverage matrix: si un dominio es crítico pero tiene 0 reflexiones → visible
@@ -10,7 +10,7 @@
 #   bash helix-knowledge-map.sh --json       → salida JSON a knowledge-map.json
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 MEMORY_DIR="$GLOBAL_DIR/memory"
 EVO_LOG="$MEMORY_DIR/evolution-log.txt"
 HEURISTICS="$MEMORY_DIR/routing-heuristics.md"

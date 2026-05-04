@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-detect-stack.sh — Detección determinista de stack
 # Uso: bash helix-detect-stack.sh [PROJECT_ROOT]
 # Imprime JSON estructurado con el stack detectado

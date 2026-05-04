@@ -10,7 +10,7 @@
 
 set -uo pipefail
 
-readonly COUNCIL_DIR="${HOME}/.claude/council"
+readonly COUNCIL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/council"
 readonly FREQ_LOG="${COUNCIL_DIR}/frequency.log"
 
 mkdir -p "$COUNCIL_DIR" 2>/dev/null

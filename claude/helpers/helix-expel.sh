@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-expel.sh — ExpeL: Experiential Policy Learning
 # Analiza trayectorias en routing-feedback.jsonl para extraer reglas contrastivas
 # Compara agentes que compiten en el mismo dominio y abstrae políticas generalizables
@@ -8,7 +8,7 @@
 # Output: agrega sección "## Reglas ExpeL" a routing-heuristics.md
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 FEEDBACK_FILE="$GLOBAL_DIR/memory/routing-feedback.jsonl"
 HEURISTICS_FILE="$GLOBAL_DIR/memory/routing-heuristics.md"
 AGENTS_INDEX="$GLOBAL_DIR/memory/agents-index.md"

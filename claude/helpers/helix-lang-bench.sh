@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-lang-bench.sh — Benchmark y análisis de efectividad de HELIX-LANG
 # Uso:
 #   log    "NL message" "HL message"        → registra un par para análisis
@@ -9,7 +9,7 @@
 #   reset                                   → limpia el log (con confirmación)
 set -uo pipefail
 
-BENCH_LOG="$HOME/.claude/data/helix-lang.jsonl"
+BENCH_LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/data/helix-lang.jsonl"
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; GRAY='\033[0;37m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
 cmd="${1:-report}"

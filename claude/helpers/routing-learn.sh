@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # routing-learn.sh — Registrar decisiones de routing para aprendizaje
 # Uso: bash ~/.claude/helpers/routing-learn.sh "<tarea>" "<agente>" "<resultado>"
 # Resultado: success | partial | failed
@@ -18,14 +18,14 @@ if [[ -z "$TAREA" || -z "$AGENTE" ]]; then
 fi
 
 DATE=$(date '+%Y-%m-%d %H:%M')
-FEEDBACK_FILE="$HOME/.claude/memory/routing-feedback.jsonl"
-mkdir -p "$HOME/.claude/memory"
+FEEDBACK_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-feedback.jsonl"
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 
 # Auto-detectar proyecto
 PROJECT=""
 dir="$PWD"
 while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
-  if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]]; then
+  if [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]]; then
     PROJECT=$(basename "$dir")
     break
   fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-cost-rollup.sh — R2 cost-tracker v0.1
 #
 # Procesa transcripts JSONL de ~/.claude/projects/ y calcula USD real por
@@ -17,7 +17,7 @@
 
 set -uo pipefail
 
-readonly HELIX_DIR="${HOME}/.claude"
+readonly HELIX_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 readonly PROJECTS_DIR="${HELIX_DIR}/projects"
 readonly CACHE_DIR="${HELIX_DIR}/cache"
 readonly REPORT_FILE="${HELIX_DIR}/memory/topics/route-cost-audit.md"

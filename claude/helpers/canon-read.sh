@@ -9,15 +9,15 @@ AGENT="${1:?uso: canon-read.sh <agent> <book_id> <chapter>}"
 BOOK_ID="${2:?falta book_id}"
 CHAPTER="${3:?falta chapter}"
 
-CANON_DIR="$HOME/.claude/memory/canon/$AGENT"
-LOG="$HOME/.claude/memory/canon/_cron.log"
+CANON_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/canon/$AGENT"
+LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/canon/_cron.log"
 mkdir -p "$CANON_DIR"
 
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 log() { echo "[$(ts)] [canon-read] $*" | tee -a "$LOG"; }
 
 # Validacion: el agente debe existir
-AGENT_FILE="$HOME/.claude/agents/$AGENT.md"
+AGENT_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents/$AGENT.md"
 if [[ ! -f "$AGENT_FILE" ]]; then
     log "ERROR: agente $AGENT no existe en $AGENT_FILE"
     exit 1

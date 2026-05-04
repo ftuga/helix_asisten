@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-route.sh - Routing con anti-bias y stack-aware
 # Subcomandos: pick <domain> "<query>" [--epsilon N] | audit | weights
 # Diseño: ~/.claude/memory/topics/routing-anti-bias.md
@@ -8,10 +8,10 @@ set -euo pipefail
 
 PROJECT="${PROJECT_ROOT:-$PWD}"
 STACK_FILE="$PROJECT/.claude/memory/helix-stack.md"
-WEIGHTS_FILE="$HOME/.claude/config/routing-weights.yaml"
-FEEDBACK="$HOME/.claude/memory/routing-feedback.jsonl"
-QUALITY="$HOME/.claude/memory/skill-quality.jsonl"
-AGENTS_DIR="$HOME/.claude/agents"
+WEIGHTS_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/config/routing-weights.yaml"
+FEEDBACK="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-feedback.jsonl"
+QUALITY="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/skill-quality.jsonl"
+AGENTS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents"
 
 # Catalogo de dominios → agentes (subset; el catalogo completo en stack-catalogs.md)
 declare -A DOMAIN_CATALOG=(
@@ -31,7 +31,7 @@ cmd_pick() {
     local query="${2:?query requerido}"
     local epsilon="${3:-0.1}"
     local shadow="${4:-}"  # --shadow opcional: registra en log sin imprimir
-    local shadow_log="$HOME/.claude/memory/routing-shadow.jsonl"
+    local shadow_log="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-shadow.jsonl"
 
     # 1. Vector search (hv usa --top-k y retorna {results: [...]})
     # Output puede ser >30KB con \n y " — pasar por archivo temporal para evitar romper heredoc
@@ -258,7 +258,7 @@ PYEOF
 }
 
 cmd_shadow_report() {
-    local shadow_log="$HOME/.claude/memory/routing-shadow.jsonl"
+    local shadow_log="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-shadow.jsonl"
     if [[ ! -f "$shadow_log" ]]; then
         echo "Sin shadow log. Ejecutar pick con --shadow primero."
         exit 0

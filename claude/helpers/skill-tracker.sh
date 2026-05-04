@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # skill-tracker.sh — Registrar uso real de skills, agentes y MCPs por sesión
 # Uso:
 #   log    "<nombre>" "<tipo: skill|agent|mcp>" [proyecto]
@@ -8,7 +8,7 @@
 #   prune  --execute        → archiva candidatos con confirmación interactiva
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 USAGE_LOG="$GLOBAL_DIR/memory/skill-usage.jsonl"
 SKILLS_DIR="$GLOBAL_DIR/skills"
 ARCHIVE_DIR="$GLOBAL_DIR/skills/archive"
@@ -56,7 +56,7 @@ log)
     if [[ -z "$PROYECTO" ]]; then
         dir="$PWD"
         while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
-            [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]] && {
+            [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && {
                 PROYECTO=$(basename "$dir"); break
             }
             dir=$(dirname "$dir")

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # passive-capture-review.sh — M2 review tool
 # Lists pending captures and lets the creator approve/reject explicitly.
 # NEVER auto-classifies. Each entry requires explicit action.
@@ -16,10 +16,10 @@
 
 set -uo pipefail
 
-PENDING="$HOME/.claude/memory/passive-captures-pending.jsonl"
-APPROVED="$HOME/.claude/memory/passive-captures-approved.jsonl"
-REJECTED="$HOME/.claude/memory/passive-captures-rejected.jsonl"
-LOCK="$HOME/.claude/memory/.passive-captures.lock"
+PENDING="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/passive-captures-pending.jsonl"
+APPROVED="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/passive-captures-approved.jsonl"
+REJECTED="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/passive-captures-rejected.jsonl"
+LOCK="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/.passive-captures.lock"
 
 mkdir -p "$(dirname "$PENDING")"
 touch "$PENDING" "$APPROVED" "$REJECTED"

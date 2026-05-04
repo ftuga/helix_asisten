@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # .claude/self-check.sh — Checklist pre-cierre de tarea de Helix
 # Stack-aware: detecta el tipo de proyecto y activa solo los checks relevantes
 set -uo pipefail
@@ -17,14 +17,14 @@ skip()    { echo -e "  \033[2m–  $1 (omitido)\033[0m"; }
 find_project_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]] && echo "$dir" && return 0
+    [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && echo "$dir" && return 0
     dir="$(dirname "$dir")"
   done
   return 1
 }
 
-GLOBAL_MEMORY_DIR="$HOME/.claude/memory"
-GLOBAL_SKILLS_DIR="$HOME/.claude/skills"
+GLOBAL_MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
+GLOBAL_SKILLS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
 PROJECT_ROOT=""
 
 if PROJECT_ROOT=$(find_project_root 2>/dev/null); then
@@ -273,7 +273,7 @@ TODAY_LEARNS="${TODAY_LEARNS//[[:space:]]/}"; TODAY_LEARNS="${TODAY_LEARNS:-0}"
 SKILL_COUNT=$(find "$GLOBAL_SKILLS_DIR" -name "SKILL.md" 2>/dev/null | wc -l | tr -d '[:space:]')
 check "${SKILL_COUNT:-0} skill(s) disponibles"
 
-LINES=$(wc -l < "$HOME/.claude/CLAUDE.md" | tr -d '[:space:]')
+LINES=$(wc -l < "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md" | tr -d '[:space:]')
 if [[ "$LINES" -gt 450 ]]; then
   fail "CLAUDE.md en $LINES líneas — revisar secciones archivables"
 elif [[ "$LINES" -gt 350 ]]; then

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-read-staleness-hook.sh — PreToolUse(Read):
 # Advierte si un helix-*.md de memoria esta desactualizado vs git log.
 # NUNCA bloquea (exit 0 siempre). Solo emite warning a stderr.
@@ -56,7 +56,7 @@ print(data.get('tool_input',{}).get('file_path',''))
 # Invocar staleness con timeout de 3s para no bloquear
 # Capturar stdout en archivo temporal para poder leer exit code correctamente
 _STALE_TMP=$(mktemp 2>/dev/null || echo "/tmp/helix-stale-$$")
-timeout 3 bash "$HOME/.claude/helpers/helix-staleness.sh" "$FILE_PATH" > "$_STALE_TMP" 2>/dev/null
+timeout 3 bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-staleness.sh" "$FILE_PATH" > "$_STALE_TMP" 2>/dev/null
 STALE_EXIT=$?
 STALE_OUT=$(cat "$_STALE_TMP" 2>/dev/null || echo "")
 rm -f "$_STALE_TMP"

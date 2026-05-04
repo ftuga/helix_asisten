@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # ============================================================
 # .claude/evolve.sh — Orquestador de Auto-Evolución
 # Uso:
@@ -31,9 +31,9 @@ info() { echo -e "${BLUE}[EVOLVE]${NC} $1"; }
 err()  { echo -e "${RED}[EVOLVE ERROR]${NC} $1"; }
 
 # ── Rutas globales (siempre disponibles) ─────────────────────
-GLOBAL_CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-GLOBAL_MEMORY_DIR="$HOME/.claude/memory"
-GLOBAL_SKILLS_DIR="$HOME/.claude/skills"
+GLOBAL_CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+GLOBAL_MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
+GLOBAL_SKILLS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
 
 mkdir -p "$GLOBAL_MEMORY_DIR" "$GLOBAL_SKILLS_DIR"
 
@@ -43,7 +43,7 @@ find_project_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
     # No contar el CLAUDE.md global como raíz de proyecto
-    if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]]; then
+    if [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]]; then
       echo "$dir"
       return 0
     fi

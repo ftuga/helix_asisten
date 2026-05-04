@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-lang-state.sh — Gestión de snapshots de estado para S:hash
 # El corazón del ahorro real de HELIX-LANG: contexto por referencia, no por re-envío.
 #
@@ -12,8 +12,8 @@
 #   gc [--days N]                     → elimina snapshots > N días (default 7)
 set -uo pipefail
 
-STATES_DIR="$HOME/.claude/data/helix-states"
-BENCH_LOG="$HOME/.claude/data/helix-lang.jsonl"
+STATES_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/data/helix-states"
+BENCH_LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/data/helix-lang.jsonl"
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BOLD='\033[1m'; GRAY='\033[0;37m'; CYAN='\033[0;36m'; NC='\033[0m'
 
 mkdir -p "$STATES_DIR"

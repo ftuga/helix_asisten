@@ -14,7 +14,7 @@
 
 set -uo pipefail
 
-readonly CACHE="${HOME}/.claude/cache/capa0-bench.json"
+readonly CACHE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/cache/capa0-bench.json"
 readonly CACHE_TTL=$((7 * 86400))   # 7 días — re-bench semanal
 readonly TEST_PROMPT="say only OK"
 readonly TIMEOUT_SEC=35

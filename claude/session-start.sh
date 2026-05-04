@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Auto-detect Python binary on first run (handles Windows where `python3` is the MS Store stub)
-if [[ ! -f "$HOME/.claude/helix-python.conf" && -x "$HOME/.claude/helpers/helix-python-detect.sh" ]]; then
-    bash "$HOME/.claude/helpers/helix-python-detect.sh" >/dev/null 2>&1 || true
+if [[ ! -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" && -x "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-python-detect.sh" ]]; then
+    bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-python-detect.sh" >/dev/null 2>&1 || true
 fi
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # .claude/session-start.sh — Ejecutar al inicio de cada sesión
 # Auto-detecta proyecto, carga contexto global + proyecto
 set -euo pipefail
@@ -11,15 +11,15 @@ set -euo pipefail
 DATE=$(date '+%Y-%m-%d %H:%M')
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-GLOBAL_CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-GLOBAL_MEMORY_DIR="$HOME/.claude/memory"
-GLOBAL_SKILLS_DIR="$HOME/.claude/skills"
+GLOBAL_CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+GLOBAL_MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
+GLOBAL_SKILLS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
 
 # ── Auto-detección de raíz del proyecto ──────────────────────
 find_project_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]]; then
+    if [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]]; then
       echo "$dir"
       return 0
     fi
@@ -91,7 +91,7 @@ fi
 # ── Última evolución (desde global) ──────────────────────────
 LAST=$("${HELIX_PYTHON:-python3}" -c "
 import re
-with open('$HOME/.claude/CLAUDE.md') as f:
+with open('${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md') as f:
     content = f.read()
 m = re.search(r'<!-- LAST_EVOLUTION -->(.*?)<!-- /LAST_EVOLUTION -->', content)
 print(m.group(1) if m else 'No registrada')
@@ -100,7 +100,7 @@ echo -e "${GREEN}🕐 Última evolución:${NC} $LAST"
 echo ""
 
 # ── Health-check silencioso — alerta solo si hay problemas ───
-HEALTH_RESULT=$(bash "$HOME/.claude/health-check.sh" 2>&1 | tail -3)
+HEALTH_RESULT=$(bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/health-check.sh" 2>&1 | tail -3)
 if echo "$HEALTH_RESULT" | grep -q "❌"; then
   echo -e "${RED}⚠️  ALERTA: Ecosistema con problemas críticos — ejecutar: bash ~/.claude/health-check.sh${NC}"
   echo ""
@@ -336,7 +336,7 @@ fi
 
 # ── Recuperación proactiva de Qdrant ─────────────────────────
 if [[ -n "$PROJECT_ROOT" ]]; then
-  REFLEXION_SCRIPT="$HOME/.claude/helpers/helix-reflexion.sh"
+  REFLEXION_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-reflexion.sh"
   if [[ -f "$REFLEXION_SCRIPT" ]] && curl -sf "http://localhost:6333/healthz" &>/dev/null; then
     # Construir query desde nombre del proyecto + stack detectado
     PROJECT_NAME=$(basename "$PROJECT_ROOT")
@@ -357,7 +357,7 @@ fi
 
 # ── Detección de memoria stale vs git log ────────────────────
 if [[ -n "$PROJECT_ROOT" && -d "$PROJECT_ROOT/.git" ]]; then
-  STALENESS_SCRIPT="$HOME/.claude/helpers/helix-staleness.sh"
+  STALENESS_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-staleness.sh"
   STALE_FOUND=false
   STALE_MSGS=()
   if [[ -f "$STALENESS_SCRIPT" ]]; then
@@ -383,7 +383,7 @@ fi
 # ── Detectar snapshot conversacional reciente (HELIX-SUGGEST-RESUME) ─
 SNAPSHOT_PROJECT="${PROJECT_ROOT:+$(basename "$PROJECT_ROOT")}"
 SNAPSHOT_PROJECT="${SNAPSHOT_PROJECT:-global}"
-SNAPSHOT_DIR="$HOME/.claude/snapshots/$SNAPSHOT_PROJECT"
+SNAPSHOT_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/snapshots/$SNAPSHOT_PROJECT"
 if [[ -d "$SNAPSHOT_DIR" ]]; then
   LATEST_SNAPSHOT=$(ls -t "$SNAPSHOT_DIR"/*.yaml 2>/dev/null | head -1)
   if [[ -n "$LATEST_SNAPSHOT" ]]; then
@@ -405,7 +405,7 @@ fi
 echo -e "${GREEN}✅ Contexto cargado. Listo para trabajar.${NC}"
 echo ""
 # ── Vector memory sync (silencioso) ──────────────────────────
-HV_SCRIPT="$HOME/.claude/hv.sh"
+HV_SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hv.sh"
 if [[ -f "$HV_SCRIPT" ]]; then
   if curl -sf "http://localhost:6333/healthz" &>/dev/null; then
     bash "$HV_SCRIPT" sync &>/dev/null &

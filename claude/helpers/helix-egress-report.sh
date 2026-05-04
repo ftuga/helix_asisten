@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-egress-report.sh — SEC2 monthly report
 # Aggregates ~/.claude/memory/egress-audit.jsonl into a markdown summary.
 # Default scope: current calendar month (UTC). Overridable via --month YYYY-MM.
@@ -15,7 +15,7 @@
 
 set -uo pipefail
 
-LOG="$HOME/.claude/memory/egress-audit.jsonl"
+LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/egress-audit.jsonl"
 [[ ! -s "$LOG" ]] && { echo "(no egress audit log: $LOG)"; exit 0; }
 
 MONTH=$(date -u '+%Y-%m')

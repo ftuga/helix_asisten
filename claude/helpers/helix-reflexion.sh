@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-reflexion.sh — Memoria semántica de errores y resoluciones (Reflexion pattern)
 # Almacena patrones de error resueltos en Qdrant y los recupera por similitud
 #
@@ -11,7 +11,7 @@
 # Colección Qdrant: helix_reflexions
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 HV="$GLOBAL_DIR/helix-vector.py"
 QDRANT_URL="${QDRANT_URL:-http://localhost:6333}"
 REFLEXIONS_LOG="$GLOBAL_DIR/memory/reflexions.jsonl"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-bitacora-hook.sh — Registrar cambios significativos en bitácora
 # Disparado por PostToolUse(Write|Edit|MultiEdit)
 # Recibe JSON en stdin. Siempre exit 0 — nunca bloquea a Helix.
@@ -38,7 +38,7 @@ find_project_root() {
   local dir
   dir=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
   while [[ "$dir" != "/" ]]; do
-    [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]] && echo "$dir" && return 0
+    [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && echo "$dir" && return 0
     dir=$(dirname "$dir")
   done
   # Fallback: usar PWD

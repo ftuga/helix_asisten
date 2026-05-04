@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-lang-trigger-hook.sh — PreToolUse(Agent): advierte cuando prompt >500 tokens sin HELIX-LANG
 # Objetivo Helix: maximizar contexto, reducir costos. Output NO se cachea → comprimirlo es ahorro real.
 # No bloqueante (exit 0 + stderr). Cementa el hábito sin requerir que el usuario recuerde.

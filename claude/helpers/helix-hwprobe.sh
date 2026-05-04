@@ -12,7 +12,7 @@
 
 set -uo pipefail
 
-readonly PROFILE="${HOME}/.claude/hw-profile.json"
+readonly PROFILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hw-profile.json"
 QUIET=0
 PRINT_TIER_ONLY=0
 

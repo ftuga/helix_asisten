@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # scope-guard.sh — Guardia de scope para Helix
 # Disparado por PreToolUse(Write|Edit|MultiEdit)
 # Avisa cuando se edita un archivo fuera del proyecto activo.
@@ -23,7 +23,7 @@ except:
 [[ -z "$FILE_PATH" ]] && exit 0
 
 # ── Siempre permitido ─────────────────────────────────────────
-HOME_CLAUDE="$HOME/.claude"
+HOME_CLAUDE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 HELIX_REPO="$HOME/helix_asisten"
 
 is_always_allowed() {

@@ -8,7 +8,7 @@
 
 set -uo pipefail
 
-readonly PROFILE="${HOME}/.claude/hw-profile.json"
+readonly PROFILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hw-profile.json"
 
 # Catálogo de modelos con requisitos típicos
 # Format: nombre|tamaño_aprox|RAM_min_GB|VRAM_min_GB|latencia_típica|propósito
@@ -27,7 +27,7 @@ readonly MODELS_DB=(
 )
 
 if [[ ! -f "$PROFILE" ]]; then
-    bash "${HOME}/.claude/helpers/helix-hwprobe.sh" --quiet
+    bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-hwprobe.sh" --quiet
 fi
 
 # Parse profile

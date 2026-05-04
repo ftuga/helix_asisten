@@ -21,7 +21,7 @@ set -uo pipefail
 # ─────────────────────────────────────────────────────────────
 # Constantes
 # ─────────────────────────────────────────────────────────────
-readonly HELIX_DIR="${HOME}/.claude"
+readonly HELIX_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 readonly CACHE_DIR="${HELIX_DIR}/cache"
 readonly CACHE_TTL=30          # segundos
 readonly HSL_LAYERS=6          # constante mientras HSL v1 esté activo

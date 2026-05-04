@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # secrets-scanner-hook.sh — PreToolUse(Write|Edit|MultiEdit|Bash):
 # Detecta secretos antes de escribir a disco. Exit 2 bloquea.
 # Regex: AWS, GCP, GitHub tokens, JWT largos, SSH privados, .env values comunes.

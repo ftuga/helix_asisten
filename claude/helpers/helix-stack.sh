@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-stack.sh - Stack manifest manager para proyectos Helix
 # Subcomandos: detect | init [mode] | show | add <agent> | remove <agent> | promote <agent>
 # Diseño: ~/.claude/memory/topics/stack-manifest.md
@@ -8,8 +8,8 @@ set -euo pipefail
 
 PROJECT="${PROJECT_ROOT:-$PWD}"
 STACK_FILE="$PROJECT/.claude/memory/helix-stack.md"
-CATALOGS="$HOME/.claude/memory/topics/stack-catalogs.md"
-AGENTS_DIR="$HOME/.claude/agents"
+CATALOGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/topics/stack-catalogs.md"
+AGENTS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents"
 
 ts() { date '+%Y-%m-%d'; }
 
@@ -25,8 +25,8 @@ cmd_detect() {
     local stack_json
 
     # 1. Stack base via detector existente (lenguaje/framework)
-    if [[ -x "$HOME/.claude/helpers/helix-detect-stack.sh" ]]; then
-        stack_json=$(bash "$HOME/.claude/helpers/helix-detect-stack.sh" "$PROJECT" 2>/dev/null || echo '{}')
+    if [[ -x "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-detect-stack.sh" ]]; then
+        stack_json=$(bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-detect-stack.sh" "$PROJECT" 2>/dev/null || echo '{}')
     else
         stack_json='{}'
     fi

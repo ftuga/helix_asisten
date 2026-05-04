@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-retrospectiva.sh — Análisis automático al cierre de sesión
 # Detecta aprendizajes no registrados, patrones de uso, gaps y genera reflexiones
 # Uso: bash helix-retrospectiva.sh "<resumen_sesion>" [PROJECT_ROOT]
@@ -7,7 +7,7 @@ set -uo pipefail
 
 RESUMEN="${1:-}"
 PROJECT="${2:-}"
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 MEMORY_DIR="$GLOBAL_DIR/memory"
 
 # ── 1. ERL + ExpeL: actualizar heurísticas de routing ────────

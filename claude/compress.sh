@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # .claude/compress.sh — Compresión de memoria de Helix
 # Mantiene CLAUDE.md liviano archivando historial a ~/.claude/memory/topics/
 # Uso: bash ~/.claude/compress.sh [--dry-run]
 set -euo pipefail
 
-GLOBAL_CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-TOPICS_DIR="$HOME/.claude/memory/topics"
-SCRIPT="$HOME/.claude/compress_logic.py"
+GLOBAL_CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+TOPICS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/topics"
+SCRIPT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/compress_logic.py"
 GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 
 mkdir -p "$TOPICS_DIR"
@@ -18,7 +18,7 @@ DRY_RUN=false
 find_project_root() {
   local dir="$PWD"
   while [[ "$dir" != "/" ]]; do
-    [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME/.claude" ]] && echo "$dir" && return 0
+    [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && echo "$dir" && return 0
     dir="$(dirname "$dir")"
   done
   return 1

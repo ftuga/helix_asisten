@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # network-egress-hook.sh — PreToolUse(Bash):
 # Bloquea curl|wget|nc|ssh|scp a dominios fuera del allowlist.
 # Allowlist: ~/.claude/config/network-allowlist.txt (un dominio por línea, # para comentarios)
@@ -9,7 +9,7 @@ set -uo pipefail
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0
 
-ALLOWLIST="$HOME/.claude/config/network-allowlist.txt"
+ALLOWLIST="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/config/network-allowlist.txt"
 mkdir -p "$(dirname "$ALLOWLIST")"
 
 # Seed default allowlist si no existe

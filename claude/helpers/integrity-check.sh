@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # integrity-check.sh — Verifica que hooks/settings/CLAUDE.md no fueron alterados sin autorización.
 # Mantiene manifest en ~/.claude/data/integrity-manifest.json
 # Uso:
@@ -8,7 +8,7 @@
 #   bash integrity-check.sh init      — crea manifest por primera vez
 set -uo pipefail
 
-MANIFEST="$HOME/.claude/data/integrity-manifest.json"
+MANIFEST="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/data/integrity-manifest.json"
 mkdir -p "$(dirname "$MANIFEST")"
 
 cmd="${1:-verify}"

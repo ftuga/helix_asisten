@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-cache-metrics.sh — Mide cache-hit rate del prompt cache de Anthropic.
 # Lee logs de Claude Code (~/.claude/projects/*/*.jsonl) y calcula ratios.
 # Uso: bash helix-cache-metrics.sh [--last-n 100] [--project <name>]

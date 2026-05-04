@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-swarm-panel.sh v2.0 — Barra de estado inferior para Helix
 # Layout: ancho completo, ~7 líneas. Ejecutado via: watch -n 2 -t '...'
 # Secciones: costo · tool calls · top routing agent · última evolución
@@ -13,7 +13,7 @@ NC='\033[0m'
 
 DATE=$(date '+%H:%M:%S')
 DAY=$(date '+%a %d %b')
-MEMORY_DIR="$HOME/.claude/memory"
+MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 FEEDBACK_FILE="$MEMORY_DIR/routing-feedback.jsonl"
 COLS=$(tput cols 2>/dev/null || echo 100)
 

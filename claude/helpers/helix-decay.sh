@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-decay.sh — Confidence decay para evolution-log entries
 # Calcula score de vigencia 0-100 para cada aprendizaje registrado
 # Factores: recencia, confirmaciones, importancia del patrón, tipo de entrada
@@ -10,7 +10,7 @@
 #   bash helix-decay.sh --prune      → marca candidatos a deprecar en obsolete.md
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 MEMORY_DIR="$GLOBAL_DIR/memory"
 EVO_LOG="$MEMORY_DIR/evolution-log.txt"
 DECAY_FILE="$MEMORY_DIR/decay-scores.json"

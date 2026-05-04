@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-longmemeval.sh — Probe de recall para helix_reflexions (Qdrant).
 # Inspirado en LongMemEval: mide precision@k, MRR y recall de memoria semántica.
 # Uso:
@@ -8,7 +8,7 @@
 #   helix-longmemeval.sh compare <thr1> <thr2>  — A/B de 2 thresholds
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 HV="$GLOBAL_DIR/helix-vector.py"
 QDRANT_URL="${QDRANT_URL:-http://localhost:6333}"
 DATASET="$GLOBAL_DIR/data/longmemeval-dataset.jsonl"

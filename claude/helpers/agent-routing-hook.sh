@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # agent-routing-hook.sh — PostToolUse(Agent): captura routing automáticamente
 # Recibe JSON por stdin: { tool_input, tool_response, tool_name, cwd, ... }
 set -uo pipefail
 
-FEEDBACK="$HOME/.claude/memory/routing-feedback.jsonl"
-mkdir -p "$HOME/.claude/memory"
+FEEDBACK="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-feedback.jsonl"
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 
 # Leer payload de stdin (bash lo consume aquí, se pasa a python via env)
 PAYLOAD=$(cat)

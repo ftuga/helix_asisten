@@ -4,12 +4,12 @@
 # Excludes detector + this patcher. Manual cases printed at end.
 set -uo pipefail
 
-CLAUDE_DIR="$HOME/.claude"
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 BACKUP_TAG=".pybak"
-SOURCE_LINE='[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"'
+SOURCE_LINE='[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"'
 SENTINEL='helix-python.conf'
 
-source "$HOME/.claude/helix-python.conf" 2>/dev/null || true
+source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" 2>/dev/null || true
 PY="${HELIX_PYTHON:-python3}"
 
 MANUAL_CASES=(

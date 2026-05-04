@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-distill.sh — HELIX-COMPRESS: Compresión de contexto adaptativa
 # Tres targets: CLAUDE.md por agente, archivos de proyecto, archivos de código.
 #
@@ -13,9 +13,9 @@
 #   clean                             → elimina slices generados
 set -uo pipefail
 
-CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-DISTILLED_DIR="$HOME/.claude/skills/_distilled"
-DATA_FILE="$HOME/.claude/data/distill-meta.json"
+CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+DISTILLED_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/_distilled"
+DATA_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/data/distill-meta.json"
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'
 BOLD='\033[1m'; GRAY='\033[0;37m'; RED='\033[0;31m'; CYAN='\033[0;36m'; NC='\033[0m'
 

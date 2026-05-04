@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-erl.sh — Experiential Reflective Learning
 # Analiza routing-feedback.jsonl y extrae heurísticas reutilizables
 # Uso: bash helix-erl.sh [--min-samples N] [--force]
@@ -7,7 +7,7 @@
 set -uo pipefail
 
 MIN_SAMPLES="${1:-2}"
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 FEEDBACK_FILE="$GLOBAL_DIR/memory/routing-feedback.jsonl"
 HEURISTICS_FILE="$GLOBAL_DIR/memory/routing-heuristics.md"
 TOPICS_DIR="$GLOBAL_DIR/memory/topics"

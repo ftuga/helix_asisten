@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-claude-md-prune.sh — Auto-archiva evoluciones >14d cuando CLAUDE.md > umbral
 # Idempotente. Diseñado para correr en cron, session-start o post-evolve.
 # Uso: bash helix-claude-md-prune.sh [--dry-run] [--threshold N]
 
 set -euo pipefail
 
-CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-HISTORY="$HOME/.claude/memory/topics/evolution-history.md"
+CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+HISTORY="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/topics/evolution-history.md"
 THRESHOLD=340     # si >= esto, podar
 DAYS_KEEP=14      # días a mantener en CLAUDE.md
 DRY_RUN=false

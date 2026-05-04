@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # evolve-flush.sh — Procesa la cola de evoluciones al final de cada turno (Stop hook)
 # No falla aunque la cola esté vacía o haya errores individuales.
 set -uo pipefail
 
-QUEUE="$HOME/.claude/memory/evolve-queue.jsonl"
+QUEUE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/evolve-queue.jsonl"
 
 [[ -f "$QUEUE" ]] || exit 0
 [[ -s "$QUEUE" ]] || exit 0
@@ -49,7 +49,7 @@ except:
 
   [[ -z "$APRENDIZAJE" ]] && continue
 
-  if bash "$HOME/.claude/evolve.sh" learn "$CAT" "$APRENDIZAJE" "$TRIGGER" 2>/dev/null; then
+  if bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/evolve.sh" learn "$CAT" "$APRENDIZAJE" "$TRIGGER" 2>/dev/null; then
     processed=$((processed + 1))
   else
     failed=$((failed + 1))
@@ -62,5 +62,5 @@ rm -f "$TMP"
 
 if [[ "$processed" -gt 0 ]]; then
   echo "[evolve-flush] ✅ $processed evoluciones registradas automáticamente" \
-    >> "$HOME/.claude/memory/evolution-log.txt"
+    >> "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/evolution-log.txt"
 fi

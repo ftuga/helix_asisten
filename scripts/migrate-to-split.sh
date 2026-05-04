@@ -151,23 +151,48 @@ for c in "${HELIX_COMPONENTS[@]}"; do
   fi
 done
 
-# Post-migration fixup: settings.json puede tener paths $HOME/.claude/ hardcoded
-# (instalaciones previas a v3.16). Convertir a ${CLAUDE_CONFIG_DIR:-$HOME/.claude}
-# para que los hooks resuelvan al dir nuevo (~/.helix/).
+# Post-migration fixup: settings.json y helpers/*.sh pueden tener paths
+# $HOME/.claude/ hardcoded (instalaciones previas a v3.16). Convertir a
+# ${CLAUDE_CONFIG_DIR:-$HOME/.claude} para que apunten a ~/.helix/ en runtime.
 echo ""
-echo "→ Fixup paths en settings.json..."
-if [[ -f "$HELIX_DIR/settings.json" ]] && grep -q '\$HOME/\.claude' "$HELIX_DIR/settings.json" 2>/dev/null; then
+echo "→ Fixup paths $HOME/.claude → \${CLAUDE_CONFIG_DIR:-\$HOME/.claude}..."
+
+_hxc_fixup_file() {
+  local f="$1"
+  [[ -f "$f" ]] || return
+  grep -q 'HOME/\.claude\|HOME}/\.claude' "$f" 2>/dev/null || return
+  sed -i \
+    -e 's|\${HOME}/\.claude|__HXC_DIR__|g' \
+    -e 's|\$HOME/\.claude|__HXC_DIR__|g' \
+    -e 's|__HXC_DIR__|${CLAUDE_CONFIG_DIR:-$HOME/.claude}|g' \
+    "$f"
+}
+
+# settings.json (con validación JSON)
+if [[ -f "$HELIX_DIR/settings.json" ]] && grep -q 'HOME/\.claude\|HOME}/\.claude' "$HELIX_DIR/settings.json" 2>/dev/null; then
   cp "$HELIX_DIR/settings.json" "$HELIX_DIR/settings.json.bak-pre-split"
-  sed -i 's|\$HOME/\.claude|${CLAUDE_CONFIG_DIR:-$HOME/.claude}|g' "$HELIX_DIR/settings.json"
+  _hxc_fixup_file "$HELIX_DIR/settings.json"
   if python3 -c "import json; json.load(open('$HELIX_DIR/settings.json'))" 2>/dev/null; then
-    echo -e "  ${C_GREEN}✓ paths actualizados (backup en settings.json.bak-pre-split)${C_RESET}"
+    echo -e "  ${C_GREEN}✓ settings.json actualizado (backup en settings.json.bak-pre-split)${C_RESET}"
   else
-    echo -e "  ${C_RED}[!] settings.json quedó inválido tras el fixup. Restaurando backup...${C_RESET}"
+    echo -e "  ${C_RED}[!] settings.json quedó inválido. Restaurando backup...${C_RESET}"
     mv "$HELIX_DIR/settings.json.bak-pre-split" "$HELIX_DIR/settings.json"
     exit 3
   fi
+fi
+
+# Scripts shell + python (no requieren validación, sintaxis igual)
+SCRIPT_FIXED=0
+while IFS= read -r f; do
+  _hxc_fixup_file "$f"
+  ((SCRIPT_FIXED++))
+done < <(find "$HELIX_DIR" -type f \( -name "*.sh" -o -name "*.py" \) 2>/dev/null \
+         | xargs grep -l 'HOME/\.claude\|HOME}/\.claude' 2>/dev/null)
+
+if [[ $SCRIPT_FIXED -gt 0 ]]; then
+  echo -e "  ${C_GREEN}✓ $SCRIPT_FIXED helpers/scripts actualizados${C_RESET}"
 else
-  echo -e "  ${C_DIM}(settings.json ya usa CLAUDE_CONFIG_DIR o no existe — skip)${C_RESET}"
+  echo -e "  ${C_DIM}(scripts ya usan CLAUDE_CONFIG_DIR — skip)${C_RESET}"
 fi
 
 # Verificación post-migración

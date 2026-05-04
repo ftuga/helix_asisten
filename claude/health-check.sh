@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # .claude/health-check.sh — Diagnóstico de integridad del ecosistema Helix
 # Verifica scripts, archivos, markers y estructura de memoria
 # Uso: bash ~/.claude/health-check.sh
@@ -13,7 +13,7 @@ warn()    { echo -e "  ${YELLOW}⚠️ ${NC} $1"; WARN=$((WARN + 1)); }
 fail()    { echo -e "  ${RED}❌${NC} $1"; FAIL=$((FAIL + 1)); }
 section() { echo -e "\n${BLUE}▶ $1${NC}"; }
 
-CLAUDE_HOME="$HOME/.claude"
+CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 GLOBAL_MD="$CLAUDE_HOME/CLAUDE.md"
 MEMORY_DIR="$CLAUDE_HOME/memory"
 SKILLS_DIR="$CLAUDE_HOME/skills"

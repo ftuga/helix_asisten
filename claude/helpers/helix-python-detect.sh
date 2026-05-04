@@ -4,7 +4,7 @@
 # Persists to ~/.claude/helix-python.conf as `export HELIX_PYTHON=<cmd>`.
 set -uo pipefail
 
-CONF="$HOME/.claude/helix-python.conf"
+CONF="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 
 is_real_python() {
     local cmd="$1"

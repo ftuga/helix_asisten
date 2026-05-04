@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # mcp-tracker-hook.sh — PostToolUse(mcp__.*): registra uso real de MCPs
 # Extrae el nombre del servicio MCP desde tool_name: mcp__context7__... → context7
 set -uo pipefail
 
-USAGE_LOG="$HOME/.claude/memory/skill-usage.jsonl"
-mkdir -p "$HOME/.claude/memory"
+USAGE_LOG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/skill-usage.jsonl"
+mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 
 PAYLOAD=$(cat)
 [[ -z "$PAYLOAD" ]] && exit 0

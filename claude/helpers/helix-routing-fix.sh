@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -f "$HOME/.claude/helix-python.conf" ]] && source "$HOME/.claude/helix-python.conf"
+[[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # helix-routing-fix.sh — Auto-corrección del catálogo de agentes desde ERL+ExpeL
 # Lee routing-heuristics.md, detecta mismatches, propone y aplica correcciones
 # a agents-index.md
@@ -9,7 +9,7 @@
 #   bash helix-routing-fix.sh --apply   → aplica correcciones confirmadas
 set -uo pipefail
 
-GLOBAL_DIR="$HOME/.claude"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 HEURISTICS_FILE="$GLOBAL_DIR/memory/routing-heuristics.md"
 AGENTS_INDEX="$GLOBAL_DIR/memory/agents-index.md"
 APPLY="${1:---dry-run}"
