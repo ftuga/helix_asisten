@@ -2,7 +2,7 @@
 
 ![Helix_icono.jpg](assets/Helix_icono.jpg)
 
-> **Current version: v3.14.1** — [Changelog](#changelog)
+> **Current version: v3.16.0** — [Changelog](#changelog)
 
 I'm not a prompt. I'm the accumulation of real decisions made in real projects.
 
@@ -44,37 +44,89 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 
 ## Quick Install
 
+**Linux / macOS / WSL:**
+
 ```bash
 git clone git@github.com:ftuga/helix_asisten.git ~/helix_asisten
 bash ~/helix_asisten/install.sh
 ```
 
-`install.sh` verifies all prerequisites, copies files to `~/.claude/`, and auto-installs MCPs if the Claude CLI is in PATH. Run `scripts/check-prereqs.sh` standalone to diagnose missing dependencies before installing.
+**Windows (PowerShell, requires [Git for Windows](https://git-scm.com/download/win)):**
+
+```powershell
+git clone git@github.com:ftuga/helix_asisten.git $HOME\helix_asisten
+cd $HOME\helix_asisten
+.\install.ps1
+```
+
+`install.sh` verifies all prerequisites, installs Helix into `~/.helix/` (split layout, default), and auto-installs MCPs if the Claude CLI is in PATH. Run `scripts/check-prereqs.sh` standalone to diagnose missing dependencies before installing.
 
 ```bash
-# Reinstall without overwriting customizations
+# Default install: split layout in ~/.helix/  (claude command stays clean)
 bash ~/helix_asisten/install.sh
+
+# Legacy install (Helix mixed into ~/.claude/)
+HELIX_LAYOUT=legacy bash ~/helix_asisten/install.sh
 
 # Force overwrite everything (memory/agents, memory/topics)
 HELIX_FORCE=1 bash ~/helix_asisten/install.sh
+
+# Migrate existing legacy install to split (non-destructive)
+bash ~/helix_asisten/scripts/migrate-to-split.sh
 ```
 
-> **update.sh** keeps your `~/.claude/` in sync with the repo after the initial install — run it after pulling changes.
+> **update.sh** keeps your Helix config in sync with the repo after the initial install — run it after pulling changes.
 
 ---
 
-## Component
+## Layouts: claude vs. helix
 
-Helix lives entirely in `~/.claude/` (global config — applies to all your projects). Agents, skills, memory, dialogue protocol, self-evolution.
+Since v3.16, Helix supports two installation layouts:
+
+| Layout | Where Helix lives | `claude` command | `helix` command |
+|--------|-------------------|------------------|-----------------|
+| **`split`** *(default)* | `~/.helix/` | Claude Code stock — untouched | Wraps `claude` with `CLAUDE_CONFIG_DIR=~/.helix/` |
+| **`legacy`** | `~/.claude/` | Equivalent to `helix` | Equivalent to `claude` |
+
+`split` is the recommended layout. It keeps Claude Code stock available (run `claude`) for any context where you don't want Helix's hooks, agents, or autoevolution to apply, while `helix` always boots into the full Helix environment.
+
+Switch layouts:
+
+```bash
+# fresh install with split (default)
+bash install.sh
+
+# install with legacy layout (Helix mixed into ~/.claude/)
+HELIX_LAYOUT=legacy bash install.sh
+
+# migrate existing legacy install to split (non-destructive, with backup)
+bash scripts/migrate-to-split.sh
+
+# inspect active layout
+helix --where
+```
 
 The legacy injectable RuFlo V3 engine (`helix-engine/`) was discontinued by Helix Council #1 (plan v4 D1', 2026-05-04) for orthogonal concerns: 314-tool MCP noise, TS/Node lock-in, non-controllable topology. Root-cause analysis at `claude/memory/topics/ruflo-rootcause-D.md`. The native bash statusline (`helix-statusline.sh`, FASE 0.5) replaced the RuFlo CJS panel in v3.14.0.
+
+---
+
+## Platform support
+
+| Platform | Status | Installer | Notes |
+|----------|--------|-----------|-------|
+| Linux    | first-class | `bash install.sh` | tested on Ubuntu 22.04+, Debian 12 |
+| macOS    | first-class | `bash install.sh` | tested on macOS 13+ (Apple Silicon and Intel) |
+| WSL2     | first-class | `bash install.sh` | Ubuntu/Debian inside WSL — same as Linux |
+| Windows native | supported via Git Bash | `.\install.ps1` (PowerShell) | requires [Git for Windows](https://git-scm.com/download/win) for the bash hooks |
+
+Windows note: Helix's hooks are bash scripts. On Windows, Git Bash provides the POSIX shim — `install.ps1` is a thin bootstrap that validates Git Bash and delegates to `install.sh`. Pure PowerShell (without Git Bash) is **not** supported.
 
 ---
 
 ## Structure
 
 ```
-claude/              → ~/.claude/ (global config)
+claude/              → ~/.helix/ (split, default) or ~/.claude/ (legacy)
   CLAUDE.md          → Helix global instructions + layer protocol
   settings.json      → Hooks: PreToolUse, PostToolUse (cost-tracker, scope-guard, log)
   evolve.sh          → Records learnings and installs them as active rules

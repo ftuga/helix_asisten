@@ -1,18 +1,49 @@
 #!/usr/bin/env bash
 # ============================================================
-# Helix — Script de instalación en nueva máquina
-# Uso: bash install.sh
+# Helix — Script de instalación
+#
+# Uso:
+#   bash install.sh                       # layout split (default v3.16+)
+#   HELIX_LAYOUT=legacy bash install.sh   # mezclado en ~/.claude/ (instalaciones previas)
+#   HELIX_LAYOUT=split  bash install.sh   # explícito split en ~/.helix/
+#
+# Layouts:
+#   split  — Helix vive en ~/.helix/. Claude Code stock queda intocado en ~/.claude/.
+#            Se invoca con `helix` (wrapper que setea CLAUDE_CONFIG_DIR).
+#   legacy — Helix se instala dentro de ~/.claude/. `claude` y `helix` son equivalentes.
 # ============================================================
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLAUDE_DIR="$HOME/.claude"
 TEMPLATE_DIR="$HOME/.claude-template"
 
-# Acumular warnings no críticos para mostrarlos al final
+# Resolver layout
+HELIX_LAYOUT="${HELIX_LAYOUT:-split}"
+case "$HELIX_LAYOUT" in
+  split)  CLAUDE_DIR="$HOME/.helix" ;;
+  legacy) CLAUDE_DIR="$HOME/.claude" ;;
+  *)      echo "❌ HELIX_LAYOUT debe ser 'split' o 'legacy' (recibido: '$HELIX_LAYOUT')"; exit 1 ;;
+esac
+
+# Si layout=split y existe instalación legacy en ~/.claude, advertir y ofrecer migrar
+if [[ "$HELIX_LAYOUT" == "split" ]] && [[ -f "$HOME/.claude/CLAUDE.md" ]] && grep -q "Helix" "$HOME/.claude/CLAUDE.md" 2>/dev/null && [[ ! -d "$HOME/.helix" ]]; then
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "⚠️  Detecté Helix instalado en ~/.claude/ (layout legacy)."
+  echo ""
+  echo "   Para migrar a layout split (Claude Code stock + Helix aislado):"
+  echo "     bash $REPO_DIR/scripts/migrate-to-split.sh"
+  echo ""
+  echo "   O instalar split en paralelo (no toca ~/.claude/):"
+  echo "     [Enter] continuar con HELIX_LAYOUT=split en ~/.helix/"
+  echo "     [c]    cancelar"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  read -r -p "> " _ans
+  [[ "${_ans,,}" == "c" ]] && exit 0
+fi
+
 INSTALL_WARNINGS=()
 
-echo "🔷 Instalando Helix en $HOME..."
+echo "🔷 Instalando Helix en $CLAUDE_DIR (layout=$HELIX_LAYOUT)..."
 
 # ── 0. Verificar prerequisitos ───────────────────────────────
 bash "$REPO_DIR/scripts/check-prereqs.sh" || exit 1
@@ -311,7 +342,17 @@ if [[ ${#INSTALL_WARNINGS[@]} -gt 0 ]]; then
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Helix instalado correctamente en $HOME"
-echo "   Reinicia Claude Code para aplicar los cambios."
+echo "✅ Helix instalado en $CLAUDE_DIR (layout=$HELIX_LAYOUT)"
+echo ""
+if [[ "$HELIX_LAYOUT" == "split" ]]; then
+  echo "   Cómo usarlo:"
+  echo "     helix              → arranca Claude Code con ambiente Helix (CLAUDE_CONFIG_DIR=$CLAUDE_DIR)"
+  echo "     claude             → arranca Claude Code stock (sin Helix, ~/.claude/ intacto)"
+  echo "     helix --where      → muestra qué layout está activo"
+  echo ""
+  echo "   El alias 'helix' fue agregado a ~/.bashrc / ~/.zshrc — abrí una nueva terminal."
+else
+  echo "   Reinicia Claude Code para aplicar los cambios. Layout legacy: 'claude' y 'helix' son equivalentes."
+fi
 echo ""
 echo "   Para reinstalar sobreescribiendo todo: HELIX_FORCE=1 bash install.sh"

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 # ============================================================
-# Helix — Sincronizar cambios de ~/.claude al repo
+# Helix — Sincronizar cambios del entorno Helix activo al repo
+#
+# Detecta layout automáticamente:
+#   - Si ~/.helix/CLAUDE.md existe → split layout (sync desde ~/.helix/)
+#   - Si no → legacy layout (sync desde ~/.claude/)
+#   - Override manual: HELIX_HOME=/path/to/dir bash update.sh
+#
 # Uso: bash update.sh          → solo sync (muestra diff al final)
 #      bash update.sh --push   → sync + commit + push automático
 # ============================================================
@@ -10,10 +16,21 @@ AUTO_PUSH=0
 [[ "${1:-}" == "--push" ]] && AUTO_PUSH=1
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLAUDE_DIR="$HOME/.claude"
 TEMPLATE_DIR="$HOME/.claude-template"
 
-echo "🔄 Sincronizando ~/.claude → $REPO_DIR..."
+# Resolver source dir según layout
+if [[ -n "${HELIX_HOME:-}" ]] && [[ -d "$HELIX_HOME" ]]; then
+  CLAUDE_DIR="$HELIX_HOME"
+elif [[ -f "$HOME/.helix/CLAUDE.md" ]] && grep -q "Helix" "$HOME/.helix/CLAUDE.md" 2>/dev/null; then
+  CLAUDE_DIR="$HOME/.helix"
+elif [[ -f "$HOME/.claude/CLAUDE.md" ]] && grep -q "Helix" "$HOME/.claude/CLAUDE.md" 2>/dev/null; then
+  CLAUDE_DIR="$HOME/.claude"
+else
+  echo "❌ No detecté instalación Helix activa (ni ~/.helix/ ni ~/.claude/ tienen CLAUDE.md con Helix)."
+  exit 1
+fi
+
+echo "🔄 Sincronizando $CLAUDE_DIR → $REPO_DIR..."
 
 # Scripts y config
 for f in CLAUDE.md settings.json evolve.sh session-start.sh session-end.sh \
