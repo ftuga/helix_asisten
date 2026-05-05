@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 [[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
 # integrity-check.sh — Verifica que hooks/settings/CLAUDE.md no fueron alterados sin autorización.
-# Mantiene manifest en ~/.claude/data/integrity-manifest.json
+# Mantiene manifest en $HELIX_ROOT/data/integrity-manifest.json (split-layout aware).
 # Uso:
 #   bash integrity-check.sh verify    — compara estado actual vs manifest, alerta diffs
 #   bash integrity-check.sh update    — actualiza manifest con estado actual (después de evolución registrada)
@@ -9,8 +9,22 @@
 set -uo pipefail
 
 # Layout split (v3.16+): Helix vive en ~/.helix/. Legacy: en ~/.claude/.
-HELIX_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.helix}"
-[[ -d "$HELIX_ROOT" ]] || HELIX_ROOT="$HOME/.claude"  # fallback legacy
+# Reglas:
+#   - CLAUDE_CONFIG_DIR explícito → respetarlo. Si el dir no existe, error (no fallback silencioso).
+#   - ~/.helix/ existe → split layout.
+#   - Caso contrario → legacy ~/.claude/.
+if [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
+  HELIX_ROOT="$CLAUDE_CONFIG_DIR"
+  if [[ ! -d "$HELIX_ROOT" ]]; then
+    echo "❌ CLAUDE_CONFIG_DIR=$HELIX_ROOT pero el directorio no existe." >&2
+    echo "   Corrige la variable o crea el directorio antes de continuar." >&2
+    exit 2
+  fi
+elif [[ -d "$HOME/.helix" && -f "$HOME/.helix/CLAUDE.md" ]]; then
+  HELIX_ROOT="$HOME/.helix"
+else
+  HELIX_ROOT="$HOME/.claude"
+fi
 MANIFEST="$HELIX_ROOT/data/integrity-manifest.json"
 mkdir -p "$(dirname "$MANIFEST")"
 
@@ -81,6 +95,20 @@ if CMD == "verify":
     prev_files = prev.get("files", {})
     cur_files = cur["files"]
 
+    # Migración v3.16+ split: manifests anteriores guardaban claves relativas a HOME
+    # (ej: ".claude/helpers/foo.sh") o a un HELIX_ROOT distinto al actual. Compararlos
+    # contra claves nuevas (relativas a HELIX_ROOT, ej: "helpers/foo.sh") generaría
+    # un falso positivo masivo (todo "removed" + todo "added"). Detectar y rebaseliner.
+    prev_root = prev.get("root")
+    legacy_keys = any(k.startswith((".claude/", ".helix/")) for k in prev_files)
+    if legacy_keys or (prev_root and prev_root != str(HELIX_ROOT)):
+        print(f"{YELLOW}⚠️  Manifest desactualizado (formato pre-v3.16 o root distinto){NC}")
+        print(f"    Anterior: root={prev_root or 'legacy ~/.claude'}, claves estilo HOME-relative")
+        print(f"    Actual:   root={HELIX_ROOT}, claves relativas a HELIX_ROOT")
+        print(f"    → Regenerando baseline con el formato nuevo.")
+        MANIFEST.write_text(json.dumps(cur, indent=2))
+        sys.exit(0)
+
     changed, added, removed = [], [], []
     for path, info in cur_files.items():
         if path not in prev_files:
@@ -106,7 +134,7 @@ if CMD == "verify":
         print(f"{RED}  Eliminados ({len(removed)}):{NC}")
         for p in removed[:10]: print(f"    - {p}")
     print(f"\n  Si los cambios son legítimos (evolución tuya):")
-    print(f"    bash ~/.claude/helpers/integrity-check.sh update")
+    print(f"    bash {HELIX_ROOT}/helpers/integrity-check.sh update")
     print(f"  Si son sospechosos: revisar manualmente antes de continuar.")
     sys.exit(1 if (changed or removed or added) else 0)
 

@@ -13,9 +13,10 @@ warn()    { echo -e "  ${YELLOW}⚠️ ${NC} $1"; WARN=$((WARN + 1)); }
 fail()    { echo -e "  ${RED}❌${NC} $1"; FAIL=$((FAIL + 1)); }
 section() { echo -e "\n${BLUE}▶ $1${NC}"; }
 
-# Layout split (v3.16+): Helix en ~/.helix/, ~/.claude/ stock. Legacy: mezclado en ~/.claude/.
+# Layout split (v3.16+): Helix en ~/.helix/, ~/.claude/ queda intacto para Claude Code stock.
+# Garantía: la instalación de Helix NUNCA debe modificar archivos propios de Claude Code.
 if [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
-  CLAUDE_HOME="$CLAUDE_CONFIG_DIR"
+  CLAUDE_HOME="${CLAUDE_CONFIG_DIR%/}"
   HELIX_LAYOUT="$([[ "$CLAUDE_HOME" == */.helix ]] && echo split || echo custom)"
 elif [[ -d "$HOME/.helix" && -f "$HOME/.helix/CLAUDE.md" ]]; then
   CLAUDE_HOME="$HOME/.helix"
@@ -277,12 +278,36 @@ settings_path = os.environ['SETTINGS_PATH']
 
 def expand(p):
     p = re.sub(r'\$\{CLAUDE_CONFIG_DIR:-[^}]+\}', ccd, p)
+    p = p.replace('$CLAUDE_CONFIG_DIR', ccd).replace('${CLAUDE_CONFIG_DIR}', ccd)
     p = p.replace('$HOME', home).replace('${HOME}', home)
+    if p.startswith('~/'):
+        p = home + p[1:]
     return p
 
-def first_quoted_path(cmd):
+def extract_path(cmd):
+    """Extrae el path principal del comando.
+    Formato preferido (todos los hooks de Helix): bash "QUOTED_PATH" [args].
+    Fallback (commands sin comillas): tokenizar con shlex y devolver el primer
+    token que parezca path absoluto/expandible. Evita falsos negativos cuando
+    alguien añade un hook con sintaxis distinta."""
+    import shlex
     m = re.search(r'"([^"]+)"', cmd)
-    return expand(m.group(1)) if m else ''
+    if m:
+        return expand(m.group(1))
+    try:
+        tokens = shlex.split(cmd, posix=True)
+    except ValueError:
+        return ''
+    # Saltar el intérprete (bash/sh/python3) y devolver el primer token con pinta de path
+    skip = {'bash', 'sh', 'zsh', 'python', 'python3', 'node', 'env'}
+    for tok in tokens:
+        if tok in skip or tok.startswith('-'):
+            continue
+        expanded = expand(tok)
+        if expanded.startswith('/') or expanded.startswith(home):
+            return expanded
+        return ''  # primer token no-flag no parece path → salir
+    return ''
 
 try:
     s = json.load(open(settings_path))
@@ -294,7 +319,7 @@ sl_cmd = s.get('statusLine', {}).get('command', '')
 if not sl_cmd:
     print('STATUS|warn|statusLine no configurado en settings.json')
 else:
-    p = first_quoted_path(sl_cmd)
+    p = extract_path(sl_cmd)
     if os.access(p, os.X_OK):
         print(f'STATUS|ok|statusLine ejecutable: {os.path.basename(p)}')
     elif os.path.isfile(p):
@@ -307,7 +332,7 @@ def scan(node):
     if isinstance(node, dict):
         cmd = node.get('command', '')
         if cmd:
-            p = first_quoted_path(cmd)
+            p = extract_path(cmd)
             if p and not os.path.exists(p):
                 missing.append(p)
         for v in node.values(): scan(v)
