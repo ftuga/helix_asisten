@@ -8,29 +8,33 @@
 #   bash integrity-check.sh init      — crea manifest por primera vez
 set -uo pipefail
 
-MANIFEST="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/data/integrity-manifest.json"
+# Layout split (v3.16+): Helix vive en ~/.helix/. Legacy: en ~/.claude/.
+HELIX_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.helix}"
+[[ -d "$HELIX_ROOT" ]] || HELIX_ROOT="$HOME/.claude"  # fallback legacy
+MANIFEST="$HELIX_ROOT/data/integrity-manifest.json"
 mkdir -p "$(dirname "$MANIFEST")"
 
 cmd="${1:-verify}"
 
-HOOK_CMD="$cmd" HOOK_MANIFEST="$MANIFEST" "${HELIX_PYTHON:-python3}" <<'PYEOF'
+HOOK_CMD="$cmd" HOOK_MANIFEST="$MANIFEST" HELIX_ROOT="$HELIX_ROOT" "${HELIX_PYTHON:-python3}" <<'PYEOF'
 import os, json, hashlib, sys
 from datetime import datetime
 from pathlib import Path
 
 CMD = os.environ["HOOK_CMD"]
 MANIFEST = Path(os.environ["HOOK_MANIFEST"])
-HOME = Path.home()
+HELIX_ROOT = Path(os.environ["HELIX_ROOT"])
 
-# Archivos críticos a vigilar
+# Archivos críticos a vigilar (relativos a HELIX_ROOT, no hardcoded ~/.claude)
 TARGETS = [
-    HOME / ".claude/settings.json",
-    HOME / ".claude/CLAUDE.md",
+    HELIX_ROOT / "settings.json",
+    HELIX_ROOT / "CLAUDE.md",
 ]
-# Todos los hooks del directorio helpers
-HELPERS_DIR = HOME / ".claude/helpers"
-for p in sorted(HELPERS_DIR.glob("*.sh")):
-    TARGETS.append(p)
+# Hooks del directorio helpers (.sh, .cjs, .py — antes solo .sh)
+HELPERS_DIR = HELIX_ROOT / "helpers"
+for ext in ("*.sh", "*.cjs", "*.py"):
+    for p in sorted(HELPERS_DIR.glob(ext)):
+        TARGETS.append(p)
 
 def hash_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -45,8 +49,9 @@ def hash_file(path: Path) -> str:
 def snapshot() -> dict:
     return {
         "ts": datetime.now().isoformat(timespec="seconds"),
+        "root": str(HELIX_ROOT),
         "files": {
-            str(p.relative_to(HOME)): {
+            str(p.relative_to(HELIX_ROOT)): {
                 "sha256": hash_file(p),
                 "size": p.stat().st_size if p.exists() else 0,
                 "mtime": int(p.stat().st_mtime) if p.exists() else 0,
@@ -95,7 +100,7 @@ if CMD == "verify":
         print(f"{YELLOW}  Modificados ({len(changed)}):{NC}")
         for p in changed[:10]: print(f"    ~ {p}")
     if added:
-        print(f"{GREEN}  Añadidos ({len(added)}):{NC}")
+        print(f"{YELLOW}  Añadidos ({len(added)}) — revisar si esperabas estos archivos:{NC}")
         for p in added[:10]: print(f"    + {p}")
     if removed:
         print(f"{RED}  Eliminados ({len(removed)}):{NC}")
@@ -103,7 +108,7 @@ if CMD == "verify":
     print(f"\n  Si los cambios son legítimos (evolución tuya):")
     print(f"    bash ~/.claude/helpers/integrity-check.sh update")
     print(f"  Si son sospechosos: revisar manualmente antes de continuar.")
-    sys.exit(1 if changed or removed else 0)
+    sys.exit(1 if (changed or removed or added) else 0)
 
 print(f"Uso: {sys.argv[0] if len(sys.argv)>0 else 'integrity-check.sh'} verify|update|init")
 sys.exit(2)

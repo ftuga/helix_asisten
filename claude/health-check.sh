@@ -13,7 +13,17 @@ warn()    { echo -e "  ${YELLOW}⚠️ ${NC} $1"; WARN=$((WARN + 1)); }
 fail()    { echo -e "  ${RED}❌${NC} $1"; FAIL=$((FAIL + 1)); }
 section() { echo -e "\n${BLUE}▶ $1${NC}"; }
 
-CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# Layout split (v3.16+): Helix en ~/.helix/, ~/.claude/ stock. Legacy: mezclado en ~/.claude/.
+if [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
+  CLAUDE_HOME="$CLAUDE_CONFIG_DIR"
+  HELIX_LAYOUT="$([[ "$CLAUDE_HOME" == */.helix ]] && echo split || echo custom)"
+elif [[ -d "$HOME/.helix" && -f "$HOME/.helix/CLAUDE.md" ]]; then
+  CLAUDE_HOME="$HOME/.helix"
+  HELIX_LAYOUT="split"
+else
+  CLAUDE_HOME="$HOME/.claude"
+  HELIX_LAYOUT="legacy"
+fi
 GLOBAL_MD="$CLAUDE_HOME/CLAUDE.md"
 MEMORY_DIR="$CLAUDE_HOME/memory"
 SKILLS_DIR="$CLAUDE_HOME/skills"
@@ -233,6 +243,95 @@ elif total_tokens < threshold * 2:
 else:
     print(f"  \033[0;31m❌ Contexto crítico — comprimir urgente\033[0m")
 PYEOF
+
+# ════════════════════════════════════════════════════════════
+section "LAYOUT & STATUSLINE"
+# ════════════════════════════════════════════════════════════
+
+# Check 1: layout split correcto (v3.16+)
+case "$HELIX_LAYOUT" in
+  split)
+    ok "Layout split: Helix en $CLAUDE_HOME, ~/.claude/ es Claude Code stock"
+    for f in CLAUDE.md settings.json helpers agents skills memory commands evolve.sh; do
+      if [[ -e "$HOME/.claude/$f" ]]; then
+        warn "~/.claude/$f existe — residuo legacy, mover a ~/.helix/"
+      fi
+    done
+    ;;
+  legacy)
+    warn "Layout legacy: Helix en ~/.claude/ — recomendado migrar con scripts/migrate-to-split.sh"
+    ;;
+  custom)
+    ok "CLAUDE_CONFIG_DIR custom: $CLAUDE_HOME"
+    ;;
+esac
+
+# Check 2 + 3: statusLine y hooks de settings.json apuntan a archivos existentes
+SETTINGS="$CLAUDE_HOME/settings.json"
+if [[ -f "$SETTINGS" ]]; then
+  REPORT=$(SETTINGS_PATH="$SETTINGS" CLAUDE_HOME_VAR="$CLAUDE_HOME" "${HELIX_PYTHON:-python3}" <<'PYEOF'
+import json, re, os
+home = os.environ['HOME']
+ccd  = os.environ.get('CLAUDE_CONFIG_DIR') or os.environ['CLAUDE_HOME_VAR']
+settings_path = os.environ['SETTINGS_PATH']
+
+def expand(p):
+    p = re.sub(r'\$\{CLAUDE_CONFIG_DIR:-[^}]+\}', ccd, p)
+    p = p.replace('$HOME', home).replace('${HOME}', home)
+    return p
+
+def first_quoted_path(cmd):
+    m = re.search(r'"([^"]+)"', cmd)
+    return expand(m.group(1)) if m else ''
+
+try:
+    s = json.load(open(settings_path))
+except Exception as e:
+    print(f'STATUS|fail|settings.json no parseable: {e}')
+    raise SystemExit(0)
+
+sl_cmd = s.get('statusLine', {}).get('command', '')
+if not sl_cmd:
+    print('STATUS|warn|statusLine no configurado en settings.json')
+else:
+    p = first_quoted_path(sl_cmd)
+    if os.access(p, os.X_OK):
+        print(f'STATUS|ok|statusLine ejecutable: {os.path.basename(p)}')
+    elif os.path.isfile(p):
+        print(f'STATUS|warn|statusLine {p} existe pero no es ejecutable')
+    else:
+        print(f'STATUS|fail|statusLine apunta a {p} (NO EXISTE)')
+
+missing = []
+def scan(node):
+    if isinstance(node, dict):
+        cmd = node.get('command', '')
+        if cmd:
+            p = first_quoted_path(cmd)
+            if p and not os.path.exists(p):
+                missing.append(p)
+        for v in node.values(): scan(v)
+    elif isinstance(node, list):
+        for v in node: scan(v)
+scan(s.get('hooks', {}))
+if not missing:
+    print('HOOKS|ok|Todos los hooks de settings.json apuntan a archivos existentes')
+else:
+    for m in sorted(set(missing)):
+        print(f'HOOKS|fail|Hook missing: {m}')
+PYEOF
+)
+  while IFS='|' read -r kind level msg; do
+    [[ -z "$kind" ]] && continue
+    case "$level" in
+      ok)   ok "$msg" ;;
+      warn) warn "$msg" ;;
+      fail) fail "$msg" ;;
+    esac
+  done <<< "$REPORT"
+else
+  warn "settings.json no encontrado en $CLAUDE_HOME"
+fi
 
 # ════════════════════════════════════════════════════════════
 # RESULTADO FINAL
