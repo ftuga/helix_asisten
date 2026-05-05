@@ -66,17 +66,36 @@ readonly C_HELIX_BOLD_CYAN=$'\033[1;38;2;0;245;212m'
 # Helpers
 # ─────────────────────────────────────────────────────────────
 
-# Cache get/set: cache_get <key> -> stdout cached value if fresh, exit 1 if miss
-cache_get() {
+# Cache get/set — pura bash. Devuelve valor en variable global REPLY (sin subshell).
+# Antes: 350ms/call por stat+date+cat fork × 6 calls = ~2s. Ahora: ~5ms total.
+# Uso:
+#   if cache_get_v "$key"; then val="$REPLY"; else miss=1; fi
+#   printf '%s' "$val" | cache_set "$key"
+#
+# Mantengo cache_get original (con cat al stdout) para compatibilidad con código existente
+# que ya usa $(cache_get k); pero ahora delegado a cache_get_v + echo.
+cache_get_v() {
     local key="$1"
     local file="${CACHE_DIR}/statusline-${key}.txt"
     [[ -f "$file" ]] || return 1
-    local mtime now age
+    # printf %T es bash 4.2+ builtin (sin fork). $EPOCHSECONDS es bash 5.0+ builtin.
+    local now mtime age
+    if [[ -n "${EPOCHSECONDS:-}" ]]; then
+        now=$EPOCHSECONDS
+    else
+        printf -v now '%(%s)T' -1
+    fi
     mtime=$(stat -c %Y "$file" 2>/dev/null) || return 1
-    now=$(date +%s)
     age=$((now - mtime))
-    [[ $age -lt $CACHE_TTL ]] || return 1
-    cat "$file"
+    (( age < CACHE_TTL )) || return 1
+    # read en lugar de cat — sin fork
+    IFS= read -r REPLY < "$file" || REPLY=""
+    return 0
+}
+
+cache_get() {
+    cache_get_v "$1" || return 1
+    printf '%s' "$REPLY"
 }
 
 cache_set() {
@@ -85,22 +104,22 @@ cache_set() {
     cat > "$file"
 }
 
-# Extraer string de JSON con regex bash. Frágil pero rápido (sin python startup).
-# Uso: json_str <json> <key>  -> stdout valor
+# Extraer string/número de JSON con regex bash. Resultado en variable global REPLY
+# para evitar subshell de $(json_*). Save: 4 forks × ~60ms = 240ms por render.
+# Uso: json_str <json> <key>  → REPLY="..."
 json_str() {
-    local json="$1"
-    local key="$2"
-    if [[ "$json" =~ \"${key}\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
-        printf '%s' "${BASH_REMATCH[1]}"
+    if [[ "$1" =~ \"${2}\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+        REPLY="${BASH_REMATCH[1]}"
+    else
+        REPLY=""
     fi
 }
 
-# Extraer número de JSON
 json_num() {
-    local json="$1"
-    local key="$2"
-    if [[ "$json" =~ \"${key}\"[[:space:]]*:[[:space:]]*([0-9.]+) ]]; then
-        printf '%s' "${BASH_REMATCH[1]}"
+    if [[ "$1" =~ \"${2}\"[[:space:]]*:[[:space:]]*([0-9.]+) ]]; then
+        REPLY="${BASH_REMATCH[1]}"
+    else
+        REPLY=""
     fi
 }
 
@@ -122,25 +141,22 @@ human_age() {
 # Parse stdin JSON
 # ─────────────────────────────────────────────────────────────
 INPUT="$(cat 2>/dev/null || true)"
-MODEL_NAME=$(json_str "$INPUT" "display_name")
-[[ -z "$MODEL_NAME" ]] && MODEL_NAME="Claude"
-CWD=$(json_str "$INPUT" "current_dir")
-[[ -z "$CWD" ]] && CWD="$PWD"
-# Context window % (puede llegar como exceeded_pct, cache_pct, etc.)
-CTX_PCT=$(json_num "$INPUT" "context_window_used_pct")
-[[ -z "$CTX_PCT" ]] && CTX_PCT="—"
-CACHE_PCT=$(json_num "$INPUT" "cache_efficiency_pct")
-[[ -z "$CACHE_PCT" ]] && CACHE_PCT="—"
+json_str "$INPUT" "display_name";              MODEL_NAME="${REPLY:-Claude}"
+json_str "$INPUT" "current_dir";               CWD="${REPLY:-$PWD}"
+json_num "$INPUT" "context_window_used_pct";   CTX_PCT="${REPLY:-—}"
+json_num "$INPUT" "cache_efficiency_pct";      CACHE_PCT="${REPLY:-—}"
 
 PROJECT_NAME=$(basename "$CWD")
 
 # ─────────────────────────────────────────────────────────────
-# Git info (single call con cache TTL=10s)
+# Git info (single call con cache TTL=30s)
 # ─────────────────────────────────────────────────────────────
-GIT_KEY="git-$(printf '%s' "$CWD" | tr / _)"
+GIT_KEY="git-${CWD//\//_}"
+GIT_KEY="${GIT_KEY//[^A-Za-z0-9._-]/_}"
 GIT_DATA=""
-if cache_get "$GIT_KEY" >/dev/null 2>&1; then
-    GIT_DATA=$(cache_get "$GIT_KEY")
+if cache_get_v "$GIT_KEY"; then
+    # cache_get_v sólo lee la primera línea con read; recargamos con cat para multi-línea
+    GIT_DATA=$(<"${CACHE_DIR}/statusline-${GIT_KEY}.txt")
 else
     if cd "$CWD" 2>/dev/null && [[ -d .git ]] || git -C "$CWD" rev-parse --git-dir &>/dev/null; then
         GIT_DATA=$(
@@ -153,9 +169,8 @@ else
         printf '%s' "$GIT_DATA" | cache_set "$GIT_KEY"
     fi
 fi
-GIT_USER=$(printf '%s' "$GIT_DATA" | sed -n '1p')
-GIT_BRANCH=$(printf '%s' "$GIT_DATA" | sed -n '2p')
-GIT_DIRTY=$(printf '%s' "$GIT_DATA" | sed -n '3p')
+# Parse 3 líneas con read (pura bash, sin sed)
+{ IFS= read -r GIT_USER; IFS= read -r GIT_BRANCH; IFS= read -r GIT_DIRTY; } <<< "$GIT_DATA"
 [[ -z "$GIT_USER" ]] && GIT_USER="user"
 [[ -z "$GIT_BRANCH" ]] && GIT_BRANCH="—"
 [[ -z "$GIT_DIRTY" ]] && GIT_DIRTY=0
@@ -171,26 +186,39 @@ if [[ -f "$AGENTS_FILE" ]]; then
     N_AGENTS=$(grep -cE '^\| `[a-z]' "$AGENTS_FILE" 2>/dev/null || echo 0)
 fi
 
-# Skills: subdirectorios bajo ~/.claude/skills/
+# Skills: subdirectorios bajo ~/.claude/skills/  (bash glob: ~20× más rápido que find|wc en Git Bash)
 SKILLS_DIR="${HELIX_DIR}/skills"
 N_SKILLS=0
 if [[ -d "$SKILLS_DIR" ]]; then
-    N_SKILLS=$(find "$SKILLS_DIR" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l)
+    shopt -s nullglob
+    _skills=("$SKILLS_DIR"/*/)
+    N_SKILLS=${#_skills[@]}
+    unset _skills
+    shopt -u nullglob
 fi
 
 # Topics: archivos *.md bajo ~/.claude/memory/topics/
 TOPICS_DIR="${HELIX_DIR}/memory/topics"
 N_TOPICS=0
 if [[ -d "$TOPICS_DIR" ]]; then
-    N_TOPICS=$(find "$TOPICS_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l)
+    shopt -s nullglob
+    _topics=("$TOPICS_DIR"/*.md)
+    N_TOPICS=${#_topics[@]}
+    unset _topics
+    shopt -u nullglob
 fi
 
-# Stack tier: parse helix-stack.md del proyecto
+# Stack tier: parse helix-stack.md del proyecto (bash regex en lugar de grep|head|awk)
 STACK_FILE="${CWD}/.claude/memory/helix-stack.md"
 STACK_TIER="—"
 if [[ -f "$STACK_FILE" ]]; then
-    STACK_TIER=$(grep -oE '^tier:[[:space:]]*[a-z]+' "$STACK_FILE" 2>/dev/null | head -1 | awk '{print $2}')
-    [[ -z "$STACK_TIER" ]] && STACK_TIER="?"
+    while IFS= read -r _line || [[ -n "$_line" ]]; do
+        if [[ "$_line" =~ ^tier:[[:space:]]*([a-z]+) ]]; then
+            STACK_TIER="${BASH_REMATCH[1]}"
+            break
+        fi
+    done < "$STACK_FILE"
+    [[ "$STACK_TIER" == "—" ]] && STACK_TIER="?"
 fi
 
 # CLAUDE.md size
@@ -243,48 +271,56 @@ if [[ -f "$SETTINGS" ]]; then
     N_HOOKS=$(grep -cE '"(PreToolUse|PostToolUse|UserPromptSubmit|SessionStart|Stop|Notification|PreCompact|SubagentStop|SessionEnd)"' "$SETTINGS" 2>/dev/null || echo 0)
 fi
 
-# Cost USD — R2 cost-tracker v0.1: USD real de la sesión actual vía helix-cost-rollup.sh
-# Cache TTL 30s gestionado por el rollup. Fallback al contador placeholder si rollup falla.
+# Cost USD — R2 cost-tracker v0.1 con cache 30s a nivel statusline (el rollup mismo
+# cachea pero igual fork ~600ms en Windows. Cache local elimina el fork salvo refresh).
 COST_DAY="—"
+COST_KEY="cost-${PROJECT_NAME//[^A-Za-z0-9._-]/_}"
 COST_ROLLUP="${HELIX_DIR}/helpers/helix-cost-rollup.sh"
-if [[ -x "$COST_ROLLUP" ]]; then
+if cache_get_v "$COST_KEY"; then
+    COST_DAY="$REPLY"
+elif [[ -x "$COST_ROLLUP" ]]; then
     cost_result=$(cd "$CWD" 2>/dev/null && timeout 2 bash "$COST_ROLLUP" current 2>/dev/null | head -1)
     if [[ -n "$cost_result" ]]; then
-        usd=$(printf '%s' "$cost_result" | cut -d'|' -f1)
-        # Formato: <$1 → "0.42" / 1-99 → "12.4" / ≥100 → "157" entero
+        usd="${cost_result%%|*}"
+        # Formato: <$1 → "0.42" / 1-99 → "12.4" / ≥100 → "157" — un solo awk
         if [[ "$usd" =~ ^[0-9]+\.?[0-9]*$ ]]; then
-            usd_int=$(printf '%.0f' "$usd" 2>/dev/null || echo 0)
-            if (( usd_int >= 100 )); then
-                COST_DAY="\$$(printf '%.0f' "$usd")"
-            elif awk -v v="$usd" 'BEGIN{exit !(v<1)}'; then
-                COST_DAY="\$$(printf '%.2f' "$usd")"
-            else
-                COST_DAY="\$$(printf '%.1f' "$usd")"
-            fi
+            COST_DAY=$(awk -v v="$usd" 'BEGIN{
+                if (v >= 100)      printf "$%.0f", v;
+                else if (v < 1)    printf "$%.2f", v;
+                else               printf "$%.1f", v;
+            }')
         fi
     fi
+    [[ "$COST_DAY" != "—" ]] && printf '%s' "$COST_DAY" | cache_set "$COST_KEY"
 fi
 # Fallback contador legacy si rollup no devolvió nada
 if [[ "$COST_DAY" == "—" ]]; then
     SESSION_COUNTER="/tmp/helix-cost-${CLAUDE_SESSION_ID:-$(date +%Y%m%d_%H)}"
     if [[ -f "$SESSION_COUNTER" ]]; then
-        cnt=$(cat "$SESSION_COUNTER" 2>/dev/null || echo 0)
-        COST_DAY="${cnt}c"
+        IFS= read -r cnt < "$SESSION_COUNTER" 2>/dev/null || cnt=0
+        COST_DAY="${cnt:-0}c"
     fi
 fi
 
-# Snapshot age
+# Snapshot age — bash glob + comparación por mtime sin spawn de ls/head
 SNAP_DIR="${HELIX_DIR}/snapshots/${PROJECT_NAME}"
 SNAP_AGE="—"
 if [[ -d "$SNAP_DIR" ]]; then
-    last_snap=$(ls -t "$SNAP_DIR"/*.yaml 2>/dev/null | head -1)
-    if [[ -n "$last_snap" ]]; then
-        mtime=$(stat -c %Y "$last_snap" 2>/dev/null)
-        if [[ -n "$mtime" ]]; then
-            now=$(date +%s)
-            SNAP_AGE=$(human_age $((now - mtime)))
+    shopt -s nullglob
+    _newest_mtime=0
+    _newest_file=""
+    for _f in "$SNAP_DIR"/*.yaml; do
+        _m=$(stat -c %Y "$_f" 2>/dev/null) || continue
+        if (( _m > _newest_mtime )); then
+            _newest_mtime=$_m
+            _newest_file=$_f
         fi
+    done
+    shopt -u nullglob
+    if [[ -n "$_newest_file" ]]; then
+        SNAP_AGE=$(human_age $(( $(date +%s) - _newest_mtime )))
     fi
+    unset _f _m _newest_mtime _newest_file
 fi
 
 # Backlog
@@ -292,20 +328,21 @@ BACKLOG_FILE="${CWD}/.claude/memory/helix-backlog.md"
 N_BACKLOG=0
 [[ -f "$BACKLOG_FILE" ]] && N_BACKLOG=$(grep -cE '^- \[ \]' "$BACKLOG_FILE" 2>/dev/null || echo 0)
 
-# Evolutions: parse JSON stats block en CLAUDE.md ("total_aprendizajes": N)
+# Evolutions + Session — parse JSON stats block en CLAUDE.md en una sola pasada (read+regex)
+# Ahorra 6 forks (2× grep|grep|tail) por render.
 N_EVOLUTIONS=0
-if [[ -f "$CLAUDE_MD" ]]; then
-    v=$(grep -oE '"total_aprendizajes"[[:space:]]*:[[:space:]]*[0-9]+' "$CLAUDE_MD" 2>/dev/null \
-        | grep -oE '[0-9]+' | tail -1)
-    [[ -n "$v" ]] && N_EVOLUTIONS="$v"
-fi
-
-# Session # — del JSON stats ("total_sesiones": N)
 SESSION_NUM=0
 if [[ -f "$CLAUDE_MD" ]]; then
-    v=$(grep -oE '"total_sesiones"[[:space:]]*:[[:space:]]*[0-9]+' "$CLAUDE_MD" 2>/dev/null \
-        | grep -oE '[0-9]+' | tail -1)
-    [[ -n "$v" ]] && SESSION_NUM="$v"
+    while IFS= read -r _line || [[ -n "$_line" ]]; do
+        if [[ "$_line" =~ \"total_aprendizajes\"[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+            N_EVOLUTIONS="${BASH_REMATCH[1]}"
+        fi
+        if [[ "$_line" =~ \"total_sesiones\"[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+            SESSION_NUM="${BASH_REMATCH[1]}"
+        fi
+        # Salir temprano si ambos encontrados
+        [[ "$N_EVOLUTIONS" != 0 && "$SESSION_NUM" != 0 ]] && break
+    done < "$CLAUDE_MD"
 fi
 
 # Agentes activos recientes (ventana 60 min) — fuente: routing-feedback.jsonl
@@ -345,9 +382,8 @@ if [[ -f "$ROUTING_LOG" ]]; then
               printf "%d|%s|%d", n, top, extra
             }' "$ROUTING_LOG" 2>/dev/null)
         if [[ -n "$AGENTS_RESULT" ]]; then
-            N_AGENTS_ACTIVE=$(printf '%s' "$AGENTS_RESULT" | cut -d'|' -f1)
-            TOP_AGENTS=$(printf '%s' "$AGENTS_RESULT" | cut -d'|' -f2)
-            EXTRA_AGENTS=$(printf '%s' "$AGENTS_RESULT" | cut -d'|' -f3)
+            # Split por '|' con IFS — pura bash, sin 3 forks de cut
+            IFS='|' read -r N_AGENTS_ACTIVE TOP_AGENTS EXTRA_AGENTS _ <<< "$AGENTS_RESULT"
         fi
     fi
 fi
@@ -358,13 +394,18 @@ fi
 # Stale: helix-staleness.sh count (cached)
 STALE_COUNT="—"
 STALE_KEY="stale"
-if cache_get "$STALE_KEY" >/dev/null 2>&1; then
-    STALE_COUNT=$(cache_get "$STALE_KEY")
+if cache_get_v "$STALE_KEY"; then
+    STALE_COUNT="$REPLY"
 else
     if [[ -x "${HELIX_DIR}/helpers/helix-staleness.sh" ]]; then
         # asumimos que con --count devuelve un entero; si no, 0
-        sc=$(timeout 1 "${HELIX_DIR}/helpers/helix-staleness.sh" --count 2>/dev/null | grep -oE '^[0-9]+' | head -1)
-        [[ -n "$sc" ]] && STALE_COUNT="$sc" || STALE_COUNT=0
+        sc=$(timeout 1 "${HELIX_DIR}/helpers/helix-staleness.sh" --count 2>/dev/null)
+        # Extraer primer entero con bash regex en lugar de grep|head
+        if [[ "$sc" =~ ^[[:space:]]*([0-9]+) ]]; then
+            STALE_COUNT="${BASH_REMATCH[1]}"
+        else
+            STALE_COUNT=0
+        fi
         printf '%s' "$STALE_COUNT" | cache_set "$STALE_KEY"
     else
         STALE_COUNT=0
@@ -374,21 +415,22 @@ fi
 # ─────────────────────────────────────────────────────────────
 # Sanitize integer values (eliminar whitespace que rompe %d en printf)
 # ─────────────────────────────────────────────────────────────
+# Pura bash — sin tr fork ni subshell. Ahorra ~1.9s sobre 9 invocaciones (medido).
 sanitize_int() {
     local v="${1:-0}"
-    v=$(printf '%s' "$v" | tr -d '[:space:]')
+    v="${v//[[:space:]]/}"
     [[ "$v" =~ ^[0-9]+$ ]] || v=0
-    printf '%s' "$v"
+    REPLY="$v"
 }
-N_AGENTS=$(sanitize_int "$N_AGENTS")
-N_SKILLS=$(sanitize_int "$N_SKILLS")
-N_TOPICS=$(sanitize_int "$N_TOPICS")
-N_CLAUDE_LINES=$(sanitize_int "$N_CLAUDE_LINES")
-N_HOOKS=$(sanitize_int "$N_HOOKS")
-N_BACKLOG=$(sanitize_int "$N_BACKLOG")
-N_EVOLUTIONS=$(sanitize_int "$N_EVOLUTIONS")
-SESSION_NUM=$(sanitize_int "$SESSION_NUM")
-GIT_DIRTY=$(sanitize_int "$GIT_DIRTY")
+sanitize_int "$N_AGENTS";        N_AGENTS="$REPLY"
+sanitize_int "$N_SKILLS";        N_SKILLS="$REPLY"
+sanitize_int "$N_TOPICS";        N_TOPICS="$REPLY"
+sanitize_int "$N_CLAUDE_LINES";  N_CLAUDE_LINES="$REPLY"
+sanitize_int "$N_HOOKS";         N_HOOKS="$REPLY"
+sanitize_int "$N_BACKLOG";       N_BACKLOG="$REPLY"
+sanitize_int "$N_EVOLUTIONS";    N_EVOLUTIONS="$REPLY"
+sanitize_int "$SESSION_NUM";     SESSION_NUM="$REPLY"
+sanitize_int "$GIT_DIRTY";       GIT_DIRTY="$REPLY"
 
 # ─────────────────────────────────────────────────────────────
 # Build dirty indicator

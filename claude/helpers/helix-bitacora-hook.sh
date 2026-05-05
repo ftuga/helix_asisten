@@ -35,10 +35,14 @@ is_trivial "$FILE_PATH" && exit 0
 
 # ── Encontrar raíz del proyecto ───────────────────────────────
 find_project_root() {
-  local dir
+  local dir prev
   dir=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
-  while [[ "$dir" != "/" ]]; do
+  # Termina cuando dirname devuelve el mismo valor (root). El guard "!= /" anterior
+  # entra en loop infinito en Windows Git Bash: dirname "C:\\tmp" → "." → "." …
+  prev=""
+  while [[ -n "$dir" && "$dir" != "$prev" && "$dir" != "/" && "$dir" != "." ]]; do
     [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && echo "$dir" && return 0
+    prev="$dir"
     dir=$(dirname "$dir")
   done
   # Fallback: usar PWD
