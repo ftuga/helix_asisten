@@ -239,6 +239,19 @@ VEC_KEY="vectors"
 VEC_FILE="${CACHE_DIR}/statusline-${VEC_KEY}.txt"
 VEC_LOCK="${CACHE_DIR}/statusline-${VEC_KEY}.lock"
 VEC_TTL=300
+VEC_LOCK_TTL=60  # lock huérfano si más viejo que esto
+
+# Lock cleanup: si lock existe pero tiene >60s, asumir subshell muerto y borrar.
+# Sin esto, un crash del populator deja el slot mostrando "?" permanente.
+if [[ -f "$VEC_LOCK" ]]; then
+    lock_mtime=$(stat -c %Y "$VEC_LOCK" 2>/dev/null || echo 0)
+    if [[ -n "${EPOCHSECONDS:-}" ]]; then
+        lock_now=$EPOCHSECONDS
+    else
+        printf -v lock_now '%(%s)T' -1
+    fi
+    (( lock_now - lock_mtime > VEC_LOCK_TTL )) && rm -f "$VEC_LOCK"
+fi
 
 if [[ -f "$VEC_FILE" ]]; then
     N_VECTORS=$(cat "$VEC_FILE" 2>/dev/null)
@@ -252,6 +265,9 @@ if [[ -f "$VEC_FILE" ]]; then
           if command -v hv >/dev/null 2>&1; then
               total=$(timeout 5 hv status 2>/dev/null | grep -oE '[0-9]+[[:space:]]+puntos' | awk '{s+=$1} END {print s+0}')
               [[ -n "$total" ]] && printf '%s' "$total" > "$VEC_FILE"
+          else
+              # hv no instalado: marca el slot como "no aplica" para no quedarse en "?"
+              printf '%s' "—" > "$VEC_FILE"
           fi
           rm -f "$VEC_LOCK"
         ) </dev/null >/dev/null 2>&1 & disown
@@ -262,6 +278,9 @@ elif [[ ! -f "$VEC_LOCK" ]]; then
       if command -v hv >/dev/null 2>&1; then
           total=$(timeout 5 hv status 2>/dev/null | grep -oE '[0-9]+[[:space:]]+puntos' | awk '{s+=$1} END {print s+0}')
           [[ -n "$total" ]] && printf '%s' "$total" > "$VEC_FILE"
+      else
+          # hv no instalado: marca el slot como "no aplica" para no quedarse en "?"
+          printf '%s' "—" > "$VEC_FILE"
       fi
       rm -f "$VEC_LOCK"
     ) </dev/null >/dev/null 2>&1 & disown
@@ -494,8 +513,16 @@ printf '%s≋ HELIX%s  %s  %s%s@%s%s%s  %s  %s%s%s  %s  📁 %s%s%s\n' \
 printf '\n'
 
 # L3: 🧬 corpus — agentes/skills/topics/vectors/claude.md/stack
-VEC_DOT="${C_HELIX_SLATE}○${C_RESET}"
-[[ "$N_VECTORS" != "—" && "$N_VECTORS" != "?" && "$N_VECTORS" -gt 0 ]] 2>/dev/null && VEC_DOT="${C_HELIX_CYAN}●${C_RESET}"
+# VEC_DOT semántica: "●" = hay vectores, "○" = esperando, "" = no aplica (hv ausente).
+if [[ "$N_VECTORS" == "—" ]]; then
+    VEC_DOT=""
+elif [[ "$N_VECTORS" == "?" ]]; then
+    VEC_DOT="${C_HELIX_SLATE}○${C_RESET}"
+elif [[ "$N_VECTORS" -gt 0 ]] 2>/dev/null; then
+    VEC_DOT="${C_HELIX_CYAN}●${C_RESET}"
+else
+    VEC_DOT="${C_HELIX_SLATE}○${C_RESET}"
+fi
 printf '  %s🧬 corpus%s     🧠 %s%d%s  🛠 %s%d%s  📚 %s%d%s  🔬 %s%s%s%s  📄 %s%dL%s  🏷 %s%s%s\n' \
     "${C_HELIX_BOLD_CYAN}" "${C_RESET}" \
     "${C_HELIX_OFFWHITE}" "$N_AGENTS" "${C_RESET}" \
