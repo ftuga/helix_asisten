@@ -72,6 +72,10 @@ readonly C_HELIX_BOLD_CYAN=$'\033[1;38;2;0;245;212m'
 #   if cache_get_v "$key"; then val="$REPLY"; else miss=1; fi
 #   printf '%s' "$val" | cache_set "$key"
 #
+# IMPORTANTE: cache_get_v sólo lee la PRIMERA LÍNEA del archivo (read -r).
+# Para valores multilínea (ej: GIT_DATA con user/branch/dirty), usar cache_get_v
+# para el TTL check y luego "$(<file)" para releer entero. Ver bloque GIT_DATA abajo.
+#
 # Mantengo cache_get original (con cat al stdout) para compatibilidad con código existente
 # que ya usa $(cache_get k); pero ahora delegado a cache_get_v + echo.
 cache_get_v() {

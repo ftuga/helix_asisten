@@ -54,11 +54,14 @@ log)
     SHORT=$(date '+%Y-%m-%d')
 
     if [[ -z "$PROYECTO" ]]; then
+        # Guard portable: dirname(d)==d marca root (Win Git Bash: dirname "C:\x" → ".").
         dir="$PWD"
-        while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
+        prev=""
+        while [[ -n "$dir" && "$dir" != "$prev" && "$dir" != "/" && "$dir" != "." && "$dir" != "$HOME" ]]; do
             [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]] && {
                 PROYECTO=$(basename "$dir"); break
             }
+            prev="$dir"
             dir=$(dirname "$dir")
         done
     fi

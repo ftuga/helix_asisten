@@ -44,12 +44,16 @@ if [[ -n "${CLAUDE_PROJECT_DIR:-}" ]]; then
   PROJECT_ROOT="$CLAUDE_PROJECT_DIR"
 else
   # 2. Auto-detectar desde el directorio del archivo
+  # Guard portable: dirname(d)==d marca root (Win Git Bash: dirname "C:\x" → ".").
+  # Hook activo PreToolUse — un loop infinito acá congela cada herramienta.
   dir=$("${HELIX_PYTHON:-python3}" -c "import os; print(os.path.dirname(os.path.abspath('$FILE_PATH')))" 2>/dev/null || dirname "$FILE_PATH")
-  while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
+  prev=""
+  while [[ -n "$dir" && "$dir" != "$prev" && "$dir" != "/" && "$dir" != "." && "$dir" != "$HOME" ]]; do
     if [[ -f "$dir/CLAUDE.md" && "$dir" != "$HOME_CLAUDE" ]]; then
       PROJECT_ROOT="$dir"
       break
     fi
+    prev="$dir"
     dir=$(dirname "$dir")
   done
 fi

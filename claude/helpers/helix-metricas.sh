@@ -9,12 +9,15 @@ PROJECT="${1:-}"
 GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 # Detectar proyecto si no se pasó
+# Guard portable: dirname(d)==d marca root (Win Git Bash: dirname "C:\x" → ".").
 if [[ -z "$PROJECT" ]]; then
   dir="$PWD"
-  while [[ "$dir" != "/" ]]; do
+  prev=""
+  while [[ -n "$dir" && "$dir" != "$prev" && "$dir" != "/" && "$dir" != "." ]]; do
     if [[ -f "$dir/CLAUDE.md" && "$dir" != "$GLOBAL_DIR" ]]; then
       PROJECT="$dir"; break
     fi
+    prev="$dir"
     dir=$(dirname "$dir")
   done
 fi

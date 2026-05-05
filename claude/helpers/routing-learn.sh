@@ -22,13 +22,16 @@ FEEDBACK_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-feedback.jsonl
 mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
 
 # Auto-detectar proyecto
+# Guard portable: dirname(d)==d marca root (Win Git Bash: dirname "C:\x" → ".").
 PROJECT=""
 dir="$PWD"
-while [[ "$dir" != "/" && "$dir" != "$HOME" ]]; do
+prev=""
+while [[ -n "$dir" && "$dir" != "$prev" && "$dir" != "/" && "$dir" != "." && "$dir" != "$HOME" ]]; do
   if [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]]; then
     PROJECT=$(basename "$dir")
     break
   fi
+  prev="$dir"
   dir=$(dirname "$dir")
 done
 

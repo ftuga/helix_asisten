@@ -28,13 +28,16 @@ detect_project() {
 
     local dir="${PROJECT_ROOT:-$PWD}"
     local original_dir="$dir"
+    local prev=""
 
     # Búsqueda 1: ascender buscando CLAUDE.md en root
-    while [[ "$dir" != "/" ]]; do
+    # Guard portable: dirname(d)==d marca root (Win Git Bash: dirname "C:\x" → ".").
+    while [[ -n "$dir" && "$dir" != "$prev" && "$dir" != "/" && "$dir" != "." ]]; do
         if [[ -f "$dir/CLAUDE.md" && "$dir" != "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ]]; then
             basename "$dir"
             return 0
         fi
+        prev="$dir"
         dir="$(dirname "$dir")"
     done
 
