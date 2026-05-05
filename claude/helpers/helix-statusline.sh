@@ -351,6 +351,46 @@ BACKLOG_FILE="${CWD}/.claude/memory/helix-backlog.md"
 N_BACKLOG=0
 [[ -f "$BACKLOG_FILE" ]] && N_BACKLOG=$(grep -cE '^- \[ \]' "$BACKLOG_FILE" 2>/dev/null || echo 0)
 
+# Tasks de la sesión activa (CC TaskCreate). Cuenta done/total y formatea "N/M".
+# Sesión activa = carpeta tasks/<sid>/ con mtime más reciente y < 10min.
+# Si no hay tasks activos → "—" (no aplica).
+TASKS_LABEL="—"
+TASKS_DIR="${HELIX_DIR}/tasks"
+if [[ -d "$TASKS_DIR" ]]; then
+    if [[ -n "${EPOCHSECONDS:-}" ]]; then
+        _now=$EPOCHSECONDS
+    else
+        printf -v _now '%(%s)T' -1
+    fi
+    _newest_mtime=0
+    _newest_sid=""
+    shopt -s nullglob
+    for _sd in "$TASKS_DIR"/*/; do
+        _m=$(stat -c %Y "$_sd" 2>/dev/null) || continue
+        if (( _m > _newest_mtime && _now - _m < 600 )); then
+            _newest_mtime=$_m
+            _newest_sid="$_sd"
+        fi
+    done
+    if [[ -n "$_newest_sid" ]]; then
+        _total=0; _done=0
+        for _tj in "$_newest_sid"*.json; do
+            [[ -f "$_tj" ]] || continue
+            _content=$(<"$_tj")
+            # Filtrar 'deleted' del total.
+            if [[ "$_content" =~ \"status\"[[:space:]]*:[[:space:]]*\"deleted\" ]]; then
+                continue
+            fi
+            _total=$((_total + 1))
+            if [[ "$_content" =~ \"status\"[[:space:]]*:[[:space:]]*\"completed\" ]]; then
+                _done=$((_done + 1))
+            fi
+        done
+        (( _total > 0 )) && TASKS_LABEL="${_done}/${_total}"
+    fi
+    shopt -u nullglob
+fi
+
 # Evolutions + Session — parse JSON stats block en CLAUDE.md en una sola pasada (read+regex)
 # Ahorra 6 forks (2× grep|grep|tail) por render.
 N_EVOLUTIONS=0
@@ -499,6 +539,31 @@ if [[ "$N_HOOKS" -lt 4 ]] || [[ "$HSL_LAYERS" -lt 6 ]]; then
     HEALTH_GLYPH="✗"
 fi
 
+# L0: activity separator — "─────── 🎯 <activity> ───────"
+# Resuelve actividad actual via helper (task in_progress > plan > branch feat/fix > bitácora).
+ACTIVITY_HELPER="${HELIX_DIR}/helpers/resolve-activity.sh"
+ACTIVITY="idle"
+if [[ -x "$ACTIVITY_HELPER" ]]; then
+    ACTIVITY=$(timeout 1 bash "$ACTIVITY_HELPER" "$CWD" 2>/dev/null)
+    [[ -z "$ACTIVITY" ]] && ACTIVITY="idle"
+fi
+# Width dinámico: COLUMNS si disponible, fallback 100. Restamos label para que las
+# rayas a izquierda y derecha sumen ~ancho total.
+TERM_WIDTH="${COLUMNS:-100}"
+[[ "$TERM_WIDTH" =~ ^[0-9]+$ ]] || TERM_WIDTH=100
+(( TERM_WIDTH < 60 )) && TERM_WIDTH=60
+(( TERM_WIDTH > 140 )) && TERM_WIDTH=140
+# Label: " 🎯 <activity> "  (4 chars padding + emoji 2 + activity len)
+LABEL_LEN=$(( ${#ACTIVITY} + 5 ))
+SIDE_LEN=$(( (TERM_WIDTH - LABEL_LEN) / 2 ))
+(( SIDE_LEN < 3 )) && SIDE_LEN=3
+LINE=""
+for ((i=0; i<SIDE_LEN; i++)); do LINE+="─"; done
+printf '%s%s%s 🎯 %s %s%s%s\n' \
+    "${C_HELIX_SLATE}" "$LINE" "${C_RESET}" \
+    "$ACTIVITY" \
+    "${C_HELIX_SLATE}" "$LINE" "${C_RESET}"
+
 # L1: header — ≋ HELIX · user@branch · model · 📁 project (axolotl signature ≋)
 printf '%s≋ HELIX%s  %s  %s%s@%s%s%s  %s  %s%s%s  %s  📁 %s%s%s\n' \
     "${C_HELIX_BOLD_CYAN}" "${C_RESET}" \
@@ -542,10 +607,13 @@ printf '  %s⚡ runtime%s    🔋 %s%s%%%s  💾 %s%s%%%s  🪝 %s%d%s  🛡 %s%
     "${C_HELIX_OFFWHITE}" "$COST_DAY" "${C_RESET}" \
     "${C_HELIX_OFFWHITE}" "$SNAP_AGE" "${C_RESET}"
 
-# L5: 🌀 state — backlog/evolutions/stale/session
-printf '  %s🌀 state%s      📋 %s%d%s  🌿 %s%d%s  ⏳ %s%s%s  ✦ %s#%d%s\n' \
+# L5: 🌀 state — tasks(done/total)/evolutions/stale/session
+# El slot 📋 ahora muestra progreso de tasks de la sesión actual (TaskCreate de CC).
+# Si no hay tasks activos → "—". Backlog del proyecto se mantiene accesible
+# vía bitácora pero ya no ocupa este slot — más útil ver lo que se está haciendo.
+printf '  %s🌀 state%s      📋 %s%s%s  🌿 %s%d%s  ⏳ %s%s%s  ✦ %s#%d%s\n' \
     "${C_HELIX_SLATE}" "${C_RESET}" \
-    "${C_HELIX_OFFWHITE}" "$N_BACKLOG" "${C_RESET}" \
+    "${C_HELIX_OFFWHITE}" "$TASKS_LABEL" "${C_RESET}" \
     "${C_HELIX_OFFWHITE}" "$N_EVOLUTIONS" "${C_RESET}" \
     "${C_HELIX_OFFWHITE}" "$STALE_COUNT" "${C_RESET}" \
     "${C_HELIX_OFFWHITE}" "$SESSION_NUM" "${C_RESET}"
