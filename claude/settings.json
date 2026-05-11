@@ -80,6 +80,15 @@
             "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/secrets-scanner-hook.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/frontend-intent-gate-hook.sh\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -129,6 +138,33 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/mcp-tracker-hook.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-aidefence-hook.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/passive-capture-hook.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-egress-audit-hook.sh\""
           }
         ]
       }

@@ -42,16 +42,17 @@ import secrets
 
 THRESHOLD = int(os.environ.get("HELIX_M2_THRESHOLD", "2"))
 HOME = os.environ.get("HOME", os.path.expanduser("~"))
-PENDING = os.path.join(HOME, ".claude/memory/passive-captures-pending.jsonl")
-LOCK = os.path.join(HOME, ".claude/memory/.passive-captures.lock")
+CONFIG_DIR = os.environ.get("CLAUDE_CONFIG_DIR", os.path.join(HOME, ".claude"))
+PENDING = os.path.join(CONFIG_DIR, "memory/passive-captures-pending.jsonl")
+LOCK = os.path.join(CONFIG_DIR, "memory/.passive-captures.lock")
 
 PATH_MATCHERS = [
-    ("A1", lambda p: p == os.path.join(HOME, ".claude/CLAUDE.md")),
-    ("A2", lambda p: p.startswith(os.path.join(HOME, ".claude/memory/topics/")) and p.endswith(".md")),
-    ("A3", lambda p: p.startswith(os.path.join(HOME, ".claude/memory/agents/")) and p.endswith(".md")),
-    ("A4", lambda p: p == os.path.join(HOME, ".claude/memory/agents-index.md")),
-    ("A5", lambda p: "/.claude/memory/helix-" in p and p.endswith(".md")),
-    ("A6", lambda p: p.startswith(os.path.join(HOME, ".claude/council/"))),
+    ("A1", lambda p: p == os.path.join(CONFIG_DIR, "CLAUDE.md")),
+    ("A2", lambda p: p.startswith(os.path.join(CONFIG_DIR, "memory/topics/")) and p.endswith(".md")),
+    ("A3", lambda p: p.startswith(os.path.join(CONFIG_DIR, "memory/agents/")) and p.endswith(".md")),
+    ("A4", lambda p: p == os.path.join(CONFIG_DIR, "memory/agents-index.md")),
+    ("A5", lambda p: ("/.claude/memory/helix-" in p or "/.helix/memory/helix-" in p) and p.endswith(".md")),
+    ("A6", lambda p: p.startswith(os.path.join(CONFIG_DIR, "council/"))),
 ]
 
 KW_PATTERNS = [

@@ -105,6 +105,39 @@ cmd_prepare() {
 
   mkdir -p "$sdir/prompts" "$sdir/outputs" "$sdir/expert_summons"
 
+  # === HELIX-LANG version resolution (P2 + DA3 council 20260507T215307Z-109qf) ===
+  # Resolution order: HELIX_LANG_VERSION env > default 2.1
+  # During pilot phase (current), v3 is OPT-IN ONLY via explicit env var.
+  # Post-rollout, the default switches to language-based per DRAFT §4.
+  local helix_lang_version="${HELIX_LANG_VERSION:-2.1}"
+  if [[ "$helix_lang_version" != "2.1" && "$helix_lang_version" != "3.0" ]]; then
+    echo "[WARN] HELIX_LANG_VERSION='$helix_lang_version' invalid. Falling back to 2.1." >&2
+    helix_lang_version="2.1"
+  fi
+
+  # Detection of language for advisory only (no enforcement during pilot)
+  # Heuristic: CJK Unicode (U+3000-U+9FFF, U+30A0-U+30FF rough ASCII bytes count)
+  # Simplified: count non-ASCII bytes ratio
+  local trigger_total=${#trigger}
+  local trigger_nonascii=0
+  if [[ $trigger_total -gt 0 ]]; then
+    trigger_nonascii=$(printf '%s' "$trigger" | LC_ALL=C tr -d '\000-\177' | wc -c | tr -d ' ')
+  fi
+  local detected_lang="en"
+  if [[ $trigger_total -gt 0 ]]; then
+    local ratio_x1000=$(( trigger_nonascii * 1000 / trigger_total ))
+    if [[ $ratio_x1000 -gt 50 ]]; then
+      # CJK detection: very high non-ASCII ratio typically indicates CJK
+      if [[ $ratio_x1000 -gt 300 ]]; then
+        detected_lang="cjk"
+      else
+        detected_lang="es"
+      fi
+    fi
+  fi
+
+  echo "[helix-lang] version=$helix_lang_version detected_lang=$detected_lang nonascii_ratio_perm=$ratio_x1000" >&2
+
   # 1. Generar context pack
   echo "[1/4] Generating context pack..." >&2
   bash "$CONTEXT_BUILDER" "$trigger" "$severity" "$project_dir" > "$sdir/context_pack.yaml" 2>"$sdir/context_pack.err"
@@ -121,7 +154,77 @@ EOF
     return 2
   fi
 
-  # 3. Generar prompts para cada rol con context pack embebido
+  # 3. Build LANGUAGE PROTOCOL block by version (P2 + DA3 mitigation)
+  local lang_protocol_block
+  if [[ "$helix_lang_version" == "3.0" ]]; then
+    lang_protocol_block=$(cat <<'PROTOEOF'
+PROTOCOL_VERSION: HELIX_LANG_VERSION=3.0
+LANGUAGE PROTOCOL v3 (OBLIGATORIO -- spec activo: ~/.helix/skills/helix-lang/SKILL-v3-DRAFT.md):
+- HELIX-LANG es OBLIGATORIO en TODO handoff inter-agente.
+- USER-FACING: NUNCA HELIX-LANG. user_facing_summary va en idioma del usuario (mirror del ultimo turno).
+
+GRAMATICA v3 (posicion = significado, sin colon entre agente y estado):
+  1. Estado:        AGENT STATE.domain                  ej: SK ok.eval | IN ~60.prop
+  2. Mensaje:       FROM->TO object.domain              ej: SK->SY challenges.eval
+  3. Mensaje preg:  FROM->TO ?object.domain             ej: SK->SY ?evidence.eval
+  4. Delta 2-3 ag:  AGENT STATE AGENT STATE @temp       ej: SK ok IN ~60 @now
+  5. Delta 4+ ag:   [AGENT STATE AGENT STATE ...] @temp ej: [SK ok IN ok CO ok SY ok] @done
+  6. Hash de ctx:   S:xxxx                              ej: S:a3f7
+  7. Composicion:   expr1 | expr2 | expr3
+
+VOCABULARIO UNIVERSAL FIJO v3:
+  Estados:    ok | er | ! | ? | ~ | ~N (N% progreso) | #(blocked)
+  Operadores: -> | <- | => | <> | + | | | *
+  Verbos:     opcionales (give|ask|fix|chk|done|wait|stop). Default: omitir, usar `?` prefijo para preguntas.
+  Tiempos:    @now | @next | @done | @blk (siempre validos)
+              ! ; ^ al final de linea (posicional, solo si UNICO candidato final + contexto inequivoco)
+
+IDs DE ESTE COUNCIL v3 (2-char, todos 1 token cl100k verificado):
+  A:{AB:arbiter, SK:skeptic, IN:innovator, CO:conservative, SY:synthesizer, RE:researcher, DV:devils_advocate}
+  D:{.eval:evaluation, .prop:proposal, .risk:risk, .cite:citation, .vote:vote}
+
+ANTI-PATTERNS v3 (RECHAZAR):
+  AP-1: Temporal posicional con 2+ candidatos finales -- ambiguedad. Usar @now/@next/@blk.
+  AP-2: IDs 2-char sin S:vocab declarado en sesion M >= 3 -- usar S:vocab al inicio.
+  AP-3: Omitir `?` cuando ask/give son ambiguos -- agregar `?`.
+  AP-4: Delta 4+ agentes sin llaves [] -- agregar [].
+  AP-5: Verbos con colon (give:, ask:, do:) -- omitir colon o omitir verbo.
+  AP-7: Mezclar v3 y v2.1 en mismo output -- usar SOLO v3.
+  AP-8: HELIX-LANG en output user-facing -- NUNCA.
+
+REGLA DURA: campos YAML de mensaje/estado/handoff DEBEN usar HELIX-LANG v3. Campos analiticos (challenges, evidence, final_argument) pueden ser prosa estructurada.
+PROTOEOF
+)
+  else
+    lang_protocol_block=$(cat <<'PROTOEOF'
+PROTOCOL_VERSION: HELIX_LANG_VERSION=2.1
+LANGUAGE PROTOCOL (OBLIGATORIO — ver ~/.claude/council/inter-agent-language.md + ~/.claude/skills/helix-lang/SKILL.md):
+- HELIX-LANG es OBLIGATORIO en TODO handoff inter-agente, estados de progreso y referencias cruzadas. NO es opcional.
+- USER-FACING: NUNCA HELIX-LANG. El synthesizer/arbiter traduce a `user_facing_summary` en el idioma del usuario (mirror del último turno; fallback español neutro colombiano si el idioma es ambiguo). Si te tienta prosa para el usuario fuera de ese campo, STOP.
+
+GRAMÁTICA HELIX-LANG (5 formas, posición = significado):
+  1. Estado:        AGENT:STATE.domain                          ej: SKEPT:ok.eval | INNOV:~%60.proposals
+  2. Mensaje:       FROM->TO verb:object.domain                 ej: SKEPT->SYNTH give:challenges.eval
+  3. Delta:         D:{AGENT:STATE, AGENT:STATE} @temporal      ej: D:{SKEPT:ok, INNOV:~%60} @now
+  4. Hash de ctx:   S:xxxx                                      ej: S:a3f7  (ref a contexto previo, NO re-cita)
+  5. Composición:   expr1 | expr2 | expr3                       ej: SKEPT:ok | SKEPT->SYNTH give:eval @now
+
+VOCABULARIO UNIVERSAL FIJO:
+  Estados:    ok | er | ! | ? | ~ | %N | #(blocked)
+  Operadores: -> | <- | => | <> | + | | | *
+  Verbos:     need | give | ask | do | fix | chk | done | wait | stop
+  Tiempos:    @now | @next | @done | @blk
+
+VOCABULARIO DE ESTE COUNCIL (declarado, usar estos códigos):
+  A:{ARB:arbiter, SKEPT:skeptic, INNOV:innovator, CONS:conservative, SYNTH:synthesizer, RES:researcher, DEV:devils_advocate}
+  D:{.eval:evaluation, .prop:proposal, .risk:risk, .cite:citation, .vote:vote}
+
+REGLA DURA: cualquier campo YAML que represente un mensaje, estado o referencia entre roles DEBE usar HELIX-LANG. Campos analíticos (challenges, evidence, final_argument) pueden ser prosa estructurada porque son contenido, no handoff.
+PROTOEOF
+)
+  fi
+
+  # 4. Generar prompts para cada rol con context pack embebido
   local roles=(skeptic innovator conservative synthesizer researcher)
 
   for role in "${roles[@]}"; do
@@ -153,9 +256,7 @@ REGLAS DURAS:
 - CITA OBLIGATORIA: every claim must reference context_pack[<key>], expert_summons, or canon
 - Stay in role. Do NOT take other roles' jobs.
 
-LANGUAGE PROTOCOL (ver ~/.claude/council/inter-agent-language.md):
-- INTERNAL (your YAML output): structured, compressed, terse. Reference other rounds with paths like \`round_1_<role>.<field>\`, NOT full quotes. Use HELIX-LANG codes (~/.claude/skills/helix-lang/SKILL.md) if useful.
-- USER-FACING: NEVER. The synthesizer/arbiter at finalize translates to Spanish. If tempted to write prose for the user, STOP — emit YAML facts only.
+$lang_protocol_block
 
 Return YAML only. No prose outside YAML.
 EOF
@@ -195,7 +296,7 @@ If recursion detected → recommendation: ABORT
 Return YAML only.
 EOF
 
-  # 4. Estado y meta
+  # 5. Estado y meta
   cat > "$sdir/meta.yaml" <<EOF
 session_id: $sid
 trigger: "$(echo "$trigger" | sed 's/"/\\"/g')"
@@ -205,6 +306,8 @@ created_at: "$(date -u +%FT%TZ)"
 roles_round1: [skeptic, innovator, conservative, synthesizer, researcher]
 roles_round3_extra: [synthesizer, devils_advocate]
 arbiter_invocations: [pre_check, post_check]
+helix_lang_version: "$helix_lang_version"
+helix_lang_detected_lang: "$detected_lang"
 EOF
 
   write_state "$sid" "PREPARED"
@@ -428,6 +531,65 @@ cmd_finalize() {
     escalation_reason="no clear consensus"
   fi
 
+  # === DA6 mitigation — M3 manual blocking gate ===
+  # Helix Council session 20260507T215307Z-109qf — devils_advocate critical_mitigations[DA6]
+  # Active only when HELIX_M3_GATE=1. Default behavior unchanged.
+  local m3_confirmation=""
+  local m3_reference=""
+  local m3_rubric_path=""
+  if [[ "${HELIX_M3_GATE:-0}" == "1" ]]; then
+    m3_rubric_path="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/helix-lang/m3-rubric.md"
+    if [[ ! -f "$m3_rubric_path" ]]; then
+      echo "[M3 GATE ERROR] HELIX_M3_GATE=1 but rubric not found at $m3_rubric_path" >&2
+      echo "[M3 GATE ERROR] precondition P1 of pilot not satisfied — aborting finalize" >&2
+      return 1
+    fi
+    local pass_count fail_count
+    pass_count=$(awk '/^(Por qué pasa|Why it passes):[[:space:]]+[^<[:space:]]/{n++} END{print n+0}' "$m3_rubric_path" 2>/dev/null)
+    fail_count=$(awk '/^(Por qué falla|Why it fails):[[:space:]]+[^<[:space:]]/{n++} END{print n+0}' "$m3_rubric_path" 2>/dev/null)
+    if [[ "$pass_count" -lt 3 ]] || [[ "$fail_count" -lt 3 ]]; then
+      echo "[M3 GATE ERROR] rubric incomplete — needs >=3 PASS and >=3 FAIL examples filled" >&2
+      echo "  found PASS=$pass_count FAIL=$fail_count" >&2
+      echo "  edit: $m3_rubric_path" >&2
+      return 1
+    fi
+    local summary_file="$sdir/outputs/round_3_synthesizer.yaml"
+    if [[ ! -f "$summary_file" ]]; then
+      echo "[M3 GATE ERROR] synthesizer R3 output not found at $summary_file" >&2
+      return 1
+    fi
+    echo "" >&2
+    echo "=== M3 BLOCKING GATE — manual confirmation required ===" >&2
+    echo "" >&2
+    echo "user_facing_summary from synthesizer R3:" >&2
+    echo "---" >&2
+    awk '/^user_facing_summary:/{flag=1; next} /^[a-z_][a-z_]*:/{flag=0} flag' "$summary_file" >&2
+    echo "---" >&2
+    echo "" >&2
+    echo "Rubric: $m3_rubric_path" >&2
+    echo "Type PASS or FAIL followed by Enter:" >&2
+    local m3_input
+    read -r m3_input
+    case "$m3_input" in
+      PASS|pass|Pass)
+        m3_confirmation="PASS"
+        echo "Which rubric example matched? (e.g. PASS-1):" >&2
+        read -r m3_reference
+        ;;
+      FAIL|fail|Fail)
+        m3_confirmation="FAIL"
+        echo "Which FAIL criterion applied? (e.g. FAIL-2):" >&2
+        read -r m3_reference
+        decision="REJECTED"
+        escalation_reason="M3 manual gate FAIL — creator confirmed clarity loss"
+        ;;
+      *)
+        echo "[M3 GATE ERROR] invalid input. Expected PASS or FAIL. Got: '$m3_input'" >&2
+        return 1
+        ;;
+    esac
+  fi
+
   # Generar audit log YAML inmutable (R6)
   local audit_ts
   audit_ts=$(date -u +%Y%m%dT%H%M%SZ)
@@ -478,8 +640,21 @@ cmd_finalize() {
   echo "[OK] Audit log: $audit_log (chmod 400)" >&2
 
   # MIT1 council #3 — registrar adoption HELIX-LANG en frequency.log
+  # ENFORCEMENT v1: warning visible si adoption < 30% (post-corrección 2026-05-07)
   if [[ -x "${SCRIPT_DIR}/helix-lang-detect.sh" ]]; then
-    "${SCRIPT_DIR}/helix-lang-detect.sh" "$sid" >&2 2>&1 | grep -E "adoption_pct|matches" >&2 || true
+    local detect_out
+    detect_out="$("${SCRIPT_DIR}/helix-lang-detect.sh" "$sid" 2>&1)"
+    echo "$detect_out" | grep -E "adoption_pct|matches" >&2 || true
+    local adoption_raw
+    adoption_raw="$(echo "$detect_out" | grep -oE 'adoption_pct: [0-9]+' | head -1 | awk '{print $2}')"
+    if [[ -n "$adoption_raw" ]] && [[ "$adoption_raw" -lt 30 ]] && [[ "${HELIX_LANG_ENFORCE:-1}" != "0" ]]; then
+      echo "" >&2
+      echo "[HELIX-LANG WARNING] adoption_pct=${adoption_raw}% < 30% threshold" >&2
+      echo "[HELIX-LANG WARNING] Los agentes del council NO usaron el protocolo obligatorio en handoffs." >&2
+      echo "[HELIX-LANG WARNING] Revisar prompts/<role>.md y outputs/round_*.yaml — campos de mensaje/estado deben usar las 5 formas." >&2
+      echo "[HELIX-LANG WARNING] Doctrina: ~/.helix/council/inter-agent-language.md" >&2
+      echo "" >&2
+    fi
   fi
 
   echo "$decision"

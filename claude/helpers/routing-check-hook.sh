@@ -25,6 +25,11 @@ agent = (tool_input.get("subagent_type") or "").strip()
 if not agent:
     sys.exit(0)
 
+# Bypass meta-agentes (no tienen dominio funcional, reciben triggers de cualquier dominio por diseño)
+META_AGENTS = {"code-reviewer", "architect-reviewer", "error-detective", "security-auditor", "qa-expert"}
+if agent.startswith("council-") or agent in META_AGENTS:
+    sys.exit(0)
+
 prompt = (tool_input.get("prompt") or "") + " " + (tool_input.get("description") or "")
 prompt = prompt.lower()[:1000]
 
@@ -114,6 +119,39 @@ if _in_stack and agent not in _in_stack and agent != "general-purpose":
         print(f"💡 ROUTING SUGGESTION: '{agent}' no está en el stack del proyecto. "
               f"Stack core: {_stack_core[:5]}. Considerar: helix-stack add {agent} si lo usarás recurrente.",
               file=sys.stderr)
+
+# ─────────────────────────────────────────────────────────────
+# BUG-G2 fix: vector search shadow (no bloqueante)
+# Compara la elección de Claude contra helix-route.sh pick (vector + anti-bias).
+# Solo advierte si vector search recomienda agente distinto y permitido por dominio.
+# Registra en routing-shadow.jsonl para auditoría futura.
+# Reversible: HELIX_VECTOR_ROUTE_ENABLED=0
+# ─────────────────────────────────────────────────────────────
+if os.environ.get("HELIX_VECTOR_ROUTE_ENABLED", "1") != "0" and dominio:
+    _domain_map = {"bug": "error", "analysis": "generic"}
+    _rd = _domain_map.get(dominio, dominio)
+    _supported = {"testing","devops","security","database","frontend","backend","ml","api","error","generic"}
+    if _rd in _supported:
+        try:
+            import subprocess as _sp
+            _route_sh = os.path.join(
+                os.environ.get("CLAUDE_CONFIG_DIR", os.path.expanduser("~/.claude")),
+                "helpers", "helix-route.sh"
+            )
+            if os.path.isfile(_route_sh):
+                _res = _sp.run(
+                    ["bash", _route_sh, "pick", _rd, prompt[:200], "0.1", "--shadow"],
+                    capture_output=True, text=True, timeout=2,
+                )
+                if _res.returncode == 0 and _res.stdout.strip():
+                    _d = json.loads(_res.stdout.strip())
+                    _primary = _d.get("primary")
+                    if _primary and _primary != agent and (permitidos and _primary in permitidos):
+                        print(f"🧭 ROUTING VECTOR: '{_primary}' sería más apropiado según vector "
+                              f"search (dominio={_rd}). Elegiste '{agent}'. Override silencioso ok, "
+                              f"o reconsiderar.", file=sys.stderr)
+        except Exception:
+            pass  # silent fail — no bloquear nunca por vector search
 
 sys.exit(0)
 PYEOF

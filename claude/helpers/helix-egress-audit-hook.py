@@ -34,9 +34,10 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-LOG = HOME / ".claude/memory/egress-audit.jsonl"
-KNOWN = HOME / ".claude/memory/egress-known-domains.txt"
-LOCK = HOME / ".claude/memory/.egress-audit.lock"
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+LOG = CONFIG_DIR / "memory/egress-audit.jsonl"
+KNOWN = CONFIG_DIR / "memory/egress-known-domains.txt"
+LOCK = CONFIG_DIR / "memory/.egress-audit.lock"
 
 SECRET_PARAM_RE = re.compile(
     r"(api[_-]?key|token|password|secret|auth|bearer|session|sid|jwt)=([^&\s]+)",

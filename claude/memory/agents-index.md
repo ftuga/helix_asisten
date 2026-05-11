@@ -32,6 +32,7 @@
 | `app-creative-genius` | Visionario producto/UX. Ideas bold para features, flujos, modelo de negocio, diferenciación |
 | `brand-identity-expert` | Brand naming, identity, taglines, go-to-market, Google/Meta Ads |
 | `loop-operator` | Operación de loops autónomos con safeguards: detecta stalls, retries, presupuesto |
+| `linguista-computacional-tokens` | Auditar/diseñar protocolos inter-agente para reducir costo de tokens preservando contexto. tiktoken + cross-lingual. NO aplica a código/SQL/shell |
 
 ## Deshabilitados (no invocar)
 `api-architect` · `api-designer` · `api-documenter` · `azure-infra-engineer` · `backend-developer` · `business-analyst` · `fullstack-developer` · `mcp-security-auditor` · `metadata-agent` · `nextjs-architecture-expert` · `product-manager` · `project-manager` · `qa-expert` · `scrum-master` · `security-engineer`
@@ -55,4 +56,4 @@ analítica on-chain de Uniswap V2. Contexto completo en `memory/agents/<nombre>.
 
 > Última corrección: 2026-04-27 (drift cleanup: 11 entries huérfanos removidos, 3 archivos agregados, architect-review→architect-reviewer renombrado)
 
-> Última corrección ERL+ExpeL: 2026-04-27
+> Última corrección ERL+ExpeL: 2026-05-08

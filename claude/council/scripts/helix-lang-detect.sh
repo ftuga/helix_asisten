@@ -34,17 +34,54 @@ count_matches() {
 
 scan_file() {
     local file="$1"
-    local hl_verbs hl_ops hl_temporal hl_hash hl_msg total
+    local hl_verbs hl_ops hl_temporal hl_hash hl_msg hl_state total
+    local v3_state v3_msg v3_question v3_delta v3_pos_temporal v3_total
 
-    # Patrones distintivos (no false-positives con YAML normal)
-    hl_verbs=$(count_matches "$file" '\b(need|give|chk|fix|done|wait|stop)[[:space:]]*:[[:space:]]')
-    hl_ops=$(count_matches "$file" '(->|<-|=>|<>)[[:space:]]')
+    # Patrones HELIX-LANG v2 (gramática completa - corregido 2026-05-07 post-A/B test)
+    # FIX 1: incluir verbos `ask` y `do` (faltaban — gramática real los lista)
+    # FIX 2: hl_msg acepta uppercase agent codes (SKEPT->SYNTH, ORC->FE+BE)
+    # FIX 3: hl_ops sin requerir espacio (SKEPT->SYNTH es válido)
+    # FIX 4: hl_state nuevo patrón AGENT:STATE.domain (Forma 1 de la gramática)
+    hl_verbs=$(count_matches "$file" '\b(need|give|ask|do|chk|fix|done|wait|stop)[[:space:]]*:[[:space:]]*[a-z]')
+    hl_ops=$(count_matches "$file" '(->|<-|=>|<>)')
     hl_temporal=$(count_matches "$file" '@(now|next|done|blk)\b')
-    hl_hash=$(count_matches "$file" '\bS:[a-f0-9]{4,}\b')
-    hl_msg=$(count_matches "$file" '\b[a-z][a-z_]+->[a-z][a-z_]+\s+(need|give|ask|do|fix|chk|done)')
+    hl_hash=$(count_matches "$file" '\bS:[a-zA-Z0-9]{4,}\b')
+    hl_msg=$(count_matches "$file" '[A-Z][A-Za-z_]*->[A-Z{*]')
+    hl_state=$(count_matches "$file" '[A-Z][A-Z_]+:(ok|er|~|\?|#|%[0-9]+|![a-z])')
 
-    total=$((hl_verbs + hl_ops + hl_temporal + hl_hash + hl_msg))
-    printf '%d|%d|%d|%d|%d|%d' "$hl_verbs" "$hl_ops" "$hl_temporal" "$hl_hash" "$hl_msg" "$total"
+    total=$((hl_verbs + hl_ops + hl_temporal + hl_hash + hl_msg + hl_state))
+
+    # Patrones HELIX-LANG v3 (council 20260507T215307Z-109qf)
+    # v3 elimina colon entre agente y estado, IDs 2-char, verbos sin colon, prefijo ? para preguntas.
+    # IDs council v3: SK IN CO SY RE DV AB OC. IDs software v3: FE BE DB TS IF.
+    # v3_state: AGENT STATE.domain | AGENT STATE (sin colon)
+    # v3_msg: AGENT->AGENT object.domain (sin verbo:colon)
+    # v3_question: AGENT->AGENT ?object
+    # v3_delta: secuencia AGENT STATE AGENT STATE [@temp] o [...]
+    # v3_pos_temporal: line ending with ! ; o ^ unico (advisory; ambigüo, contado solo si stand-alone)
+    v3_state=$(count_matches "$file" '\b(SK|IN|CO|SY|RE|DV|AB|OC|FE|BE|DB|TS|IF) (ok|er|~[0-9]*|#)\b')
+    v3_msg=$(count_matches "$file" '\b(SK|IN|CO|SY|RE|DV|AB|OC|FE|BE|DB|TS|IF)->(SK|IN|CO|SY|RE|DV|AB|OC|FE|BE|DB|TS|IF)\b')
+    v3_question=$(count_matches "$file" '->[A-Z]{2,}\s+\?[a-z]')
+    v3_delta=$(count_matches "$file" '\b(SK|IN|CO|SY|RE|DV|AB|OC|FE|BE|DB|TS|IF) (ok|er) (SK|IN|CO|SY|RE|DV|AB|OC|FE|BE|DB|TS|IF) (ok|er)\b')
+    v3_pos_temporal=$(count_matches "$file" '[a-z0-9.]+ [!;\^]$')
+
+    v3_total=$((v3_state + v3_msg + v3_question + v3_delta + v3_pos_temporal))
+
+    printf '%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d|%d' \
+        "$hl_verbs" "$hl_ops" "$hl_temporal" "$hl_hash" "$hl_msg" "$hl_state" "$total" \
+        "$v3_state" "$v3_msg" "$v3_question" "$v3_delta" "$v3_pos_temporal" "$v3_total"
+}
+
+# Lee la version de helix-lang prescrita para una sesion (desde meta.yaml).
+# Default: 2.1 si meta.yaml no existe o no tiene el campo.
+read_session_version() {
+    local sid="$1"
+    local meta="${COUNCIL_DIR}/context-pack/${sid}/meta.yaml"
+    if [[ -f "$meta" ]]; then
+        grep -E '^helix_lang_version:' "$meta" 2>/dev/null | head -1 | awk -F'"' '{print $2}' | grep -E '^(2\.1|3\.0)$' || echo "2.1"
+    else
+        echo "2.1"
+    fi
 }
 
 scan_session() {
@@ -56,10 +93,16 @@ scan_session() {
         return 1
     fi
 
+    # Read prescribed version (council 20260507T215307Z-109qf P2 + DA3)
+    local session_version
+    session_version=$(read_session_version "$sid")
+
     local total_files=0
     local files_with_hl=0
+    local files_with_v3=0
     local total_chars=0
     local total_matches=0
+    local total_v3_matches=0
 
     while IFS= read -r f; do
         [[ -f "$f" ]] || continue
@@ -70,40 +113,73 @@ scan_session() {
 
         local stats
         stats=$(scan_file "$f")
-        local file_total
-        file_total=$(echo "$stats" | awk -F'|' '{print $6}')
-        total_matches=$((total_matches + file_total))
+        local file_v2_total file_v3_total
+        file_v2_total=$(echo "$stats" | awk -F'|' '{print $7}')
+        file_v3_total=$(echo "$stats" | awk -F'|' '{print $13}')
+        total_matches=$((total_matches + file_v2_total))
+        total_v3_matches=$((total_v3_matches + file_v3_total))
 
-        if [[ "$file_total" -gt 0 ]]; then
+        if [[ "$file_v2_total" -gt 0 ]]; then
             files_with_hl=$((files_with_hl + 1))
+        fi
+        if [[ "$file_v3_total" -gt 0 ]]; then
+            files_with_v3=$((files_with_v3 + 1))
         fi
     done < <(find "$outdir" -maxdepth 1 -name "*.yaml" -type f)
 
+    # Adoption por version prescrita
     local adoption_pct=0
+    local v3_adoption_pct=0
     if [[ "$total_files" -gt 0 ]]; then
         adoption_pct=$(( files_with_hl * 100 / total_files ))
+        v3_adoption_pct=$(( files_with_v3 * 100 / total_files ))
     fi
 
-    # Registrar en frequency.log
+    # Adoption "oficial" segun version prescrita
+    local official_adoption_pct=$adoption_pct
+    if [[ "$session_version" == "3.0" ]]; then
+        official_adoption_pct=$v3_adoption_pct
+    fi
+
+    # Backward compat warning (P5 council 20260507T215307Z-109qf)
+    local compat_warning=""
+    if [[ "$session_version" == "2.1" ]] && [[ "$total_v3_matches" -gt $((total_matches * 2)) ]]; then
+        compat_warning="WARN: session prescribed v2.1 but v3 patterns dominate (v3=${total_v3_matches} v2=${total_matches}). Possible mid-rollout drift."
+    elif [[ "$session_version" == "3.0" ]] && [[ "$total_matches" -gt $((total_v3_matches * 2)) ]]; then
+        compat_warning="WARN: session prescribed v3.0 but v2.1 patterns dominate (v2=${total_matches} v3=${total_v3_matches}). Adoption gap."
+    fi
+
+    # Registrar en frequency.log (formato extendido v3-aware: agrega v3_matches y session_version)
     local timestamp
     timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    printf '%s\t%s\t%d\t%d\t%d\t%d\t%d\n' \
-        "$timestamp" "$sid" "$total_files" "$files_with_hl" "$adoption_pct" "$total_matches" "$total_chars" \
+    printf '%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\n' \
+        "$timestamp" "$sid" "$total_files" "$files_with_hl" "$official_adoption_pct" "$total_matches" "$total_chars" \
+        "$session_version" "$files_with_v3" "$total_v3_matches" \
         >> "$FREQ_LOG"
 
     # Reporte stdout
     cat <<EOF
 session: $sid
+session_version: $session_version
 files_total: $total_files
-files_with_helix_lang: $files_with_hl
-adoption_pct: ${adoption_pct}%
-total_pattern_matches: $total_matches
+files_with_helix_lang_v2: $files_with_hl
+files_with_helix_lang_v3: $files_with_v3
+adoption_pct: ${official_adoption_pct}%
+v2_pattern_matches: $total_matches
+v3_pattern_matches: $total_v3_matches
 total_chars: $total_chars
 log: $FREQ_LOG
 EOF
+    if [[ -n "$compat_warning" ]]; then
+        echo "$compat_warning"
+    fi
 
-    # Exit code: 0 si >0% adoption, 1 si 0% (señaliza el problema)
-    [[ "$files_with_hl" -gt 0 ]] && return 0 || return 1
+    # Exit code: 0 si >0% adoption en la version prescrita, 1 si 0%
+    if [[ "$session_version" == "3.0" ]]; then
+        [[ "$files_with_v3" -gt 0 ]] && return 0 || return 1
+    else
+        [[ "$files_with_hl" -gt 0 ]] && return 0 || return 1
+    fi
 }
 
 report_history() {

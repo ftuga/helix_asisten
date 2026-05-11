@@ -4,8 +4,8 @@
 
 ## Regla universal
 
-**Capa interna del council** (entre roles, en YAML outputs, en context_pack): comprimida.
-**Capa externa del council** (al user creator): español neutro, prosa legible.
+**Capa interna del council** (entre roles, en YAML outputs, en context_pack): comprimida (HELIX-LANG ASCII, idioma-neutral).
+**Capa externa del council** (al user creator): **idioma del usuario** (mirror del último turno), prosa legible. Fallback español neutro colombiano si el idioma es ambiguo. Override en `~/.claude/memory/user-profile.md` prevalece.
 
 La traducción pasa **solo en el report final** (finalize step + chat back to user). Nunca antes.
 
@@ -41,7 +41,7 @@ LANGUAGE PROTOCOL:
 - INTERNAL (your YAML output): structured, compressed, terse.
   Reference other rounds with paths like `round_1_<role>.<field>`, not full quotes.
   Use HELIX-LANG codes if coordinating with other roles (skill: ~/.claude/skills/helix-lang/SKILL.md).
-- USER-FACING: never. The synthesizer/arbiter at finalize step translates to Spanish.
+- USER-FACING: never. The synthesizer/arbiter at finalize step translates to the user's language (mirror of the last user turn). Fallback Spanish only if user language is ambiguous.
 - If you're tempted to write prose for the user, STOP — emit YAML facts, the report layer translates.
 ```
 
@@ -51,7 +51,8 @@ Y `helix-council.sh finalize` agrega un campo `user_facing_summary` redactado po
 audit_log:
   ...
   user_facing_summary: |
-    Resumen en español neutro para el creator. Sin jerga inter-agente.
+    Resumen en el idioma del usuario (mirror del último turno; fallback español neutro
+    colombiano si el idioma es ambiguo). Sin jerga inter-agente.
     Decisión + razón + riesgos + acción recomendada.
 ```
 

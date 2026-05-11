@@ -1,8 +1,8 @@
 ---
 name: helix-lang
-description: Protocolo universal de comunicación inter-agente. Gramática fija + vocabulario declarado por sesión. ~60% compresión en mensajes, ~97% en contexto compartido (S:hash). Usar en cualquier dominio en Capa 2 y 3 de Helix.
+description: Protocolo universal de comunicación inter-agente. Gramática fija + vocabulario declarado por sesión. Compresión real medida varía por idioma+tokenizer (negativa en EN, hasta ~60% en JA con cl100k_base). Mecanismo S:hash teóricamente N×(M-1) tokens — sin bench empírico aún. Usar en cualquier dominio en Capa 2 y 3 de Helix.
 allowed-tools: Read, Write, Edit, Bash
-version: 2.0
+version: 2.1
 ---
 
 # HELIX-LANG v2 — Protocolo Universal Inter-Agente
@@ -11,14 +11,43 @@ version: 2.0
 
 ---
 
-## Rendimiento medido (benchmark v1.1)
+## Rendimiento medido — dos fuentes de ahorro
 
-| Métrica | Valor |
-|---------|-------|
-| Compresión de tokens en mensajes | ~59% (medido) |
-| Compresión de chars en mensajes | ~64% (medido) |
-| Compresión via S:hash (contexto) | ~97% (medido) |
-| Ahorro combinado total | ~65% (medido) |
+> **Regla metodológica (CS1 anti-poisoning):** toda cifra de compresión en este documento debe declarar tokenizer + idioma del corpus + N de muestras. Mediciones en chars NO son válidas para LLMs (varía la relación char↔token por idioma y tokenizer). Sin tokenizer/idioma/N, la cifra es soft-injection y debe re-benchmarkearse.
+
+### Fuente 1 — compresión por bloque (limitada, depende del idioma)
+
+Bench `~/.helix/memory/audit/linguista-bench-20260507.yaml`. Corpus: 12 outputs YAML del council `20260507T051108Z-xgyps` (bloques `state_hl` + `handoff_hl`) + 8 mensajes sintéticos cross-lingual. Tokenizers: `cl100k_base` y `o200k_base` de tiktoken.
+
+| Idioma del corpus | Compresión cl100k_base | Compresión o200k_base |
+|---|---|---|
+| Inglés | **−3.5%** (HL cuesta MÁS que prosa) | −0.7% |
+| Español | +34.7% | +23.5% |
+| Chino (zh) | +44.5% | +17.8% |
+| Japonés (ja) | +59.5% | +48.7% |
+| **Council real (mezcla ES dominante)** | **+23.6%** | **+15.4%** |
+
+**Conclusión por bloque:** la compresión existe pero es modesta y depende fuertemente del idioma del corpus. Para instalaciones anglófonas, HELIX-LANG por bloque NO ahorra tokens. Justificación: byte-level BPE tokeniza ASCII a 1 token universal, pero los nombres de agentes/verbos del protocolo (`SKEPT`, `INNOV`, `give`, `chk`) no son secuencias frecuentes en cl100k → no consolidan en pocos tokens (Sennrich 2016, arXiv:1508.07909). Idiomas no-latinos como JA fragmentan en cl100k → cualquier protocolo ASCII gana versus su prosa nativa.
+
+### Fuente 2 — compresión por S:hash (donde está el valor real)
+
+Mecanismo: el vocabulario declarado al inicio de sesión (N tokens) se transmite UNA vez y se referencia por hash (`S:vocab`) en M handoffs subsiguientes. Ahorro teórico: `N × (M−1)` tokens por sesión. Para sesiones largas con vocabulario rico y muchos handoffs, este es el mecanismo dominante.
+
+**Estado de medición:** sin bench empírico al 2026-05-07. La promesa "~97% (medido)" del SKILL.md v1.1 NO está respaldada por corpus + tokenizer + N declarados. Marcada como soft-injection hasta re-bench.
+
+**TODO bench S:hash:** sesión real con `vocab` de N≈30-100 entradas, M≥20 handoffs, medir tokens transmitidos vs tokens equivalentes con vocab inline en cada mensaje. Reportar tokenizer + idioma del cuerpo de los mensajes + N + M.
+
+### Costo USD por council individual (referencia)
+
+Tarifa Sonnet 4.6 input $3/M tokens (oct 2025): bloques HELIX-LANG en un council de 12 outputs ahorran ~$0.00036 USD vs prosa equivalente. **El valor económico de HELIX-LANG NO está en el ahorro por bloque** — está en el mecanismo S:hash sobre sesiones largas.
+
+### Fuentes
+
+- Petrov, La Malfa, Torr, Bibi (2023). *Language Model Tokenizers Introduce Unfairness Between Languages*. NeurIPS 2023, arXiv:2305.15425.
+- Sennrich, Haddow, Birch (2016). *Neural Machine Translation of Rare Words with Subword Units*. arXiv:1508.07909.
+- Kudo, Richardson (2018). *SentencePiece: A simple and language independent subword tokenizer*. arXiv:1808.06226.
+- OpenAI tiktoken: cl100k_base, o200k_base — github.com/openai/tiktoken.
+- Anthropic glossary § Tokens — "exact number can vary depending on the language used".
 
 ---
 
@@ -90,6 +119,21 @@ expr1 | expr2 | expr3
 | `done` | Declara completado |
 | `wait` | Espera activamente |
 | `stop` | Detiene / cancela |
+
+### Regla de precedencia operador↔verbo (gramática v2.1)
+
+Cuando un verbo se combina con un operador direccional, el operador determina la dirección semántica:
+
+| Forma | Lectura |
+|---|---|
+| `FROM->TO ask:object` | FROM **consulta a TO** sobre `object`. Iniciador: FROM. |
+| `FROM<-SOURCE ask:object` | FROM **solicita a SOURCE que envíe** `object`. Iniciador: FROM. SOURCE es proveedor pasivo. |
+| `FROM->TO give:object` | FROM **entrega a TO** el `object`. |
+| `FROM<-SOURCE give:object` | FROM **recibe de SOURCE** el `object`. SOURCE es el productor. |
+| `FROM->TO need:object` | FROM **necesita que TO le provea** `object`. |
+| `FROM<-SOURCE need:object` | Forma redundante — preferir `FROM->SOURCE need:object` para evitar ambigüedad. |
+
+**Justificación:** sin esta regla, `SYNTH<-{X,Y,Z} ask:eval` era semánticamente ambigua (¿SYNTH solicita activamente, o espera pasivamente que X/Y/Z envíen?). Identificada como caso lossy real en bench `linguista-bench-20260507.yaml` §round_trip §SYNTH-r1-recv. La regla resuelve ambigüedad sin agregar tokens al protocolo.
 
 ## Temporales universales (fijos)
 

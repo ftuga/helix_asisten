@@ -1,0 +1,18 @@
+# Helix egress known-domains (SEC2). Each line is one domain (subdomain match exact).
+# Lines starting with # are comments. Domains here do not raise first-seen alerts.
+api.anthropic.com
+docs.anthropic.com
+console.anthropic.com
+github.com
+api.github.com
+raw.githubusercontent.com
+pypi.org
+files.pythonhosted.org
+registry.npmjs.org
+context7.com
+docs.claude.com
+code.claude.com
+posttest.example.com
+arxiv.org
+huggingface.co
+platform.claude.com

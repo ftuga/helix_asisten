@@ -27,21 +27,23 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-REDACTION_LOG = HOME / ".claude/memory/aidefence-redactions.jsonl"
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+REDACTION_LOG = CONFIG_DIR / "memory/aidefence-redactions.jsonl"
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB cap (logs above this should rotate)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SCOPE — hard rule. Hook only acts on these paths.
+# Match either ~/.claude/... or ~/.helix/... (CLAUDE_CONFIG_DIR may differ).
 # ─────────────────────────────────────────────────────────────────────────────
 SCOPE_PATTERNS = [
-    re.compile(r"^.+/\.claude/memory/[^/]*\.jsonl$"),
-    re.compile(r"^.+/\.claude/memory/helix-bitacora.*\.md$"),
-    re.compile(r"^.+/\.claude/memory/routing-feedback\.jsonl$"),
-    re.compile(r"^.+/\.claude/memory/injection-alerts\.jsonl$"),
-    re.compile(r"^.+/\.claude/memory/passive-captures-.*\.jsonl$"),
-    re.compile(r"^.+/\.claude/memory/egress-audit\.jsonl$"),
-    re.compile(r"^.+/\.claude/snapshots/[^/]+\.ya?ml$"),
-    re.compile(r"^.+/\.claude/council/log/.*\.yaml$"),
+    re.compile(r"^.+/\.(claude|helix)/memory/[^/]*\.jsonl$"),
+    re.compile(r"^.+/\.(claude|helix)/memory/helix-bitacora.*\.md$"),
+    re.compile(r"^.+/\.(claude|helix)/memory/routing-feedback\.jsonl$"),
+    re.compile(r"^.+/\.(claude|helix)/memory/injection-alerts\.jsonl$"),
+    re.compile(r"^.+/\.(claude|helix)/memory/passive-captures-.*\.jsonl$"),
+    re.compile(r"^.+/\.(claude|helix)/memory/egress-audit\.jsonl$"),
+    re.compile(r"^.+/\.(claude|helix)/snapshots/[^/]+\.ya?ml$"),
+    re.compile(r"^.+/\.(claude|helix)/council/log/.*\.yaml$"),
 ]
 
 # Paths where the hook MUST NOT act even if scope match would suggest otherwise
