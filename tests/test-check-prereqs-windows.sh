@@ -141,6 +141,44 @@ out=$(run_win "dpkg")
 assert "no aparece 'dpkg en estado inconsistente'" \
        '! echo "$out" | grep -q "dpkg en estado inconsistente"'
 
+# ─── Test 7: stub Microsoft Store de python3 no crashea ──────
+echo ""
+echo "── Test 7: stub Microsoft Store de python3 → mark_fail, no crash ──"
+# Setup: PATH con uname shim + python3 shim que simula el stub MS Store
+td_stub=$(mktemp -d)
+cat > "$td_stub/uname" <<'EOF'
+#!/usr/bin/env bash
+case "${1:-}" in
+  -s) echo "MINGW64_NT-10.0-26200" ;;
+  *)  command /usr/bin/uname "$@" ;;
+esac
+EOF
+chmod +x "$td_stub/uname"
+# Crear subdir "WindowsApps" para que command -v lo reporte como stub
+mkdir -p "$td_stub/WindowsApps"
+cat > "$td_stub/WindowsApps/python3" <<'EOF'
+#!/usr/bin/env bash
+echo "Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Manage App Execution Aliases."
+exit 9009
+EOF
+chmod +x "$td_stub/WindowsApps/python3"
+# Symlink resto sin shadow del shim
+for src in /usr/bin/*; do
+    name=$(basename "$src")
+    [[ "$name" == "uname" ]] && continue
+    [[ "$name" == "python3" ]] && continue
+    [[ "$name" == "python" ]] && continue
+    [[ -e "$td_stub/$name" ]] || ln -s "$src" "$td_stub/$name" 2>/dev/null
+done
+# PATH: WindowsApps primero para que command -v python3 lo encuentre ahí
+out=$(PATH="$td_stub/WindowsApps:$td_stub" bash "$CHECK" 2>&1)
+rc=$?
+rm -rf "$td_stub"
+assert "no crashea con 'unbound variable'" \
+       '! echo "$out" | grep -q "unbound variable"'
+assert "detecta el stub y marca fail" \
+       'echo "$out" | grep -qE "stub Microsoft Store|python no encontrado"'
+
 # ─── Resumen ─────────────────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════"

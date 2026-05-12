@@ -133,26 +133,50 @@ fi
 
 # ─── 4. Python ≥ 3.9 + pip ───────────────────────────────────
 # Linux: python3 / pip3 (apt). Windows: python / pip (winget Python.Python.3).
+# Windows extra: el stub Microsoft Store en %LOCALAPPDATA%\Microsoft\WindowsApps
+# responde a `python3.exe --version` con "Python was not found; ..." en stdout
+# y exit 9009. Detectarlo y saltarlo, o el parser de versión rompe con set -u.
+_is_msstore_python_stub() {
+    [[ "$IS_WIN_NATIVE" -eq 1 ]] || return 1
+    local bin="$1"
+    local path
+    path=$(command -v "$bin" 2>/dev/null) || return 1
+    [[ "$path" == *"WindowsApps"* ]] || return 1
+    local out
+    out=$("$bin" --version 2>&1) || return 0
+    [[ "$out" == *"was not found"* ]] || [[ "$out" == *"Microsoft Store"* ]]
+}
+
 PY_BIN=""
-if command -v python3 &>/dev/null; then
+if command -v python3 &>/dev/null && ! _is_msstore_python_stub python3; then
     PY_BIN="python3"
-elif [[ "$IS_WIN_NATIVE" -eq 1 ]] && command -v python &>/dev/null; then
+elif [[ "$IS_WIN_NATIVE" -eq 1 ]] && command -v python &>/dev/null && ! _is_msstore_python_stub python; then
     PY_BIN="python"
 fi
 
 if [[ -n "$PY_BIN" ]]; then
     PY_VER=$("$PY_BIN" --version 2>&1 | awk '{print $2}')
-    PY_MAJOR="${PY_VER%%.*}"
-    PY_MINOR="${PY_VER#*.}"; PY_MINOR="${PY_MINOR%%.*}"
-    if [[ "$PY_MAJOR" -lt 3 ]] || [[ "$PY_MAJOR" -eq 3 && "$PY_MINOR" -lt 9 ]]; then
+    # Defensa: validar que PY_VER sea version string antes de arithmetic.
+    if [[ ! "$PY_VER" =~ ^[0-9]+\.[0-9]+ ]]; then
         if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
-            mark_fail "Python ${PY_VER} < 3.9" "winget_python"
+            mark_fail "$PY_BIN responde texto inesperado ('$PY_VER') — probable stub Microsoft Store" "winget_python"
         else
-            mark_fail "Python ${PY_VER} < 3.9" "apt"
+            mark_fail "$PY_BIN responde texto inesperado ('$PY_VER')" "apt"
             add_apt "python3"
         fi
     else
-        mark_ok "$PY_BIN ${PY_VER}"
+        PY_MAJOR="${PY_VER%%.*}"
+        PY_MINOR="${PY_VER#*.}"; PY_MINOR="${PY_MINOR%%.*}"
+        if [[ "$PY_MAJOR" -lt 3 ]] || [[ "$PY_MAJOR" -eq 3 && "$PY_MINOR" -lt 9 ]]; then
+            if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+                mark_fail "Python ${PY_VER} < 3.9" "winget_python"
+            else
+                mark_fail "Python ${PY_VER} < 3.9" "apt"
+                add_apt "python3"
+            fi
+        else
+            mark_ok "$PY_BIN ${PY_VER}"
+        fi
     fi
 else
     if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
@@ -163,9 +187,9 @@ else
     fi
 fi
 
-if command -v pip3 &>/dev/null; then
+if command -v pip3 &>/dev/null && ! _is_msstore_python_stub pip3; then
     mark_ok "pip3"
-elif [[ "$IS_WIN_NATIVE" -eq 1 ]] && command -v pip &>/dev/null; then
+elif [[ "$IS_WIN_NATIVE" -eq 1 ]] && command -v pip &>/dev/null && ! _is_msstore_python_stub pip; then
     mark_ok "pip"
 else
     if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
