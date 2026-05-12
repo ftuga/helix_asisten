@@ -184,6 +184,8 @@ mkdir -p "$CLAUDE_DIR/council/scripts"
   rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/council/constitution.md" "$CLAUDE_DIR/council/" 2>&1 | head -5
 [[ -f "$REPO_DIR/claude/council/inter-agent-language.md" ]] && \
   rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/council/inter-agent-language.md" "$CLAUDE_DIR/council/" 2>&1 | head -5
+[[ -f "$REPO_DIR/claude/council/README.md" ]] && \
+  rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/council/README.md" "$CLAUDE_DIR/council/" 2>&1 | head -5
 [[ -d "$REPO_DIR/claude/council/scripts" ]] && \
   rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/council/scripts/" "$CLAUDE_DIR/council/scripts/" 2>&1 | head -10
 
