@@ -101,7 +101,7 @@ else {
 
 Write-Host ''
 Write-Host '------------------------------------------------------------'
-Write-Host '  Delegando a install_on_wsl.sh via Git Bash...'
+Write-Host '  Delegando al instalador Helix (bash) via Git Bash...'
 Write-Host '------------------------------------------------------------'
 Write-Host ''
 

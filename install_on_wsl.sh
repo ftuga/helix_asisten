@@ -17,6 +17,12 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$HOME/.claude-template"
 
+# Detectar Git Bash / MSYS / Cygwin (Windows nativo) vs Linux/WSL
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*) IS_WIN_NATIVE=1 ;;
+  *)                    IS_WIN_NATIVE=0 ;;
+esac
+
 # Resolver layout
 HELIX_LAYOUT="${HELIX_LAYOUT:-split}"
 case "$HELIX_LAYOUT" in
@@ -192,21 +198,32 @@ ln -sf "$CLAUDE_DIR/hv.sh" "$HOME/.local/bin/hv" 2>/dev/null || true
 ln -sf "$CLAUDE_DIR/helix-project-index.sh" "$HOME/.local/bin/helix-project-index" 2>/dev/null || true
 
 # Instalar dependencia Python
+# Linux: pip3 (apt). Windows: pip o pip3 (winget Python).
 # Ubuntu 24.04+ (PEP 668): pip sin flags falla. Intentar --user primero,
 # luego --break-system-packages como fallback.
+PIP_BIN=""
+if command -v pip3 &>/dev/null; then
+  PIP_BIN="pip3"
+elif [[ "$IS_WIN_NATIVE" -eq 1 ]] && command -v pip &>/dev/null; then
+  PIP_BIN="pip"
+fi
 _pip_install_qdrant() {
-  pip3 install --quiet --user qdrant-client 2>/dev/null && return 0
-  pip3 install --quiet --user --break-system-packages qdrant-client 2>/dev/null && return 0
+  "$PIP_BIN" install --quiet --user qdrant-client 2>/dev/null && return 0
+  "$PIP_BIN" install --quiet --user --break-system-packages qdrant-client 2>/dev/null && return 0
   return 1
 }
-if command -v pip3 &>/dev/null; then
+if [[ -n "$PIP_BIN" ]]; then
   if _pip_install_qdrant; then
-    echo "  ✓ qdrant-client instalado"
+    echo "  ✓ qdrant-client instalado ($PIP_BIN)"
   else
-    INSTALL_WARNINGS+=("qdrant-client no se pudo instalar — vector memory no disponible. Ejecutar manualmente: pip3 install --user qdrant-client")
+    INSTALL_WARNINGS+=("qdrant-client no se pudo instalar — vector memory no disponible. Ejecutar manualmente: $PIP_BIN install --user qdrant-client")
   fi
 else
-  INSTALL_WARNINGS+=("pip3 no disponible — instalar: sudo apt-get install -y python3-pip && pip3 install --user qdrant-client")
+  if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+    INSTALL_WARNINGS+=("pip no disponible — instalar Python desde winget: winget install --id Python.Python.3.12 -e ; luego: pip install --user qdrant-client")
+  else
+    INSTALL_WARNINGS+=("pip3 no disponible — instalar: sudo apt-get install -y python3-pip && pip3 install --user qdrant-client")
+  fi
 fi
 
 # Qdrant vía Docker (no bloquea si Docker no está disponible)
@@ -225,9 +242,17 @@ if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
         echo "  → Qdrant ya está corriendo"
     fi
 elif command -v docker &>/dev/null; then
-    INSTALL_WARNINGS+=("Docker instalado pero daemon no activo — Qdrant no iniciado. En WSL: sudo service docker start")
+    if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+        INSTALL_WARNINGS+=("Docker instalado pero Docker Desktop no está corriendo — Qdrant no iniciado. Abrir Docker Desktop, esperar 'Engine running' y volver a correr el installer.")
+    else
+        INSTALL_WARNINGS+=("Docker instalado pero daemon no activo — Qdrant no iniciado. En WSL: sudo service docker start")
+    fi
 else
-    INSTALL_WARNINGS+=("Docker no encontrado — Qdrant no disponible. Instalar Docker y ejecutar:\n  docker run -d --name helix-qdrant --restart unless-stopped -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant:latest")
+    if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+        INSTALL_WARNINGS+=("Docker no encontrado — Qdrant no disponible. Instalar Docker Desktop: winget install --id Docker.DockerDesktop -e\n  Luego: docker run -d --name helix-qdrant --restart unless-stopped -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant:latest")
+    else
+        INSTALL_WARNINGS+=("Docker no encontrado — Qdrant no disponible. Instalar Docker y ejecutar:\n  docker run -d --name helix-qdrant --restart unless-stopped -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant:latest")
+    fi
 fi
 
 # Embedding model vía Ollama
@@ -237,7 +262,11 @@ if command -v ollama &>/dev/null; then
     OLLAMA_PULL_PID=$!
     echo "  → nomic-embed-text descargando en background..."
 else
-    INSTALL_WARNINGS+=("Ollama no encontrado — Capa 0 (modelos locales) no disponible. Instalar: https://ollama.com/download\n  Luego: ollama pull nomic-embed-text")
+    if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+        INSTALL_WARNINGS+=("Ollama no encontrado — Capa 0 (modelos locales) no disponible. Instalar: winget install --id Ollama.Ollama -e\n  Luego: ollama pull nomic-embed-text")
+    else
+        INSTALL_WARNINGS+=("Ollama no encontrado — Capa 0 (modelos locales) no disponible. Instalar: https://ollama.com/download\n  Luego: ollama pull nomic-embed-text")
+    fi
 fi
 
 echo "  ✓ Vector Memory listo (hv y helix-project-index disponibles)"
@@ -306,8 +335,21 @@ if command -v claude &>/dev/null; then
   for _c in chromium-browser chromium google-chrome google-chrome-stable; do
     command -v "$_c" &>/dev/null && CHROME_OK=1 && break
   done
+  if [[ "$CHROME_OK" -eq 0 && "$IS_WIN_NATIVE" -eq 1 ]]; then
+    for _wp in \
+      "/c/Program Files/Google/Chrome/Application/chrome.exe" \
+      "/c/Program Files (x86)/Google/Chrome/Application/chrome.exe" \
+      "/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" \
+      "/c/Program Files/Microsoft/Edge/Application/msedge.exe"; do
+      [[ -x "$_wp" ]] && CHROME_OK=1 && break
+    done
+  fi
   if [[ "$CHROME_OK" -eq 0 ]]; then
-    INSTALL_WARNINGS+=("puppeteer MCP instalado pero Chromium no encontrado — quedará en estado 'Failed to connect'.\n  Instalar: sudo apt-get install -y chromium-browser\n  Luego reiniciar Claude Code.")
+    if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+      INSTALL_WARNINGS+=("puppeteer MCP instalado pero Chrome/Edge no encontrados — quedará en estado 'Failed to connect'.\n  Instalar: winget install --id Google.Chrome -e\n  Luego reiniciar Claude Code.")
+    else
+      INSTALL_WARNINGS+=("puppeteer MCP instalado pero Chromium no encontrado — quedará en estado 'Failed to connect'.\n  Instalar: sudo apt-get install -y chromium-browser\n  Luego reiniciar Claude Code.")
+    fi
   fi
   _mcp_add puppeteer npx -y @modelcontextprotocol/server-puppeteer
 
@@ -322,8 +364,12 @@ else
   echo "  claude mcp add context7 -- npx -y @upstash/context7-mcp"
   echo "  claude mcp add browser-tools -- npx @agentdeskai/browser-tools-mcp@1.2.0"
   echo ""
-  echo "  # Puppeteer requiere Chromium:"
-  echo "  sudo apt-get install -y chromium-browser"
+  echo "  # Puppeteer requiere Chromium / Chrome / Edge:"
+  if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+    echo "  winget install --id Google.Chrome -e"
+  else
+    echo "  sudo apt-get install -y chromium-browser"
+  fi
   echo "  claude mcp add puppeteer -- npx -y @modelcontextprotocol/server-puppeteer"
   echo ""
 fi
