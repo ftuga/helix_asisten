@@ -168,6 +168,11 @@ mkdir -p "$CLAUDE_DIR/skills"
 rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/skills/" "$CLAUDE_DIR/skills/" 2>&1 | head -20
 
 echo ""
+echo "→ Sincronizando assets/ (logos, PNGs usados por helpers/comandos)..."
+mkdir -p "$CLAUDE_DIR/assets"
+rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/assets/" "$CLAUDE_DIR/assets/" 2>&1 | head -20
+
+echo ""
 echo "→ Sincronizando agents/ (agrega/actualiza, no borra custom)..."
 mkdir -p "$CLAUDE_DIR/agents"
 rsync "${RSYNC_FLAGS[@]}" "$REPO_DIR/claude/agents/" "$CLAUDE_DIR/agents/" 2>&1 | head -20

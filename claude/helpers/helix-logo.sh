@@ -48,9 +48,20 @@ if [[ -z "$WT_DIR" || ! -f "$WT_SETTINGS" ]]; then
   echo "       Tip: exportar HELIX_WT_DIR=/mnt/c/Users/<TU_USER>/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState" >&2
   exit 1
 fi
+# Auto-bootstrap del PNG: si no está en LocalState, copiarlo desde el asset
+# replicado por update_local_on_{wsl,windows} a $CLAUDE_DIR/assets/.
 if [[ ! -f "$LOGO_PNG_LINUX" ]]; then
-  echo "WARN: PNG del logo ausente en: $LOGO_PNG_LINUX" >&2
-  echo "      Activar igual fallará al renderizar en WT." >&2
+  CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-${HELIX_HOME:-$HOME/.helix}}"
+  [[ -d "$CLAUDE_DIR" ]] || CLAUDE_DIR="$HOME/.claude"
+  ASSET_SRC="$CLAUDE_DIR/assets/ajolote-final-v3.png"
+  if [[ -f "$ASSET_SRC" ]]; then
+    cp "$ASSET_SRC" "$LOGO_PNG_LINUX"
+    echo "logo: PNG copiado desde $ASSET_SRC -> $LOGO_PNG_LINUX"
+  else
+    echo "WARN: PNG del logo ausente en: $LOGO_PNG_LINUX" >&2
+    echo "      Y tampoco encontrado en: $ASSET_SRC" >&2
+    echo "      Corré 'bash update_local_on_wsl.sh' (o el equivalente Windows) en helix_asisten." >&2
+  fi
 fi
 
 read_status() {
