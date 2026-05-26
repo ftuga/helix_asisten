@@ -71,7 +71,7 @@ if [[ "$IS_WIN_NATIVE" -eq 0 ]]; then
 fi
 
 # ─── 2. Herramientas base ────────────────────────────────────
-for cmd in git curl rsync; do
+for cmd in git curl; do
     if command -v "$cmd" &>/dev/null; then
         mark_ok "$cmd"
     else
@@ -84,12 +84,24 @@ for cmd in git curl rsync; do
     fi
 done
 
-# zstd — requerido por Ollama
+# rsync — en Windows Git Bash no está disponible; el instalador usa cp -a como fallback
+if command -v rsync &>/dev/null; then
+    mark_ok "rsync"
+else
+    if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
+        mark_warn "rsync no encontrado — usando cp -a como fallback (no bloquea)"
+    else
+        mark_fail "rsync no encontrado" "apt"
+        add_apt "rsync"
+    fi
+fi
+
+# zstd — en Windows Ollama lo incluye internamente; no es un prereq externo
 if command -v zstd &>/dev/null; then
     mark_ok "zstd"
 else
     if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
-        mark_fail "zstd no encontrado — actualizar Git for Windows (lo incluye)" "git_for_windows"
+        mark_warn "zstd no encontrado en PATH — Ollama lo gestiona internamente en Windows (no bloquea)"
     else
         mark_fail "zstd no encontrado (requerido por Ollama)" "apt"
         add_apt "zstd"
@@ -326,7 +338,7 @@ if [[ ${#FAILS_LABELS[@]} -gt 0 ]]; then
     if [[ "$IS_WIN_NATIVE" -eq 1 ]]; then
         # ─── Windows nativo: winget + manual ───────────────────
         if [[ -n "${GROUPS_NEEDED[git_for_windows]:-}" ]]; then
-            echo "# ${step}. Reinstalar/actualizar Git for Windows (incluye git, curl, rsync, zstd, Git Bash):"
+            echo "# ${step}. Reinstalar/actualizar Git for Windows (incluye git, curl, Git Bash):"
             echo "winget install --id Git.Git -e --source winget"
             echo "# Reabrir Git Bash tras instalar."
             echo ""

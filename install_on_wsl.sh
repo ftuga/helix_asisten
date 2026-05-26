@@ -160,7 +160,11 @@ cp -r "$REPO_DIR/claude/skills/." "$CLAUDE_DIR/skills/"
 # ── 6b. Helpers globales (sync completo desde claude/helpers/) ──
 echo "→ Instalando helpers globales..."
 mkdir -p "$CLAUDE_DIR/helpers"
-rsync -a "$REPO_DIR/claude/helpers/" "$CLAUDE_DIR/helpers/"
+if command -v rsync &>/dev/null; then
+    rsync -a "$REPO_DIR/claude/helpers/" "$CLAUDE_DIR/helpers/"
+else
+    cp -a "$REPO_DIR/claude/helpers/." "$CLAUDE_DIR/helpers/"
+fi
 chmod +x "$CLAUDE_DIR/helpers/"*.sh 2>/dev/null || true
 # Validar statusline post-install
 STATUSLINE_PATH="$CLAUDE_DIR/helpers/helix-statusline.sh"
@@ -171,7 +175,9 @@ fi
 # ── 6c. Launcher helix + alias ──────────────────────────────
 echo "→ Instalando launcher helix..."
 mkdir -p "$HOME/helix_asisten/scripts"
-cp "$REPO_DIR/scripts/helix.sh" "$HOME/helix_asisten/scripts/"
+if [[ ! "$REPO_DIR/scripts/helix.sh" -ef "$HOME/helix_asisten/scripts/helix.sh" ]]; then
+    cp "$REPO_DIR/scripts/helix.sh" "$HOME/helix_asisten/scripts/"
+fi
 chmod +x "$HOME/helix_asisten/scripts/helix.sh"
 
 ALIAS_LINE='alias helix="bash $HOME/helix_asisten/scripts/helix.sh"'
