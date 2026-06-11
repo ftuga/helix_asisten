@@ -104,6 +104,14 @@ scan_session() {
     local total_matches=0
     local total_v3_matches=0
 
+    # adoption_by_form (D5.B council 20260610T161758Z-ianr):
+    # Threshold desagregado en lugar de adoption_pct global.
+    # Cuenta archivos con AL MENOS 1 match en cada forma.
+    local files_with_handoff=0       # FROM->TO patterns (formas estructurales OBLIGATORIO)
+    local files_with_s_hash=0        # S:xxxx vocab refs (OBLIGATORIO)
+    local files_with_state_delta=0   # AGENT:STATE.domain o D:{...} (OBLIGATORIO)
+    local files_with_prose=0         # any verb/op pattern in prose (opt-in EN/ES)
+
     while IFS= read -r f; do
         [[ -f "$f" ]] || continue
         total_files=$((total_files + 1))
@@ -125,15 +133,48 @@ scan_session() {
         if [[ "$file_v3_total" -gt 0 ]]; then
             files_with_v3=$((files_with_v3 + 1))
         fi
+
+        # Per-form detection (formas estructurales D5.B)
+        local has_handoff has_s_hash has_state_delta has_prose
+        has_handoff=$(echo "$stats" | awk -F'|' '{print $5}')   # hl_msg
+        has_s_hash=$(echo "$stats" | awk -F'|' '{print $4}')    # hl_hash
+        has_state_delta=$(echo "$stats" | awk -F'|' '{print $6}')  # hl_state
+        # Also detect D:{...} delta blocks
+        local has_delta_block
+        has_delta_block=$(count_matches "$f" 'D:\{')
+        if [[ "$has_delta_block" -gt 0 ]]; then
+            has_state_delta=$((has_state_delta + has_delta_block))
+        fi
+        has_prose=$(echo "$stats" | awk -F'|' '{print $1 + $3}')  # hl_verbs + hl_temporal
+
+        [[ "$has_handoff" -gt 0 ]] && files_with_handoff=$((files_with_handoff + 1))
+        [[ "$has_s_hash" -gt 0 ]] && files_with_s_hash=$((files_with_s_hash + 1))
+        [[ "$has_state_delta" -gt 0 ]] && files_with_state_delta=$((files_with_state_delta + 1))
+        [[ "$has_prose" -gt 0 ]] && files_with_prose=$((files_with_prose + 1))
     done < <(find "$outdir" -maxdepth 1 -name "*.yaml" -type f)
 
     # Adoption por version prescrita
     local adoption_pct=0
     local v3_adoption_pct=0
+    # adoption_by_form (D5.B): porcentajes desagregados
+    local adoption_handoff_pct=0
+    local adoption_s_hash_pct=0
+    local adoption_state_delta_pct=0
+    local adoption_prose_pct=0
     if [[ "$total_files" -gt 0 ]]; then
         adoption_pct=$(( files_with_hl * 100 / total_files ))
         v3_adoption_pct=$(( files_with_v3 * 100 / total_files ))
+        adoption_handoff_pct=$(( files_with_handoff * 100 / total_files ))
+        adoption_s_hash_pct=$(( files_with_s_hash * 100 / total_files ))
+        adoption_state_delta_pct=$(( files_with_state_delta * 100 / total_files ))
+        adoption_prose_pct=$(( files_with_prose * 100 / total_files ))
     fi
+
+    # Threshold gates D5.B (handoffs>=80%, S:hash>=70%, estado/delta>=50%, prosa sin threshold)
+    local warn_handoff="" warn_s_hash="" warn_state_delta=""
+    [[ "$adoption_handoff_pct" -lt 80 ]] && warn_handoff="WARN: handoff adoption ${adoption_handoff_pct}% < 80% threshold"
+    [[ "$adoption_s_hash_pct" -lt 70 ]] && warn_s_hash="WARN: S:hash adoption ${adoption_s_hash_pct}% < 70% threshold"
+    [[ "$adoption_state_delta_pct" -lt 50 ]] && warn_state_delta="WARN: state/delta adoption ${adoption_state_delta_pct}% < 50% threshold"
 
     # Adoption "oficial" segun version prescrita
     local official_adoption_pct=$adoption_pct
@@ -149,15 +190,16 @@ scan_session() {
         compat_warning="WARN: session prescribed v3.0 but v2.1 patterns dominate (v2=${total_matches} v3=${total_v3_matches}). Adoption gap."
     fi
 
-    # Registrar en frequency.log (formato extendido v3-aware: agrega v3_matches y session_version)
+    # Registrar en frequency.log (formato extendido D5.B: agrega adoption_by_form columns)
     local timestamp
     timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    printf '%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\n' \
+    printf '%s\t%s\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n' \
         "$timestamp" "$sid" "$total_files" "$files_with_hl" "$official_adoption_pct" "$total_matches" "$total_chars" \
         "$session_version" "$files_with_v3" "$total_v3_matches" \
+        "$adoption_handoff_pct" "$adoption_s_hash_pct" "$adoption_state_delta_pct" "$adoption_prose_pct" \
         >> "$FREQ_LOG"
 
-    # Reporte stdout
+    # Reporte stdout (YAML para fácil parsing con yq)
     cat <<EOF
 session: $sid
 session_version: $session_version
@@ -165,6 +207,17 @@ files_total: $total_files
 files_with_helix_lang_v2: $files_with_hl
 files_with_helix_lang_v3: $files_with_v3
 adoption_pct: ${official_adoption_pct}%
+adoption:
+  by_form:
+    handoff: ${adoption_handoff_pct}%
+    s_hash: ${adoption_s_hash_pct}%
+    state_delta: ${adoption_state_delta_pct}%
+    prose: ${adoption_prose_pct}%
+  thresholds_d5b:
+    handoff_min: 80%
+    s_hash_min: 70%
+    state_delta_min: 50%
+    prose_min: null
 v2_pattern_matches: $total_matches
 v3_pattern_matches: $total_v3_matches
 total_chars: $total_chars
@@ -173,6 +226,10 @@ EOF
     if [[ -n "$compat_warning" ]]; then
         echo "$compat_warning"
     fi
+    # D5.B threshold warnings (visible al finalize del council)
+    [[ -n "$warn_handoff" ]] && echo "$warn_handoff"
+    [[ -n "$warn_s_hash" ]] && echo "$warn_s_hash"
+    [[ -n "$warn_state_delta" ]] && echo "$warn_state_delta"
 
     # Exit code: 0 si >0% adoption en la version prescrita, 1 si 0%
     if [[ "$session_version" == "3.0" ]]; then

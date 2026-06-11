@@ -1,8 +1,8 @@
 {
-  "model": "claude-opus-4-7",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "model": "claude-fable-5",
   "hooks": {
     "PreToolUse": [
       {
@@ -213,5 +213,8 @@
   "statusLine": {
     "type": "command",
     "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-statusline.sh\""
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true
   }
 }

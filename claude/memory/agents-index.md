@@ -56,4 +56,4 @@ analítica on-chain de Uniswap V2. Contexto completo en `memory/agents/<nombre>.
 
 > Última corrección: 2026-04-27 (drift cleanup: 11 entries huérfanos removidos, 3 archivos agregados, architect-review→architect-reviewer renombrado)
 
-> Última corrección ERL+ExpeL: 2026-05-08
+> Última corrección ERL+ExpeL: 2026-06-11

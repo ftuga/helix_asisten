@@ -1,13 +1,19 @@
 ---
 name: helix-route-recommend
-description: Recomienda modelo Claude (Opus/Sonnet/Haiku) por dominio o agente, basado en mapping estático y data agregada en route-cost-audit.md. ADVISOR read-only — nunca modifica settings.json. Modes recommend/by-agent/list-domains/current/compare. Override via HELIX_FORCE_MODEL. Reversibility via HELIX_R1_ENABLED=0. Invocar cuando el creator pregunte "qué modelo conviene para X", antes de cambiar settings.json model, o al diseñar una nueva sesión con dominios mixtos.
-version: 1.0
+description: Recomienda modelo Claude (Fable 5 / Opus / Sonnet / Haiku) por dominio o agente, basado en mapping estático y data agregada en route-cost-audit.md. ADVISOR read-only — nunca modifica settings.json. Modes recommend/by-agent/list-domains/current/compare. Override via HELIX_FORCE_MODEL. Reversibility via HELIX_R1_ENABLED=0. Invocar cuando el creator pregunte "qué modelo conviene para X", antes de cambiar settings.json model, o al diseñar una nueva sesión con dominios mixtos.
+version: 1.1
 status: production
 ---
 
 # Helix Route Recommend — R1 model advisor
 
-Sugiere modelo Claude por dominio (security → Opus, frontend → Sonnet, observability → Haiku) basado en `DOMAIN_RECOS` (mapping estático en `helix-route-cost-audit.py`) + cost data agregada vía R2.
+Sugiere modelo Claude por dominio (security → Fable 5, frontend → Sonnet, observability → Haiku) basado en `DOMAIN_RECOS` (mapping estático en `helix-route-cost-audit.py`) + cost data agregada vía R2.
+
+**Modelos vigentes (2026-06):**
+- `claude-fable-5` — most capable widely released. $10/$50 per MTok. Reservado para high-reasoning (council, architecture, security, debug, finance, defi, product, brand).
+- `claude-opus-4-8` — most capable Opus-tier. $5/$25. Alternativa cost-effective si Fable 5 es overkill.
+- `claude-sonnet-4-6` — balance speed/intelligence. $3/$15. Default para production code (backend, frontend, db, infra, testing).
+- `claude-haiku-4-5` — fastest. $1/$5. Pattern matching (observability).
 
 **Read-only advisor.** Claude Code en runtime actual es single-model — el setting global vive en `~/.claude/settings.json` "model". R1 informa al creator; el creator decide el cambio manualmente.
 
@@ -37,54 +43,54 @@ Sugiere modelo Claude por dominio (security → Opus, frontend → Sonnet, obser
 ### 1. Recomendación por dominio
 
 ```bash
-python3 ~/.claude/helpers/helix-route-recommend.py recommend security
-# → claude-opus-4-7 (reason: Análisis de superficie de ataque)
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" recommend security
+# → claude-fable-5 (reason: Análisis de superficie de ataque)
 
-python3 ~/.claude/helpers/helix-route-recommend.py recommend observability
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" recommend observability
 # → claude-haiku-4-5 (reason: Pattern match en logs, alta frecuencia)
 ```
 
 ### 2. Recomendación por agente
 
 ```bash
-python3 ~/.claude/helpers/helix-route-recommend.py by-agent error-detective
-# → debug → claude-opus-4-7 (root cause análisis profundo)
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" by-agent error-detective
+# → debug → claude-fable-5 (root cause análisis profundo)
 
-python3 ~/.claude/helpers/helix-route-recommend.py by-agent frontend-developer
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" by-agent frontend-developer
 # → frontend → claude-sonnet-4-6
 ```
 
 ### 3. List + current
 
 ```bash
-python3 ~/.claude/helpers/helix-route-recommend.py list-domains
-python3 ~/.claude/helpers/helix-route-recommend.py current
-# → current Claude Code model: claude-opus-4-7
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" list-domains
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" current
+# → current Claude Code model: claude-fable-5
 ```
 
 ### 4. Compare 2 agents (sesión mixta)
 
 ```bash
-python3 ~/.claude/helpers/helix-route-recommend.py compare error-detective frontend-developer
-# → Diferent models — sugiere Opus para cubrir ambos
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" compare error-detective frontend-developer
+# → Diferent models — sugiere Fable 5 para cubrir ambos
 ```
 
 ### 5. Refresh audit (mensual)
 
 ```bash
-python3 ~/.claude/helpers/helix-route-cost-audit.py refresh
-# Regenera ~/.claude/memory/topics/route-cost-audit.md con cost + routing-feedback
+python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-cost-audit.py" refresh
+# Regenera $CLAUDE_CONFIG_DIR/memory/topics/route-cost-audit.md con cost + routing-feedback
 ```
 
 ## Override / kill switch
 
 ```bash
 # Override force model
-HELIX_FORCE_MODEL=claude-haiku-4-5 python3 ~/.claude/helpers/helix-route-recommend.py recommend security
+HELIX_FORCE_MODEL=claude-haiku-4-5 python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" recommend security
 # → claude-haiku-4-5 (source=force)
 
 # Disable R1 entirely → fallback Sonnet
-HELIX_R1_ENABLED=0 python3 ~/.claude/helpers/helix-route-recommend.py recommend security
+HELIX_R1_ENABLED=0 python3 "$CLAUDE_CONFIG_DIR/helpers/helix-route-recommend.py" recommend security
 # → claude-sonnet-4-6 (source=disabled)
 ```
 

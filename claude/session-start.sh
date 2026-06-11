@@ -380,6 +380,87 @@ if [[ -n "$PROJECT_ROOT" && -d "$PROJECT_ROOT/.git" ]]; then
   fi
 fi
 
+# ── D5.C — Detectar council REJECTED sin override-log entry (HELIX-OVERRIDE-UNDOCUMENTED) ──
+# Backstop institucional del protocolo D4 overrides ejecutivos.
+# Detecta: archivos en council/log/*.yaml con decision: REJECTED que no tengan
+# entry correspondiente en council/overrides-log/*.yaml.
+# Caso "limpio" (no override): REJECTED sin override-log es OK — significa que NO se overrideó.
+# El warning solo se emite si hay >0 REJECTED sin override Y el creator quiere revisar.
+# Filosofía: chequeo defensivo, no enforcement. El creator interpreta.
+COUNCIL_LOG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/council/log"
+OVERRIDES_LOG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/council/overrides-log"
+if [[ -d "$COUNCIL_LOG_DIR" ]]; then
+  REJECTED_COUNCILS=()
+  while IFS= read -r -d '' council_file; do
+    # Extraer session_id (campo session_id: del YAML)
+    sid=$(grep -E '^session_id:' "$council_file" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"' || true)
+    [[ -z "$sid" ]] && continue
+    # Verificar decision REJECTED
+    if grep -qE '^decision:\s*REJECTED' "$council_file" 2>/dev/null; then
+      # Match por contenido: buscar overridden_council_id: <sid> dentro de overrides-log/
+      has_override_entry=false
+      if [[ -d "$OVERRIDES_LOG_DIR" ]]; then
+        if grep -rqE "^overridden_council_id:\s*\"?${sid}\"?" "$OVERRIDES_LOG_DIR" 2>/dev/null; then
+          has_override_entry=true
+        fi
+      fi
+      if [[ "$has_override_entry" == "false" ]]; then
+        REJECTED_COUNCILS+=("$sid ($(basename "$council_file"))")
+      fi
+    fi
+  done < <(find "$COUNCIL_LOG_DIR" -maxdepth 1 -name "*.yaml" -print0 2>/dev/null)
+
+  if [[ ${#REJECTED_COUNCILS[@]} -gt 0 ]]; then
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo "[HELIX-OVERRIDE-UNDOCUMENTED]"
+    echo "Council(s) REJECTED sin entry correspondiente en overrides-log/:"
+    for entry in "${REJECTED_COUNCILS[@]}"; do echo "   - $entry"; done
+    echo ""
+    echo "Caso normal: REJECTED sin override = NO se overrideó. No requiere acción."
+    echo "Caso a investigar: si la doctrina (CLAUDE.md o topics/) cambió tras alguno"
+    echo "  de estos REJECTED implementando lo opuesto al voto, registrar en"
+    echo "  ~/.helix/council/overrides-log/ siguiendo el protocolo D5.C."
+    echo "  Doctrina: ~/.helix/memory/topics/overrides-ejecutivos.md"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+  fi
+fi
+
+# ── D5 — Deadline tracker council preconditions (D2.1 sin cron) ──
+# Emite warning cuando se alcanza fecha de precondition del council 20260610T161758Z-ianr.
+# Reversibility: crear flag ~/.helix/memory/.deadline-acked-<id> apaga el warning.
+TODAY_ISO=$(date -u +%Y-%m-%d)
+MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
+mkdir -p "$MEMORY_DIR" 2>/dev/null
+
+check_deadline() {
+  local id="$1" deadline="$2" action="$3" detail="$4"
+  local flag="$MEMORY_DIR/.deadline-acked-${id}"
+  [[ -f "$flag" ]] && return 0  # acknowledged
+  # Solo emitir si hoy >= deadline
+  if [[ "$TODAY_ISO" > "$deadline" || "$TODAY_ISO" == "$deadline" ]]; then
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo "[HELIX-DEADLINE-${id}]"
+    echo "Deadline alcanzada: $deadline (hoy: $TODAY_ISO)"
+    echo "Acción requerida: $action"
+    echo "Detalle: $detail"
+    echo ""
+    echo "Para marcar como hecho: touch $flag"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+  fi
+}
+
+# P1 #1 — Bench retrospectivo HELIX-LANG (council D5.B, 30d post-cementación)
+check_deadline "BENCH-LANG" "2026-07-10" \
+  "Ejecutar bench retrospectivo HELIX-LANG (régimen mixto vs #84 universal)" \
+  "Comparar tokens consumidos en councils 2026-05-07 → 2026-06-09 vs 2026-06-10 → 2026-07-10 con tiktoken cl100k. Si NO baja ≥15% → re-council. Ver topics/helix-lang-regimen-mixto.md §Bench retrospectivo."
+
+# P1 #2 — Verificación calendárica gate A4 Capa 2 (council D5.A, 90d post-cementación)
+check_deadline "GATE-A4" "2026-09-10" \
+  "Verificar gate A4 (Capa 2 propia) — chequear si capa2-bypass-counter.jsonl tiene ≥10 entries en últimos 30d" \
+  "cat ~/.helix/memory/audit/capa2-bypass-counter.jsonl | wc -l. Si 0 con sesiones activas → bug del hook (anti-BUG-G2). Si <10 → mantener A3. Si ≥10 → re-council. Ver topics/capa2-status.md."
+
 # ── Detectar snapshot conversacional reciente (HELIX-SUGGEST-RESUME) ─
 SNAPSHOT_PROJECT="${PROJECT_ROOT:+$(basename "$PROJECT_ROOT")}"
 SNAPSHOT_PROJECT="${SNAPSHOT_PROJECT:-global}"

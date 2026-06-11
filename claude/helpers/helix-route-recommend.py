@@ -36,11 +36,13 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-LOG = HOME / ".claude/memory/r1-recommend-log.jsonl"
-SETTINGS_JSON = HOME / ".claude/settings.json"
+# Respect CLAUDE_CONFIG_DIR (Helix migration to ~/.helix/). Falls back to ~/.claude.
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+LOG = CONFIG_DIR / "memory/r1-recommend-log.jsonl"
+SETTINGS_JSON = CONFIG_DIR / "settings.json"
 
 # Import the static maps from the audit script (single source of truth)
-sys.path.insert(0, str(HOME / ".claude/helpers"))
+sys.path.insert(0, str(CONFIG_DIR / "helpers"))
 try:
     from importlib import import_module
     _audit = import_module("helix-route-cost-audit".replace("-", "_"))
@@ -49,7 +51,7 @@ except Exception:
     import importlib.util
     spec = importlib.util.spec_from_file_location(
         "helix_route_cost_audit",
-        HOME / ".claude/helpers/helix-route-cost-audit.py",
+        CONFIG_DIR / "helpers/helix-route-cost-audit.py",
     )
     _audit = importlib.util.module_from_spec(spec)  # type: ignore
     spec.loader.exec_module(_audit)  # type: ignore

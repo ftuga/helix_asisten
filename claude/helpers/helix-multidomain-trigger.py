@@ -32,7 +32,11 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-LOG = HOME / ".claude/memory/d1-multidomain-detections.jsonl"
+# Respect CLAUDE_CONFIG_DIR (Helix migration to ~/.helix/). Falls back to ~/.claude.
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+LOG = CONFIG_DIR / "memory/d1-multidomain-detections.jsonl"
+# D5.A capa2-bypass-counter: solo eventos no-council, gate del A4 trigger.
+BYPASS_LOG = CONFIG_DIR / "memory/audit/capa2-bypass-counter.jsonl"
 
 ENABLED = os.environ.get("HELIX_D1_TRIGGER_ENABLED", "1") != "0"
 THRESHOLD = int(os.environ.get("HELIX_D1_THRESHOLD", "2"))
@@ -124,6 +128,16 @@ def _log(entry: dict) -> None:
         pass
 
 
+def _log_bypass(entry: dict) -> None:
+    """D5.A capa2-bypass-counter: gate del A4 trigger (≥10 eventos no-council/30d)."""
+    BYPASS_LOG.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with BYPASS_LOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
 def main() -> int:
     if not ENABLED:
         return 0
@@ -163,6 +177,10 @@ def main() -> int:
         "advised": True,
     }
     _log(entry)
+
+    # D5.A: count only NON-council bypasses (gate A4 needs ≥10 in 30d to reopen Capa 2 debate)
+    if subagent and not subagent.startswith("council-"):
+        _log_bypass(entry)
 
     domains_str = ", ".join(domains)
     print(

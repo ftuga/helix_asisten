@@ -25,11 +25,18 @@ readonly CACHE_TTL=30
 
 mkdir -p "$CACHE_DIR"
 
-# Precios USD por millón de tokens (Anthropic public pricing 2025-11)
+# Precios USD por millón de tokens (Anthropic public pricing 2026-06)
 # Cache write = input × 1.25 ; cache read = input × 0.10
+# Fuente: https://platform.claude.com/docs/en/about-claude/models/overview
+# NOTA: Opus 4.5+ bajó a $5/$25 (era $15/$75 en Opus 4 / 4.1). Bug pricing corregido 2026-06-10.
 declare -A MODEL_INPUT_PRICE=(
-    ["claude-opus-4-7"]="15.00"
-    ["claude-opus-4-6"]="15.00"
+    ["claude-fable-5"]="10.00"
+    ["claude-mythos-5"]="10.00"
+    ["claude-opus-4-8"]="5.00"
+    ["claude-opus-4-7"]="5.00"
+    ["claude-opus-4-6"]="5.00"
+    ["claude-opus-4-5"]="5.00"
+    ["claude-opus-4-1"]="15.00"
     ["claude-opus-4"]="15.00"
     ["claude-sonnet-4-6"]="3.00"
     ["claude-sonnet-4-5"]="3.00"
@@ -38,8 +45,13 @@ declare -A MODEL_INPUT_PRICE=(
     ["claude-haiku-4"]="1.00"
 )
 declare -A MODEL_OUTPUT_PRICE=(
-    ["claude-opus-4-7"]="75.00"
-    ["claude-opus-4-6"]="75.00"
+    ["claude-fable-5"]="50.00"
+    ["claude-mythos-5"]="50.00"
+    ["claude-opus-4-8"]="25.00"
+    ["claude-opus-4-7"]="25.00"
+    ["claude-opus-4-6"]="25.00"
+    ["claude-opus-4-5"]="25.00"
+    ["claude-opus-4-1"]="75.00"
     ["claude-opus-4"]="75.00"
     ["claude-sonnet-4-6"]="15.00"
     ["claude-sonnet-4-5"]="15.00"
@@ -60,8 +72,13 @@ import json, os, sys
 from pathlib import Path
 
 PRICES = {
-    "claude-opus-4-7":   {"in": 15.00, "out": 75.00},
-    "claude-opus-4-6":   {"in": 15.00, "out": 75.00},
+    "claude-fable-5":    {"in": 10.00, "out": 50.00},
+    "claude-mythos-5":   {"in": 10.00, "out": 50.00},
+    "claude-opus-4-8":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-7":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-6":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-5":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-1":   {"in": 15.00, "out": 75.00},
     "claude-opus-4":     {"in": 15.00, "out": 75.00},
     "claude-sonnet-4-6": {"in": 3.00,  "out": 15.00},
     "claude-sonnet-4-5": {"in": 3.00,  "out": 15.00},
@@ -89,7 +106,7 @@ try:
             model = msg.get("model") or model_seen or "unknown"
             if model and model != "unknown":
                 model_seen = model
-            p = PRICES.get(model, PRICES["claude-opus-4-7"])  # default opus
+            p = PRICES.get(model, PRICES["claude-fable-5"])  # default = current global model (settings.json)
             inp = usage.get("input_tokens", 0) or 0
             out = usage.get("output_tokens", 0) or 0
             cw  = usage.get("cache_creation_input_tokens", 0) or 0
@@ -161,8 +178,13 @@ from pathlib import Path
 from collections import defaultdict
 
 PRICES = {
-    "claude-opus-4-7":   {"in": 15.00, "out": 75.00},
-    "claude-opus-4-6":   {"in": 15.00, "out": 75.00},
+    "claude-fable-5":    {"in": 10.00, "out": 50.00},
+    "claude-mythos-5":   {"in": 10.00, "out": 50.00},
+    "claude-opus-4-8":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-7":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-6":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-5":   {"in": 5.00,  "out": 25.00},
+    "claude-opus-4-1":   {"in": 15.00, "out": 75.00},
     "claude-opus-4":     {"in": 15.00, "out": 75.00},
     "claude-sonnet-4-6": {"in": 3.00,  "out": 15.00},
     "claude-sonnet-4-5": {"in": 3.00,  "out": 15.00},
@@ -195,7 +217,7 @@ for proj_dir in root.iterdir():
                     usage = msg.get("usage", {}) if isinstance(msg.get("usage"), dict) else {}
                     if not usage: continue
                     model = msg.get("model") or "unknown"
-                    p = PRICES.get(model, PRICES["claude-opus-4-7"])
+                    p = PRICES.get(model, PRICES["claude-fable-5"])  # default = current global model
                     inp = usage.get("input_tokens", 0) or 0
                     out = usage.get("output_tokens", 0) or 0
                     cw  = usage.get("cache_creation_input_tokens", 0) or 0

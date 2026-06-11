@@ -57,3 +57,9 @@ claude/data/distill-meta.json
 claude/data/helix-lang.jsonl
 claude/data/helix-states/
 labs/
+
+# Backups internos timestamped (no versionar)
+*.bak.pre-*
+*.bak.pre-fable5-*
+*.bak.pre-council-*
+*.bak-2026*

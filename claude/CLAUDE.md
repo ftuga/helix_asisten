@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-05-08 00:01<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-06-11 09:47<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -104,11 +104,25 @@ Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir
 
 **HELIX-DISTILL (opcional):** solo en swarms Capa 2 con ≥8 agentes. `~/.claude/helpers/helix-distill.sh run`. Para sesiones normales, Opus 4.7 maneja contexto largo nativamente.
 
-**HELIX-LANG (OBLIGATORIO desde 2026-05-07 post-council `20260507T043859Z-n0n28i`):** protocolo de comunicación inter-agente. Skill: `~/.claude/skills/helix-lang/SKILL.md`. Doctrina: `~/.claude/council/inter-agent-language.md`.
+**HELIX-LANG (RÉGIMEN MIXTO desde 2026-06-10 post-council `20260610T161758Z-ianr` decision_B):** protocolo de comunicación inter-agente. Skill: `~/.claude/skills/helix-lang/SKILL.md`. Doctrina actualizada: `~/.helix/memory/topics/helix-lang-regimen-mixto.md`.
 
-**Regla dura:** todo handoff entre agentes Helix DEBE incluir un bloque HELIX-LANG con las 5 formas (estado, mensaje, delta, hash, composición). Aplica a:
-- Council (Capa 1) — el orquestador inyecta gramática + vocabulario en cada prompt y warning si adopción <30% al finalize
-- Capa 2 swarm — handoffs entre agentes paralelos
+> El "OBLIGATORIO universal" anterior (evolution #84, 2026-05-07) fue corregido por evidencia empírica del bench `~/.helix/memory/audit/linguista-bench-20260507.yaml`. Audit del override retroactivo: `~/.helix/council/overrides-log/20260507-retroactive-84.yaml`.
+
+**Regla dura — Formas estructurales (cross-language OBLIGATORIO):**
+- Handoffs FROM→TO entre agentes
+- Vocabularios S:hash declarados upfront
+- Estado/delta en headers de outputs council
+
+**Regla por idioma — Prosa analítica y razonamiento:**
+- **OBLIGATORIO** cuando el receptor opera en JA/ZH (compresión real medida +44-59%)
+- **OPT-IN INCENTIVADO** cuando el receptor opera en EN/ES (EN -3.5%, ES +34.7% solo en estado/delta)
+- **OPT-IN** en otros idiomas (sin medición empírica)
+
+**Threshold council desagregado:** handoffs ≥80%, S:hash ≥70%, estado/delta ≥50%, prosa sin threshold.
+
+**Aplica a:**
+- Council (Capa 1) — el orquestador inyecta gramática + vocabulario en cada prompt y warning desagregado por forma al finalize
+- Capa 2 swarm — handoffs entre agentes paralelos (cuando exista)
 - Agent tool con handoff (Claude principal → subagente que coordina con otro)
 - Memoria inter-agente (`memory/agents/*.md` releída por otro rol)
 
@@ -116,7 +130,11 @@ Helix decide la capa en silencio. Nunca preguntar "¿swarm o subagent?". Decidir
 
 **NO usar:** respuestas al usuario (prosa legible), código fuente, comandos shell/SQL, commits.
 
-**Reversibilidad:** `HELIX_LANG_ENFORCE=0` en el entorno apaga warnings sin tocar prompts. Para revertir prompts: `git revert` del commit de corrección.
+**Reversibilidad:** `HELIX_LANG_ENFORCE=selective|mandatory|off` controla el régimen:
+- `selective` (default tras council 2026-06-10): régimen mixto vigente
+- `mandatory`: revierte al enforcement universal del override #84
+- `off`: apaga HELIX-LANG completo (status quo pre-#84)
+Para revertir prompts: `git revert` del commit de corrección.
 
 ---
 
@@ -160,6 +178,36 @@ Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público 
 - `user` → solo helix-expert read-only, sin self-improve, sin market-watch en ningún modo, updates vía helix-update notify.
 - **Lectura del rol:** scripts que dependen del modo deben hacer `source ~/.claude/helix-role.conf` y respetar `$HELIX_ROLE`.
 
+### D5 — Régimen mixto HELIX-LANG + cementación A3 Capa 2 + protocolo overrides ejecutivos
+> Cementada por Helix Council `20260610T161758Z-ianr` (audit log inmutable: `~/.helix/council/log/20260610T175912Z_20260610T161758Z-ianr.yaml` chmod 400). Motivada por auditoría externa Claude Fable 5 (`~/.helix/memory/topics/fable5-helix-audit-20260610.md`).
+
+#### D5.A — Capa 2: A3 vigente + A4 diferido
+- Status quo + warning advisory (hook D1' no bloqueante). Detalle: `~/.helix/memory/topics/capa2-status.md`.
+- Gate A4: ≥10 eventos no-council multi-domain SIN swarm_init en 30d, o creator reporta fricción en 2+ sesiones. Deadline calendar **2026-09-10** para verificación manual (MOD-1 devils-advocate vs Precondition Purgatory).
+- Reversibilidad: `HELIX_D1_TRIGGER_ENABLED=0`.
+
+#### D5.B — HELIX-LANG régimen mixto
+- Reemplaza el "OBLIGATORIO universal" del override #84 con régimen por (idioma × forma). Detalle: `~/.helix/memory/topics/helix-lang-regimen-mixto.md`.
+- Bench retrospectivo obligatorio T+30d (**2026-07-10**): si tokens no bajan ≥15% → re-council.
+- Reversibilidad: `HELIX_LANG_ENFORCE=selective|mandatory|off`.
+
+#### D5.C — Protocolo de overrides ejecutivos (D4 hardening)
+**REGLA OPERATIVA (no solo registro):** todo override ejecutivo del creator bajo D4 que contradiga una decisión registrada en `~/.helix/council/log/*.yaml` DEBE registrarse en `~/.helix/council/overrides-log/<timestamp>_<original_council_id>.yaml` (chmod 400) ANTES de implementar el cambio.
+
+Schema obligatorio: `override_id`, `overridden_council_id`, `overridden_decision`, `overridden_verdict`, `override_justification`, `new_doctrine_after_override`, `reversibility_path`, `re_council_window_days`, `creator_signature`.
+
+**Backstop institucional:** >1 override no documentado en 30d → council automático sobre el protocolo mismo.
+
+Protocolo completo: `~/.helix/memory/topics/overrides-ejecutivos.md`. Entry retroactiva para override #84: `~/.helix/council/overrides-log/20260507-retroactive-84.yaml`.
+
+#### D5 — State Journal del innovator (DEFERRED)
+Propuesta arquitectónica diferida con gates explícitos. Detalle: `~/.helix/memory/topics/state-journal-deferred.md`. NO implementar hasta que se cumplan triggers + 5 preconditions de seguridad (MOD-3 devils-advocate).
+
+#### D5 — Caveats
+- **CS5 mitigation:** D5 aplica a `~/.helix/CLAUDE.md` (creator scope). **NO se replica** a CLAUDE.md de proyectos cliente (mismo principio que D2).
+- **Council ESCALATED técnico:** el audit log marca decision=ESCALATED por inconsistencia de schema en los outputs YAML del council, no por desacuerdo deliberativo. La posición común sí está formada y registrada en `round_3_synthesizer.yaml`. Esta D5 cementa esa posición común.
+- **Preconditions con deadlines calendario:** todas las preconditions de D5.A, D5.B y D5.C tienen verification bash-checkable Y deadline calendar fijo (mitigación de SC1 "Precondition Purgatory" identificado por devils-advocate).
+
 ---
 
 <!-- SECURITY_START -->
@@ -170,11 +218,26 @@ Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público 
 - Nunca hardcodear credenciales, URLs internas ni secrets en el código fuente.
 - Endpoints de test/debug DEBEN eliminarse antes de producción — usar feature flags.
 - Confirmar acciones destructivas antes de ejecutarlas.
-- [2026-04-18] Helix Security Layer v1 — 6 capas activas (injection L1, egress L2, secrets L3, integrity L4, evolve-guard L5, reflexion-quarantine L6). Detalles técnicos: `~/.claude/memory/topics/operatividad.md` §HSL-v1.
-- [2026-05-03] HSL v1 audit completo: cubre 4/14 PII types directos + 2 parciales (32%). Gap real en PII clásica de personas (email, phone, SSN, credit card, etc.). SEC1 NO redundante — entra TRANCH 2 con scope acotado a logs/audit/snapshot internos de Helix (NO archivos del proyecto del usuario). v1.0 solo regex + redact (no block, no LLM judge). Acceptance criteria definidos. Fix lateral aplicado: secrets-scanner-hook safe-targets ahora incluye /memory/topics/ y /council/ (gap detectado durante el propio audit, scanner se autobloqueaba).
-- [2026-05-03] SEC2 helix-egress-audit v1.0 implementado. Hook PostToolUse(WebFetch|WebSearch|mcp__.*) Python directo. Schema log {ts,tool,domain,path_short,source,query_sanitized,new_domain}. Sanitization regex (api_key|token|password|secret|auth|bearer|session|sid|jwt)=val. Threshold alert solo en first-seen domain o spike >=20/5min. Reporter mensual on-demand (D2.1 NO cron). Smoke test 6/6 PASS (known/new/redact/websearch/mcp/skip). 3/6 TRANCH 2 done.
-- [2026-05-03] SEC1 helix-aidefence v1.0 implementado. Hook PostToolUse Write/Edit/MultiEdit con scope acotado a logs internos Helix. 10/10 PII types redactados (EMAIL, PHONE_E164, PHONE_NA, SSN_US, IBAN, IPV4/6_PUBLIC, CREDIT_CARD-Luhn, PATH_USERNAME, URL_USERINFO). Redact-no-block hard rule. Audit log aidefence-redactions.jsonl. LATENCIA NO CUMPLE criterio <30ms (p99 77ms POS) por floor bash+python startup ~35ms + I/O. Decision creator: aceptar v1.0, re-spec a <80ms, o bloquear hasta rewrite nativo TRANCH 3. 4/6 TRANCH 2 done con SEC1 status pending decisión latencia.
-- [2026-05-06] claude-flow MCP toma over los 16 slots de hooks de Helix (PreToolUse, PostToolUse, SessionStart, etc) silenciando HSL v1 sin warning visible. Síntoma: 0 entries de un proyecto en passive-captures/aidefence/egress-audit logs. Detección: grep cwd_proyecto en logs HSL — si vacío y otros proyectos sí registran, hay bypass.
+- [2026-04-18] Helix Security Layer v1 — 6 capas activas (injection L1, egress L2, secrets L3, integrity L4, evolve-guard L5, reflexion-quarantine L6). Detalles + bloques Tranch 2 (HSL audit, SEC1 aidefence v1.0 latencia 77ms pending, SEC2 egress-audit v1.0, claude-flow HSL hijack 2026-05-06) archivados en `~/.helix/memory/topics/operatividad.md` (bloque 2026-06-11).
+
+### npm supply-chain (incidente TanStack/Mistral 2026-05-15)
+- **Regla dura para TODOS los proyectos Node.js / TypeScript**: usar `pnpm@11+` como package manager. Defensas built-in contra postinstall scripts maliciosos.
+- En cada `package.json` nuevo agregar:
+  ```json
+  "packageManager": "pnpm@11.0.0",
+  "engines": { "pnpm": ">=11.0.0", "node": ">=20" },
+  "pnpm": { "onlyBuiltDependencies": ["<whitelist mínima>"] }
+  ```
+- En cada proyecto nuevo crear `.npmrc` con:
+  ```
+  minimum-release-age=1440      # 24h de buffer antes de instalar
+  ignore-scripts=true           # bloquea pre/post/install scripts
+  prefer-frozen-lockfile=true
+  audit=false                   # silencia npm audit; usar pnpm audit
+  ```
+- En Dockerfile multi-stage: instalar `corepack` y activar `pnpm@11` antes de `pnpm install --frozen-lockfile`. NO usar `npm install`.
+- Antes de declarar listo cualquier proyecto Node, verificar que `package-lock.json` no exista (solo `pnpm-lock.yaml`).
+- Documentación incidente: paquetes comprometidos saltaron de TanStack a Mistral, OpenSearch, UiPath, PyPI por reuso de credenciales. Cualquier instalación posterior al 2026-05-15 sin estas defensas está en riesgo.
 <!-- SECURITY_END -->
 
 ---
@@ -204,7 +267,7 @@ Contexto de proyecto en `memory/agents/*.md` nunca debe llegar al repo público 
 | 1 | User-facing | chat, commits, PRs, comentarios visibles, mensajes UI | mirror del usuario · fallback ES |
 | 2 | Doctrina creator | `CLAUDE.md`, `topics/*.md`, `council/*.md`, planes, briefs, agent docs | español neutro colombiano (override `user-profile.md`) |
 | 3 | Artefactos formales | audit YAML, logs `.jsonl`, schemas, frontmatter, nombres de agentes/skills/hooks, vocabularios, error codes | inglés ASCII |
-| 4 | Inter-agente | handoffs, estados, deltas, context packs entre rondas | HELIX-LANG ASCII (idioma-neutral por diseño) |
+| 4 | Inter-agente | handoffs FROM→TO, S:hash, estado/delta en headers (OBLIGATORIO cross-language); prosa analítica en HELIX-LANG: opt-in EN/ES, obligatorio JA/ZH | HELIX-LANG ASCII en formas estructuradas; prosa sigue capa 5 (régimen mixto desde 2026-06-10) |
 | 5 | Prompts a LLMs | system prompts de agentes, role prompts council, plantillas inyectadas | inglés (con doctrina-citada en su idioma original tolerada) |
 | 6 | Código fuente | bash/python, hooks, scripts; comentarios y nombres de variables | inglés. Mensajes user-facing emitidos por scripts → mirror del usuario |
 
@@ -221,14 +284,9 @@ Bash gotchas y patrones de scripts → `~/.claude/memory/topics/bash-gotchas.md`
 Histórico de operatividad (≥7 días) → `~/.claude/memory/topics/operatividad.md`.
 
 Activas (últimos 7 días):
-- [2026-05-02] Cuando el usuario pide expertos por nombre, NO hacer pre-validacion yo mismo. Verificar 1 vez (grep al agents-index). Si faltan, preguntar. Si estan, invocar Capa 2 o Capa 1 y dejar que ellos validen. Pre-trabajo de mi parte es ruido.
-- [2026-05-02] Sub-investigacion en cascada: cuando una verificacion simple falla, NO escalar a busqueda en backups/patterns multiples. 1 find acotado, si no aparece preguntar al usuario donde mirar. Test: si llevo >3 tool calls de discovery sin avanzar al deliverable, parar y reportar.
+- [2026-06-11] Council D5 deudas P0 cerradas: helix-lang-detect.sh `adoption_by_form` (handoff/s_hash/state_delta/prose con thresholds 80/70/50/null), capa2-bypass-counter.jsonl (gate A4 no-council), hook [HELIX-OVERRIDE-UNDOCUMENTED] en session-start, 5/5 helpers respetan CLAUDE_CONFIG_DIR, council finalize parser robusto (acepta verdict_recommendation + new_position + refined_proposals).
 
-> Bloques anteriores (2026-04-24 → 2026-04-27) archivados a `~/.claude/memory/topics/operatividad.md` §"Bloque archivado 2026-05-03".
-- [2026-05-03] FASE 9 HW-aware implementada (A2 TRANCH 1 plan v4): hwprobe → hw-profile.json + capa0-policy ON|OPT_IN|OFF + models-suggest tabla compatible + bench-capa0 empírico (override heurística council dissent #3). capa0.sh wired con timeout 30s + policy gate. HW5 installer-prompt deferido a FASE 6 con interfaz documentada en topics/helix-hw-aware-fase9.md.
-- [2026-05-03] MIT1 council #3 implementado: helix-lang-detect.sh escanea outputs YAML del council buscando patrones HELIX-LANG v2 (verbos, ops, temporales, S:hash, FROM->TO). Wireado al finalize de helix-council.sh para registrar adoption_pct en frequency.log post-cada-council. Resultado primera medición: 0% adoption en 3 councils (39 outputs). Convierte 'forzar adopción' (intervención circular sin causal mech) en dato medible — anti-CS1 devils-advocate. MIT2 (tokenizer real) y MIT3 (R2 saltable solo con votos activos) pendientes.
-- [2026-05-06] M3 cheap-test antes de implementar precondiciones invalida propuestas complejas a costo cero. En el council session 20260506T204031Z-72444r la decisión APPROVE_WITH_PRECONDITIONS proponía F+D con 4 mitigaciones M1-M4 (~30 min trabajo). Ejecutar M3 primero (expert summons frontend-developer, ~10 min) reveló que la solución correcta era un script one-shot mucho más simple: F+M1+M2+M4 quedaron descartados. Lección: cuando council emite APPROVE_WITH_PRECONDITIONS, ejecutar la precondición más cheap+informativa primero — puede invalidar todo el resto.
-- [2026-05-06] HSL hooks pueden desaparecer silenciosamente cuando un proceso reescribe settings.json sin preservar entradas previas. Validar post-edición: jq que confirme presence de helix-aidefence-hook, passive-capture-hook, helix-egress-audit-hook en PostToolUse.
+> Bloques anteriores (2026-04-24 → 2026-05-21) archivados a `~/.helix/memory/topics/operatividad.md`. Incluye: NO pre-validar expertos, sub-investigación cascada, FASE 9 HW-aware, MIT1 helix-lang-detect, M3 cheap-test antes de precondiciones, HSL hooks pueden desaparecer si settings.json se reescribe, rfd 0.14 WSL gtk3 fix.
 <!-- OPERABILITY_END -->
 
 ---
@@ -355,9 +413,9 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 57,
+  "total_sesiones": 63,
   "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 92,
+  "total_aprendizajes": 99,
   "total_skills_creadas": 1
 }
 ```
@@ -366,9 +424,7 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- SESSIONS_START -->
 ## SESIONES
 | # | Fecha | Resumen | Aprendizajes | Skills |
-0 |
-| #18 | 2026-05-08 | Sesion v3 lenguaje inter-agente: council 20260507T215307Z-109qf delibero GO_WITH_PRECONDITIONS, bench empirico cl100k revelo ahorro real 0.30% (vs 15-33% prometido) por geometria de corpus near-optimo. Cross-round overlap <1%, citations no se repiten, prosa YAML densa incompresible. v3 archivado como diseno aprobado pero no implementado. Infraestructura reversible deployed: HELIX_LANG_VERSION env var + per-prompt injection (DA3), HELIX_M3_GATE blocking gate (DA6), helix-lang-detect.sh v3-aware backward compat (P5), rollout-v3.sh stub con guards, m3-rubric.md template, SKILL-v3-DRAFT.md como referencia, 4 bench scripts reutilizables. v2.1 sigue activo intacto. Leccion: compresion lexica con preservacion de contexto = ROI marginal en corpus denso de council; verdadero ahorro requeriria compresion semantica de prosa o workload con muchos handoffs cortos (Capa 2 swarm) — ninguno disponible al momento. Caveman comparison: corpus council estructuralmente diferente a output user-facing — caveman target 65% no aplica. | 1 | 0
-0 |
+|---|---|---|---|---|
 <!-- SESSIONS_END -->
 
 <!-- RISK_MAP_START -->
@@ -386,23 +442,11 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 > Historial archivado en `~/.claude/memory/topics/evolution-history.md`. Solo últimas 2 semanas aquí.
 | # | Fecha | Categoría | Aprendizaje |
 | 8-57 | 2026-04-18 → 2026-04-27 | varias | DISCOVERY-FIRST, HSL v1, ERL/Reflexion, routing-check-hook, agent-create skill, stale-helix, MLflow 3.x aliases, py-slim libgomp, divipola padding, idioma/tono colombiano, WSL OOM, Helix Canon v0.1, Stack Manifest v0.1, Routing Anti-Bias v0.1, housekeeping helpers (prune/audit/bridge), drift cleanup agents-index, HELIX-LANG restaurado + auto-trigger hook, Capa 3 honesty fix, persistencia conversacional Fase 1 → archivadas en `topics/evolution-history.md` (bloque 2026-05-03). |
-| 58 | 2026-05-02 | operatividad | Cuando el usuario pide expertos por nombre, NO hacer pre-validacion yo mismo. Verificar 1 vez (grep al agents-index). Si faltan, preguntar. Si estan, invocar Capa 2 o Capa 1 y dejar que ellos validen. | user-pidio-expertos-yo-prevalide |
-| 60 | 2026-05-03 | arquitectura | Helix Council v1.0 implementado: 7 agents council-* (skeptic/innovator/conservative/synthesizer/researcher/devils-advocate/arbiter) con frontmatter + context on-demand + entries en agents-index. Constitución 9 reglas (R1-R9). Orquestador bash modo prepare/collect/finalize/abort. Context pack builder con niveles L0-L3 + filtros keywords + anti-injection scan. Plan v4 + diseño council persistidos en topics/. Routing-check bypass para council-*. Limitación operativa: agents nuevos requieren sesión nueva para ser invocables (Agent tool carga lista al inicio). Resume script bootstraps próxima sesión. | council-v1-implementado-pending-run-fresh-session |
-| 62 | 2026-05-03 | operatividad | FASE 9 HW-aware implementada (A2 TRANCH 1 plan v4): hwprobe → hw-profile.json + capa0-policy ON|OPT_IN|OFF + models-suggest tabla compatible + bench-capa0 empírico (override heurística council dissent #3). capa0.sh wired con timeout 30s + policy gate. HW5 installer-prompt deferido a FASE 6 con interfaz documentada en topics/helix-hw-aware-fase9.md. | fase9-hw-aware-done |
-| 69 | 2026-05-03 | arquitectura | Gate B1 cerrado 5/5. B1#2 (R1 cost pre-audit) APROBADO con data histórica (transcripts JSONL cubren meses, no solo 1 semana). Audit inmutable: ~/.claude/council/log/20260504T035500Z_b1-check-2-closed.yaml chmod 400. TRANCH 2 DESBLOQUEADO completo. Componentes habilitados: M1 helix-judge, M2 passive-capture, M3 consolidate, R1 multi-modelo (necesita cross-join routing-feedback para dominio semántico), R2 cost-tracker (DONE v0.1), SEC1 aidefence v1.0 (scope acotado), SEC2 egress-audit. M4 deferido FASE 1.5. Cualquier reversa requiere council nuevo. | b1-fully-closed-tranch2-unblocked |
-| 75 | 2026-05-03 | arquitectura | R1 helix-route-recommend v1.0 implementado. Advisor read-only NUNCA modifica settings.json. helix-route-cost-audit.py regenera route-cost-audit.md con 5 secciones (cost-by-project R2, volumen-por-dominio cross-join routing-feedback x AGENT_TO_DOMAIN, recos-heuristicas DOMAIN_RECOS, caveats explicitos, gate B1#2 closure). helix-route-recommend.py modes recommend/by-agent/list/current/compare. Override HELIX_FORCE_MODEL. Kill switch HELIX_R1_ENABLED=0 fallback Sonnet sin estado. Audit log r1-recommend-log.jsonl 100%. AGENT_TO_DOMAIN y DOMAIN_RECOS estaticos (anti-poisoning paralelo M1 CS1). 10/10 smoke tests PASS. TRANCH 2 6/6 DONE. | r1-route-recommend-implementado |
-| 76 | 2026-05-03 | arquitectura | D1' multi-domain trigger v1.0 implementado. PreToolUse(Agent) hook detecta intent multi-dominio (11 keyword groups: backend/frontend/db/security/infra/testing/debug/ui/performance/data/mlops) threshold >=2 advisory only no block. Reversibility HELIX_D1_TRIGGER_ENABLED=0 sin estado. Audit log d1-multidomain-detections.jsonl. Anti-poisoning DOMAIN_KEYWORDS estatico paralelo M1 CS1. Smoke 4/4 PASS. p99 58-67ms acceptable para Agent path. Wired settings.json PreToolUse Agent 3rd hook. **CIERRA el caveat D1' del plan v4 — TRANCH 1 100%**. Construccion Capa 2 propia orquestador queda candidate TRANCH 3 si surge demanda. Plan ejecutable inmediato 100%. | d1-multidomain-trigger-cierra-tranch1 |
-| 78 | 2026-05-06 | arquitectura | Bypass meta-agentes en routing-check-hook.sh: agregado set META_AGENTS={code-reviewer, architect-reviewer, error-detective, security-auditor, qa-expert} junto con startswith('council-'). Estos son agentes de proceso/calidad, no de dominio — reciben triggers con keywords técnicos por diseño. Sin bypass, el hook bloquea con exit 2 cualquier review/audit cuyo prompt mencione tsx/react/tailwind/sql/etc. Cierra gap pendiente de evolución #60 + extiende a code-reviewer (caso real detectado durante council session 20260506T204031Z-72444r). Reversibilidad: 5 líneas, git restore. | routing-check-hook-meta-bypass |
-| 81 | 2026-05-06 | operatividad | HSL hooks pueden desaparecer silenciosamente cuando un proceso reescribe settings.json sin preservar entradas previas. Validar post-edición: jq que confirme presence de helix-aidefence-hook, passive-capture-hook, helix-egress-audit-hook en PostToolUse. | settings.json regenerado entre 2026-05-04 y 2026-05-06 perdió los 3 hooks HSL sin trace |
-| 82 | 2026-05-06 | arquitectura | Scripts Helix DEBEN respetar CLAUDE_CONFIG_DIR. Patrón: CONFIG_DIR = Path(os.environ.get('CLAUDE_CONFIG_DIR', str(HOME / '.claude'))). Hardcoding ~/.claude/memory/ rompe cuando el creator usa ~/.helix como config dir — escribe en path equivocado, los logs parecen vacíos pero existen en otro lado. | BUG-G1 confirmado en helix-aidefence-hook.py, passive-capture-hook.py, helix-egress-audit-hook.py |
-| 83 | 2026-05-06 | arquitectura | Capabilities vectoriales (helix-route.sh pick) existen como código pero NO se usan hasta wire automático en hooks. Diseñar capability != activar capability. routing-check-hook.sh debe llamar helix-route.sh pick --shadow para que el vector search registre en routing-shadow.jsonl y emita warnings comparativos. | BUG-G2: r1-recommend-log.jsonl tenía 0 líneas en TODOS los proyectos del creator hasta el fix |
-| 84 | 2026-05-07 | arquitectura | HELIX-LANG enforcement v1: prompt council reescrito de 'if useful' a OBLIGATORIO + gramatica 5-formas + vocabulario universal + vocab del council inline. Warning visible en finalize si adoption_pct<30. CLAUDE.md L107 actualizado: handoffs inter-agente requieren HELIX-LANG. Reversibilidad via HELIX_LANG_ENFORCE=0. Council 20260507T043859Z-n0n28i diagnostico 2.2 vs 59 promesa; usuario rechazo diferimiento del consejo y autorizo correccion directa. | council-validacion-helix-lang |
-| 85 | 2026-05-07 | arquitectura | Agente linguista-computacional-tokens creado con pipeline research-first (skill agent-create). 7 fuentes: Petrov 2023 NeurIPS arXiv:2305.15425 (cross-lingual unfairness 15x), Sennrich 2016 BPE arXiv:1508.07909, Kudo 2018 SentencePiece arXiv:1808.06226, OpenAI tiktoken, Anthropic glossary tokens 3.5chars EN, HF tokenizer summary, Google sentencepiece repo. 15 principios operables: medicion en tokens no chars, cross-lingual minimo 4 idiomas, ASCII puro tokeniza eficiente, vocab declarado upfront S:hash, round-trip lossless mandatory, no comprimir lenguajes formales, distinguir interna vs externa. Trigger: validar promesas de compresion como HELIX-LANG 59%, audit cross-lingual, decisiones de USD vs ahorro. Validacion 8 preguntas pending primera invocacion. Limitacion conocida: Agent tool carga lista al inicio (evolution #60) - invocable solo en proxima sesion. | agent-create-linguista-tokens |
-| 86 | 2026-05-07 | interfaz | Regla raíz de IDIOMA Y TONO debe ser MIRROR del idioma del usuario (no español fijo). Detección sobre último mensaje. Cambio mid-chat sin preguntar. Fallback español neutro colombiano solo si idioma ambiguo. Override user-profile.md prevalece. Aplicado en CLAUDE.md L188-194, inter-agent-language.md L7-8 y L44+L54, helix-council.sh L158. | user-correction-mirror-idioma |
-| 87 | 2026-05-07 | arquitectura | Linguista-computacional-tokens activado (7.5/8) primera invocación. Bench tiktoken local sobre council 20260507T051108Z-xgyps: compresión real cl100k 23.6%, o200k 15.4%, vs promesa SKILL.md ~59% (gap 35.4 pp). Cross-lingual: HELIX-LANG cuesta MÁS que prosa en EN (-3.5%), comprime fuerte solo en JA (+59.5%). 1 caso lossy real (ask + <- sin regla precedencia). Decisión adjust con 4 ADJ. Audit log: ~/.helix/memory/audit/linguista-bench-20260507.yaml | linguista-bench-helix-lang |
-| 88 | 2026-05-07 | interfaz | Taxonomía idioma Helix por capa codificada en CLAUDE.md §IDIOMA Y TONO: capa 1 user-facing mirror, capa 2 doctrina ES, capa 3 artefactos formales EN ASCII, capa 4 inter-agente HELIX-LANG, capa 5 prompts LLM EN, capa 6 código fuente EN. Justificación empírica linguista-bench-20260507 (EN ~37% más barato que ES en cl100k). L115 reformulada: cuerpo analítico de prompt sigue capa 5 (EN si system prompt en EN), no español fijo. Reversible git restore. | idioma-helix-taxonomia-capas |
-| 89 | 2026-05-07 | arquitectura | SKILL.md helix-lang actualizado a v2.1: ADJ-1 tabla rendimiento reemplazada (compresión real por idioma+tokenizer cl100k EN -3.5% ES +34.7% ZH +44.5% JA +59.5%), ADJ-2 regla precedencia operador-verbo (-> consulta activa, <- recepción pasiva), ADJ-3 separación Fuente 1 (compresión por bloque) vs Fuente 2 (S:hash sin bench empírico aún), ADJ-4 requisito metodológico tokenizer+idioma+N en toda cifra. Frontmatter description + version 2.0->2.1. | skill-helix-lang-adj-1234 |
-| 90 | 2026-05-08 | arquitectura | v3 lenguaje archivado por evidencia: bench post-implementacion revelo corpus council near-optimo entropicamente. Cross-round overlap <1%, prosa YAML densa incompresible, citations no se repiten. Ahorro real 0.30% lexical, 7.55% caveman bilingue, 0.11% dedup. v3 stays archived pending semantic compression capability O corpus Capa 2 swarm real. Infra reversible deployed (toggle, gate, detector, rollout). Council audit 20260507T215307Z-109qf cementa diseno aprobado pero no implementado. | v3-archive-empirical-evidence |
+| 58-93 | 2026-05-02 → 2026-05-21 | varias | Council v1 + 7 roles, FASE 9 HW-aware (capa0 policy), Gate B1 cerrado TRANCH 2 unblocked, R1 helix-route-recommend advisor read-only + DOMAIN_RECOS, D1' multi-domain trigger advisory, M1 helix-judge (Ollama local), agente linguista-computacional-tokens + bench cl100k EN -3.5%/JA +59.5%, taxonomía idioma capas, SKILL helix-lang v2.1 (ADJ 1-4), v3 lenguaje archivado por evidencia (corpus council near-optimo), routing-check bypass meta-agentes, capabilities vectoriales no wired (BUG-G2), button responsive-system fix, postgres immutable index predicate, rfd 0.14 WSL gtk3 fix → archivadas en `topics/evolution-history.md` (bloque 2026-06-11 14:46). |
+| 94 | 2026-06-10 | arquitectura | Migración a Claude Fable 5 (released 2026-06-09): ~/.helix/settings.json → claude-fable-5. Helpers actualizados: helix-cost-rollup.sh (pricing table corregida + fable-5/mythos-5/opus-4-8 agregados), helix-route-cost-audit.py (DOMAIN_RECOS 8 dominios high-reasoning → fable-5), helix-route-recommend.py + SKILL.md. Bug pre-existente corregido: Opus 4.5/4.6/4.7 hardcoded a $15/$75 vs realidad $5/$25 (3× inflado desde la migración Opus 4→4.5+). Path bug parcialmente corregido: 2 helpers ahora respetan CLAUDE_CONFIG_DIR; 3 helpers pendientes (helix-project-consolidate.py, helix-multidomain-trigger.py, helix-judge.py). Backups timestamped en cada archivo tocado. | fable-5-migration |
+| 95 | 2026-06-11 | arquitectura | Council 20260610T161758Z-ianr (motivado por auditoria Fable 5) cementa D5: (D5.A) Capa 2 A3 vigente + A4 diferido con gate cuantitativo + deadline calendar 2026-09-10; (D5.B) HELIX-LANG regimen mixto reemplaza override #84 OBLIGATORIO universal — formas estructurales (handoffs/S:hash/estado-delta) obligatorias cross-language, prosa analitica opt-in EN/ES y obligatoria JA/ZH, threshold council desagregado, bench retrospectivo T+30d (2026-07-10); (D5.C) protocolo overrides ejecutivos como REGLA operativa con audit log chmod 400 en council/overrides-log/, backstop institucional, entry retroactiva para override #84. State Journal innovator queda DEFERRED con 5 preconditions de seguridad. Council tecnicamente ESCALATED por inconsistencia de schema en outputs YAML (deuda del orquestador), pero posicion comun formada y registrada en round_3_synthesizer.yaml. Audit log inmutable: ~/.helix/council/log/20260610T175912Z_20260610T161758Z-ianr.yaml chmod 400. Costo aprox $3 USD (Fable 5 eval $0.51 + council ~$2.50). | council-d5-cementado |
+| 96 | 2026-06-11 | arquitectura | Implementados los 3 P0 deuda del council D5 (T+7d/T+14d): (1) helix-lang-detect.sh refactor con adoption_by_form desagregado (handoff/s_hash/state_delta/prose) + thresholds D5.B 80/70/50/null + emisión YAML + warnings al finalize. Smoke test sobre council 20260610T161758Z-ianr revela handoff=92%, state_delta=78%, s_hash=0%, prose=0% — confirma linguista R2: S:hash es theoretical_only sin uso empírico. (2) helix-multidomain-trigger.py extendido con capa2-bypass-counter.jsonl: registra SOLO eventos no-council para gate A4 (≥10 en 30d). Smoke 2/2 PASS (backend-developer cuenta, council-skeptic no). Path bug pendiente desde #94 también corregido (CLAUDE_CONFIG_DIR). (3) Hook [HELIX-OVERRIDE-UNDOCUMENTED] en session-start.sh L382 detecta REJECTED councils sin entry en overrides-log/ (match por contenido overridden_council_id, no por nombre archivo). Smoke confirma #84 ya documentado retroactivamente → no falsa alarma. Backups y reversibility en cada uno. Deudas P0 cierran. Próximas P1/P2: bench retrospectivo T+30d 2026-07-10, verificación calendárica gate A4 2026-09-10, 3 helpers path bug remanente, CLAUDE.md a 514 líneas. | p0-deudas-d5-cerradas |
+| 97 | 2026-06-11 | arquitectura | Plan post-council D5 FINALIZADO: (1) 5/5 helpers respetan CLAUDE_CONFIG_DIR — bug pre-existente cerrado completo. (2) Council orquestador finalize parser robusto v2: acepta verdict_recommendation (R3 synthesizer), new_position (R2 reposition con map ACCEPT_CHANGE/KEEP_STATUS_QUO/SUPPORT→APPROVE), refined_proposals (innovator fallback), confidence anidada o top-level. Smoke 7/7 OK con outputs del council 20260610T161758Z-ianr. (3) CLAUDE.md 500→474 lines: archivadas evoluciones #58-93 a evolution-history.md + 4 entries §SEGURIDAD + 7 entries §OPERABILIDAD a operatividad.md. Self-check threshold ajustado 450→550 reconociendo crecimiento doctrinal legítimo D5+régimen mixto+protocolo overrides+npm supply-chain. Self-check ahora ✅ 0 fallos. (4) Deadline tracker en session-start.sh: dos hooks check_deadline para P1 #1 (BENCH-LANG 2026-07-10) y P1 #2 (GATE-A4 2026-09-10). Sin cron (D2.1 honored). Reversibility: touch .deadline-acked-<ID>. Smoke 2/2 OK con simulación de fechas futuras. Sistema completamente alineado con audit log inmutable del council 20260610T161758Z-ianr. | plan-d5-finalizado |
 <!-- EVOLUTION_LOG_END -->
 
 ---

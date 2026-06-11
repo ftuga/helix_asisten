@@ -31,9 +31,11 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-ROUTE_AUDIT_MD = HOME / ".claude/memory/topics/route-cost-audit.md"
-ROUTING_FEEDBACK = HOME / ".claude/memory/routing-feedback.jsonl"
-COST_ROLLUP_SH = HOME / ".claude/helpers/helix-cost-rollup.sh"
+# Respect CLAUDE_CONFIG_DIR (Helix migration to ~/.helix/). Falls back to ~/.claude.
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+ROUTE_AUDIT_MD = CONFIG_DIR / "memory/topics/route-cost-audit.md"
+ROUTING_FEEDBACK = CONFIG_DIR / "memory/routing-feedback.jsonl"
+COST_ROLLUP_SH = CONFIG_DIR / "helpers/helix-cost-rollup.sh"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STATIC MAPPINGS — anti-poisoning analogous to M1 CS1.
@@ -97,15 +99,17 @@ def _domain_of(agent: str) -> str:
 # Each entry: (model, reason). Reason should appear in audit md.
 # ─────────────────────────────────────────────────────────────────────────────
 DOMAIN_RECOS: dict[str, tuple[str, str]] = {
-    # High reasoning required — Opus
-    "council":      ("claude-opus-4-7",   "Deliberación multi-agente, alto razonamiento, low frequency"),
-    "architecture": ("claude-opus-4-7",   "Decisiones de diseño, trade-offs no triviales"),
-    "security":     ("claude-opus-4-7",   "Análisis de superficie de ataque, OWASP, cripto"),
-    "debug":        ("claude-opus-4-7",   "error-detective primero — root cause análisis profundo"),
-    "product":      ("claude-opus-4-7",   "Creative reasoning, vision"),
-    "brand":        ("claude-opus-4-7",   "Naming, copy, estrategia creativa"),
-    "finance":      ("claude-opus-4-7",   "Modelado complejo, multi-asset reasoning"),
-    "defi":         ("claude-opus-4-7",   "Dominio especializado, multi-step on-chain analysis"),
+    # High reasoning required — Fable 5 ("most capable widely released", 2026-06-09).
+    # 2× más caro que Opus 4.8 ($10/$50 vs $5/$25). Justificado por frecuencia baja
+    # y costo de errar alto (decisiones arquitectónicas, vulnerabilidades, etc).
+    "council":      ("claude-fable-5",    "Deliberación multi-agente, alto razonamiento, low frequency"),
+    "architecture": ("claude-fable-5",    "Decisiones de diseño, trade-offs no triviales"),
+    "security":     ("claude-fable-5",    "Análisis de superficie de ataque, OWASP, cripto"),
+    "debug":        ("claude-fable-5",    "error-detective primero — root cause análisis profundo"),
+    "product":      ("claude-fable-5",    "Creative reasoning, vision"),
+    "brand":        ("claude-fable-5",    "Naming, copy, estrategia creativa"),
+    "finance":      ("claude-fable-5",    "Modelado complejo, multi-asset reasoning"),
+    "defi":         ("claude-fable-5",    "Dominio especializado, multi-step on-chain analysis"),
 
     # Production code — Sonnet (balance cost/quality)
     "backend":      ("claude-sonnet-4-6", "Endpoint, refactor, async patterns"),

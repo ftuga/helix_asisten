@@ -274,9 +274,12 @@ SKILL_COUNT=$(find "$GLOBAL_SKILLS_DIR" -name "SKILL.md" 2>/dev/null | wc -l | t
 check "${SKILL_COUNT:-0} skill(s) disponibles"
 
 LINES=$(wc -l < "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md" | tr -d '[:space:]')
-if [[ "$LINES" -gt 450 ]]; then
+# Threshold post-D5 (2026-06-11): doctrina creció legítimamente con régimen mixto HELIX-LANG +
+# protocolo overrides ejecutivos + npm supply-chain rules + idioma taxonomía capas.
+# fail >550, warn >450, ok ≤450. Trigger archival pass cuando cualquier nuevo bloque suba >550.
+if [[ "$LINES" -gt 550 ]]; then
   fail "CLAUDE.md en $LINES líneas — revisar secciones archivables"
-elif [[ "$LINES" -gt 350 ]]; then
+elif [[ "$LINES" -gt 450 ]]; then
   warn "CLAUDE.md en $LINES líneas — considerar archivar evoluciones antiguas"
 else
   check "CLAUDE.md en $LINES líneas"

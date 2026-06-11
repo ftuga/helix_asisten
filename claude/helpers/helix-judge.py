@@ -38,8 +38,10 @@ import time
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-LOG = HOME / ".claude/memory/judge-decisions.jsonl"
-FEEDBACK = HOME / ".claude/memory/judge-audit-feedback.jsonl"
+# Respect CLAUDE_CONFIG_DIR (Helix migration to ~/.helix/). Falls back to ~/.claude.
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+LOG = CONFIG_DIR / "memory/judge-decisions.jsonl"
+FEEDBACK = CONFIG_DIR / "memory/judge-audit-feedback.jsonl"
 DEFAULT_MODEL = os.environ.get("HELIX_JUDGE_MODEL", "llama3.2:3b")
 CONFIDENCE_THRESHOLD = float(os.environ.get("HELIX_JUDGE_CONF", "0.85"))
 OLLAMA_TIMEOUT_S = int(os.environ.get("HELIX_JUDGE_TIMEOUT", "60"))

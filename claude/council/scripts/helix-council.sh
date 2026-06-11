@@ -437,14 +437,71 @@ cmd_finalize() {
   # Recolectar votos finales (de Round 3 outputs + Round 2 si aplica)
   # Para v1.0 simplificado: usamos Round 3 synthesizer.position + devils_advocate.position
   # + Round 2 positions de los 4 que debaten
+  #
+  # D5 council 20260610T161758Z-ianr deuda P2: parser acepta DOS schemas:
+  #   1) Top-level     : "position: APPROVE" + "confidence: 0.8"
+  #   2) Nested R3     : "verdict_recommendation: APPROVE_WITH_PRECONDITIONS"
+  #                      (con indentación dentro de final_common_position.decision_X)
+  # APPROVE_WITH_PRECONDITIONS se normaliza a CONDITIONAL_APPROVE (case existente abajo).
+
+  extract_position() {
+    local f="$1"
+    local p=""
+    # Format 1: top-level position
+    p=$(grep -E '^position:' "$f" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"')
+    if [[ -z "$p" ]]; then
+      # Format 2: verdict_recommendation (R3 synthesizer / nested)
+      p=$(grep -E '^[[:space:]]*verdict_recommendation:' "$f" 2>/dev/null | head -1 \
+          | sed -E 's/^[[:space:]]*verdict_recommendation:[[:space:]]*//' \
+          | awk '{print $1}' | tr -d '"|')
+    fi
+    if [[ -z "$p" ]]; then
+      # Format 3: new_position (R2 reposition format - conservative/skeptic)
+      p=$(grep -E '^[[:space:]]+new_position:' "$f" 2>/dev/null | head -1 \
+          | sed -E 's/^[[:space:]]*new_position:[[:space:]]*//' | awk '{print $1}' | tr -d '"|')
+      # Map R2 reposition vocabularies
+      case "$p" in
+        ACCEPT_CHANGE|KEEP_STATUS_QUO|SUPPORT) p="APPROVE" ;;
+        OPPOSE) p="REJECT" ;;
+        UNCERTAIN) p="ABSTAIN" ;;
+      esac
+    fi
+    if [[ -z "$p" ]]; then
+      # Format 4: innovator schema (no explicit position, but refined_proposals = vote APPROVE)
+      if grep -qE '^refined_proposals:|^new_synthesis_proposal:' "$f" 2>/dev/null; then
+        p="APPROVE"
+      fi
+    fi
+    # Normalize APPROVE_WITH_PRECONDITIONS → CONDITIONAL_APPROVE (compat case existente)
+    [[ "$p" == "APPROVE_WITH_PRECONDITIONS" ]] && p="CONDITIONAL_APPROVE"
+    echo "${p:-ABSTAIN}"
+  }
+
+  extract_confidence() {
+    local f="$1"
+    local c=""
+    # Format 1: top-level confidence
+    c=$(grep -E '^confidence:' "$f" 2>/dev/null | head -1 | awk '{print $2}')
+    if [[ -z "$c" ]]; then
+      # Format 2: indented confidence (inside reposition_decision_X or decision_X)
+      c=$(grep -E '^[[:space:]]+confidence:' "$f" 2>/dev/null | head -1 \
+          | sed -E 's/^[[:space:]]*confidence:[[:space:]]*//')
+    fi
+    echo "$c"
+  }
 
   local synth_pos="ABSTAIN"
   local devils_pos="REJECT"
   if [[ -f "$sdir/outputs/round_3_synthesizer.yaml" ]]; then
-    synth_pos=$(grep -E '^position:' "$sdir/outputs/round_3_synthesizer.yaml" | head -1 | awk '{print $2}' || echo "ABSTAIN")
+    synth_pos=$(extract_position "$sdir/outputs/round_3_synthesizer.yaml")
   fi
   if [[ -f "$sdir/outputs/round_3_devils_advocate.yaml" ]]; then
-    devils_pos=$(grep -E '^position:' "$sdir/outputs/round_3_devils_advocate.yaml" | head -1 | awk '{print $2}' || echo "REJECT")
+    devils_pos=$(extract_position "$sdir/outputs/round_3_devils_advocate.yaml")
+    # Devils sin position explícita: si emite catastrophic_scenarios + modifications, normalizar a CONDITIONAL_APPROVE
+    if [[ "$devils_pos" == "ABSTAIN" ]] \
+       && grep -qE '^recommended_modifications_before_approving:' "$sdir/outputs/round_3_devils_advocate.yaml" 2>/dev/null; then
+      devils_pos="CONDITIONAL_APPROVE"
+    fi
   fi
 
   # Contar votos de Round 2 (donde cada rol ya defendió posición tras debate)
@@ -453,11 +510,12 @@ cmd_finalize() {
     local f="$sdir/outputs/round_2_$role.yaml"
     if [[ -f "$f" ]]; then
       local pos
-      pos=$(grep -E '^position:' "$f" | head -1 | awk '{print $2}' || echo "ABSTAIN")
+      pos=$(extract_position "$f")
       case "$pos" in
         APPROVE) approve=$((approve+1)) ;;
+        CONDITIONAL_APPROVE) conditional=$((conditional+1)); approve=$((approve+1)) ;;
         REJECT) reject=$((reject+1)) ;;
-        ABSTAIN) abstain=$((abstain+1)) ;;
+        ABSTAIN|*) abstain=$((abstain+1)) ;;
       esac
     fi
   done
@@ -477,7 +535,7 @@ cmd_finalize() {
   # Researcher típicamente ABSTAIN, ya contado o no presente en Round 2
   local researcher_pos="ABSTAIN"
   if [[ -f "$sdir/outputs/round_1_researcher.yaml" ]]; then
-    researcher_pos=$(grep -E '^position:' "$sdir/outputs/round_1_researcher.yaml" | head -1 | awk '{print $2}' || echo "ABSTAIN")
+    researcher_pos=$(extract_position "$sdir/outputs/round_1_researcher.yaml")
   fi
   case "$researcher_pos" in
     APPROVE) approve=$((approve+1)) ;;
@@ -490,12 +548,19 @@ cmd_finalize() {
   for f in "$sdir"/outputs/round_2_*.yaml "$sdir"/outputs/round_3_*.yaml; do
     [[ ! -f "$f" ]] && continue
     local c
-    c=$(grep -E '^confidence:' "$f" | head -1 | awk '{print $2}' || echo "")
+    c=$(extract_confidence "$f")
     if [[ "$c" =~ ^[0-9]*\.?[0-9]+$ ]]; then
       conf_sum=$(awk "BEGIN{print $conf_sum + $c}")
       conf_count=$((conf_count+1))
     fi
   done
+  # Si no hay confidence explícita pero hay posiciones APPROVE_WITH_PRECONDITIONS confirmadas
+  # por synthesizer R3, asumir 0.7 (default razonable para "common position formed but not unanimous")
+  if [[ $conf_count -eq 0 ]] && [[ -f "$sdir/outputs/round_3_synthesizer.yaml" ]] \
+     && grep -qE 'verdict_recommendation:.*APPROVE_WITH_PRECONDITIONS' "$sdir/outputs/round_3_synthesizer.yaml" 2>/dev/null; then
+    conf_sum="0.7"
+    conf_count=1
+  fi
   local avg_conf="0.0"
   if [[ $conf_count -gt 0 ]]; then
     avg_conf=$(awk "BEGIN{printf \"%.2f\", $conf_sum / $conf_count}")

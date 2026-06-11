@@ -38,14 +38,16 @@ from pathlib import Path
 
 THRESHOLD = float(os.environ.get("HELIX_M3_FUZZY_THRESHOLD", "0.75"))
 HOME = Path(os.environ.get("HOME", os.path.expanduser("~")))
-STATE_PATH = HOME / ".claude/memory/.m3-last-scan.json"
-BACKUP_DIR = HOME / ".claude/backups/m3"
+# Respect CLAUDE_CONFIG_DIR (Helix migration to ~/.helix/). Falls back to ~/.claude.
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+STATE_PATH = CONFIG_DIR / "memory/.m3-last-scan.json"
+BACKUP_DIR = CONFIG_DIR / "backups/m3"
 
 DEFAULT_TARGETS = [
-    HOME / ".claude/helpers",
-    HOME / ".claude/memory/agents",
-    HOME / ".claude/memory/topics",
-    HOME / ".claude/skills",
+    CONFIG_DIR / "helpers",
+    CONFIG_DIR / "memory/agents",
+    CONFIG_DIR / "memory/topics",
+    CONFIG_DIR / "skills",
 ]
 
 
@@ -65,7 +67,7 @@ class Pair:
 def _list_files(target: Path) -> list[Path]:
     if not target.exists():
         return []
-    if target == HOME / ".claude/skills":
+    if target == CONFIG_DIR / "skills":
         # Skills are subdirs; treat dir names as comparable units
         return sorted(p for p in target.iterdir() if p.is_dir() and not p.name.startswith("_"))
     return sorted(

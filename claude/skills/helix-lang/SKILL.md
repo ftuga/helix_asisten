@@ -1,13 +1,62 @@
 ---
 name: helix-lang
-description: Protocolo universal de comunicación inter-agente. Gramática fija + vocabulario declarado por sesión. Compresión real medida varía por idioma+tokenizer (negativa en EN, hasta ~60% en JA con cl100k_base). Mecanismo S:hash teóricamente N×(M-1) tokens — sin bench empírico aún. Usar en cualquier dominio en Capa 2 y 3 de Helix.
+description: Protocolo universal de comunicación inter-agente. RÉGIMEN MIXTO desde 2026-06-10 (council `20260610T161758Z-ianr` decision_B). Formas estructurales (handoffs, S:hash, estado/delta) son OBLIGATORIAS cross-language. Prosa analítica es OPT-IN en EN/ES (donde EN cuesta -3.5% extra), OBLIGATORIA en JA/ZH (donde comprime +44-59%). Gramática fija + vocabulario declarado por sesión.
 allowed-tools: Read, Write, Edit, Bash
-version: 2.1
+version: 3.0
 ---
 
-# HELIX-LANG v2 — Protocolo Universal Inter-Agente
+# HELIX-LANG v3 — Protocolo Universal Inter-Agente (Régimen Mixto)
 
 > **Separación fundamental:** la gramática es universal y fija. El vocabulario se declara por sesión y se hashea. El mismo protocolo sirve para software, investigación, marketing, soporte, análisis, o cualquier dominio.
+
+## Régimen vigente — tabla de aplicabilidad (post-council 2026-06-10)
+
+> Reemplaza el "OBLIGATORIO universal" del override #84 (2026-05-07). Justificación empírica: bench `~/.helix/memory/audit/linguista-bench-20260507.yaml`. Detalle doctrinal: `~/.helix/memory/topics/helix-lang-regimen-mixto.md`.
+
+### Por forma estructural
+
+| Forma | Aplicabilidad | Justificación |
+|---|---|---|
+| Handoffs FROM→TO entre agentes | **OBLIGATORIO** cross-language | Schema estructurado reduce ambigüedad inter-agente |
+| Vocabularios S:hash declarados upfront | **OBLIGATORIO** cross-language | Mecánica de deduplicación por referencia |
+| Estado/delta en headers de outputs council | **OBLIGATORIO** cross-language | Permite voting + tracking sin parsear prosa |
+| Cuerpo analítico de prompts council | Ver tabla idioma ↓ | Aquí está el costo neto de −3.5% en EN |
+| Prosa de razonamiento | Ver tabla idioma ↓ | Igual que cuerpo analítico |
+| Citas textuales | NO aplica | Preserva semántica original |
+| Código fuente | NO aplica | El código es su propio lenguaje |
+| Respuestas user-facing | NO aplica | Mirror de idioma usuario (regla §IDIOMA Y TONO capa 1) |
+
+### Por idioma del receptor (cuerpo analítico + prosa)
+
+| Idioma | Régimen | Compresión real medida (cl100k_base) |
+|---|---|---|
+| EN | **OPT-IN INCENTIVADO** | −3.5% (cuesta MÁS que prosa EN) |
+| ES | **OPT-IN INCENTIVADO** (con preferencia en estado/delta) | +34.7% en estado/delta, marginal en prosa |
+| ZH | **OBLIGATORIO** | +44.5% |
+| JA | **OBLIGATORIO** | +59.5% |
+| Otros | **OPT-IN** | Sin medición empírica disponible |
+
+### Threshold council desagregado
+
+Régimen previo: `adoption_pct` único global (30%).
+Régimen vigente: desagregado por forma. Warning visible en finalize si:
+- Handoffs FROM→TO <80%
+- S:hash declarations <70%
+- Estado/delta headers <50%
+- Prosa analítica: sin threshold (opt-in por diseño)
+
+### Reversibility (kill switches)
+
+```bash
+# Régimen mixto (default tras council 2026-06-10)
+export HELIX_LANG_ENFORCE=selective
+
+# Revertir al enforcement universal del override #84
+export HELIX_LANG_ENFORCE=mandatory
+
+# Apagar HELIX-LANG completo (status quo pre-#84)
+export HELIX_LANG_ENFORCE=off
+```
 
 ---
 
