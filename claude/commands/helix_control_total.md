@@ -40,8 +40,15 @@ Capa 3 — Agent Teams   → colaboración peer-to-peer (NO IMPLEMENTADO, ver to
 ## Catálogo de agentes
 
 - Globales: `~/.claude/agents/` + índice en `~/.claude/memory/agents-index.md`
+- Por proyecto: `{PROJECT_ROOT}/.claude/agents/` (roles transversales activados por tier)
 - Council: 7 agentes `council-*` para deliberaciones de alto impacto
 - Para buscar/instalar agentes faltantes: skill `helix-agent-manager`
+
+## Stack por tier (al activar el modo)
+
+Al activar control total en un proyecto con código, correr `bash ~/.claude/helpers/helix-stack.sh detect`:
+- Si tier `medium`/`large` y `pending_activation` no está vacío → ofrecer activar los roles transversales (QA, BA, security-engineer, etc.) con `helix-stack.sh activate <agent>`. Un desarrollo grande sin esos roles viola la doctrina de `topics/stack-catalogs.md`.
+- Si ya existe `helix-stack.md` → cargarlo y respetarlo (no re-detectar).
 
 ## Protocolo anti-drift
 

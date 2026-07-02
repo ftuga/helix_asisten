@@ -10,11 +10,19 @@ PROJECT="${PROJECT_ROOT:-$PWD}"
 STACK_FILE="$PROJECT/.claude/memory/helix-stack.md"
 CATALOGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/topics/stack-catalogs.md"
 AGENTS_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents"
+DISABLED_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agents-disabled"
+PROJECT_AGENTS_DIR="$PROJECT/.claude/agents"
 
 ts() { date '+%Y-%m-%d'; }
 
+# activo = archivo en el catálogo global O activado a nivel proyecto
 agent_exists() {
-    [[ -f "$AGENTS_DIR/$1.md" ]]
+    [[ -f "$AGENTS_DIR/$1.md" ]] || [[ -f "$PROJECT_AGENTS_DIR/$1.md" ]]
+}
+
+# deshabilitado globalmente pero activable por proyecto
+agent_disabled() {
+    [[ -f "$DISABLED_DIR/$1.md" ]]
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -105,7 +113,8 @@ FRAMEWORK_AGENTS = {
     "flask": ["python-pro", "backend-architect"],
 }
 DB_AGENTS = {
-    "postgresql": ["postgres-pro", "sql-pro"],
+    # postgres-pro no existe (removido 2026-04-27) — sql-pro + database-architect cubren
+    "postgresql": ["sql-pro", "database-architect"],
     "mysql": ["sql-pro"],
 }
 INFRA_AGENTS_MEDIUM_PLUS = {
@@ -117,10 +126,13 @@ TIER_EXTENDED = {
     "small": [],
     "medium": ["code-reviewer", "security-auditor"],
     "large": [
-        "code-reviewer", "security-auditor",
+        # roles transversales de desarrollo grande (2026-07-01: security-engineer
+        # agregado — DevSecOps/infra, distinto de security-auditor que audita;
+        # performance-engineer removido: no existe agente con ese archivo)
+        "code-reviewer", "security-auditor", "security-engineer",
         "database-architect", "architect-reviewer",
         "qa-expert", "business-analyst",
-        "devops-engineer", "monitoring-specialist", "performance-engineer"
+        "devops-engineer", "monitoring-specialist"
     ],
 }
 
@@ -192,14 +204,35 @@ for a in UNIVERSAL_BASE:
 
 extended = [a for a in TIER_EXTENDED[tier] if a not in core]
 
-# Validar existencia
-agents_dir = os.path.expanduser("~/.claude/agents")
-def exists(a):
-    return os.path.isfile(os.path.join(agents_dir, f"{a}.md"))
+# Validar existencia. Tres estados (2026-07-01, fin del "ignorar silencioso"):
+#   activo      — en agents/ global o en .claude/agents/ del proyecto
+#   activatable — en agents-disabled/ global: se conserva en la recomendación
+#                 y se reporta el comando para materializarlo por proyecto
+#   not_found   — sin archivo en ninguna parte: se descarta CON warning
+CONFIG = os.environ.get("CLAUDE_CONFIG_DIR", os.path.expanduser("~/.claude"))
+agents_dir = os.path.join(CONFIG, "agents")
+disabled_dir = os.path.join(CONFIG, "agents-disabled")
+project_agents_dir = os.path.join("${PROJECT}", ".claude", "agents")
 
-missing = [a for a in (core + extended) if not exists(a)]
-core = [a for a in core if exists(a)]
-extended = [a for a in extended if exists(a)]
+def exists(a):
+    return (os.path.isfile(os.path.join(agents_dir, f"{a}.md"))
+            or os.path.isfile(os.path.join(project_agents_dir, f"{a}.md")))
+
+def activatable(a):
+    return os.path.isfile(os.path.join(disabled_dir, f"{a}.md"))
+
+pending_activation = sorted({a for a in (core + extended) if not exists(a) and activatable(a)})
+missing = sorted({a for a in (core + extended) if not exists(a) and not activatable(a)})
+core = [a for a in core if exists(a) or activatable(a)]
+extended = [a for a in extended if exists(a) or activatable(a)]
+
+import sys as _sys
+for a in pending_activation:
+    print(f"WARN: '{a}' recomendado por tier '{tier}' está deshabilitado — "
+          f"activar por proyecto: bash helpers/helix-stack.sh activate {a}", file=_sys.stderr)
+for a in missing:
+    print(f"WARN: '{a}' recomendado por catálogo pero SIN archivo (ni agents/ ni agents-disabled/) — "
+          f"crear con skill agent-create o corregir el catálogo", file=_sys.stderr)
 
 # ────────────────────────────────────────────────────────────
 # Detectar señales del proyecto contra el catálogo extensible
@@ -336,6 +369,7 @@ out = {
     "recommended": {
         "core": core,
         "extended": extended,
+        "pending_activation": pending_activation,
         "missing_in_catalog": missing,
         "universal_base_applied": [a for a in UNIVERSAL_BASE if a in core]
     },
@@ -458,6 +492,41 @@ cmd_show() {
 }
 
 # ─────────────────────────────────────────────────────────────
+# activate/deactivate: materializa un agente deshabilitado a nivel PROYECTO
+# (2026-07-01 — cierre del gap "manifest lo lista pero el harness no lo carga")
+# ─────────────────────────────────────────────────────────────
+cmd_activate() {
+    local agent="${1:?agente requerido}"
+    if [[ -f "$AGENTS_DIR/$agent.md" ]]; then
+        echo "OK: '$agent' ya está activo en el catálogo global ($AGENTS_DIR)"
+        return 0
+    fi
+    if [[ -f "$PROJECT_AGENTS_DIR/$agent.md" ]]; then
+        echo "OK: '$agent' ya está activado en este proyecto ($PROJECT_AGENTS_DIR)"
+        return 0
+    fi
+    if [[ ! -f "$DISABLED_DIR/$agent.md" ]]; then
+        echo "ERROR: '$agent' no existe ni en agents/ ni en agents-disabled/."
+        echo "       Crear con skill agent-create, o revisar el nombre."
+        exit 1
+    fi
+    mkdir -p "$PROJECT_AGENTS_DIR"
+    cp "$DISABLED_DIR/$agent.md" "$PROJECT_AGENTS_DIR/$agent.md"
+    echo "OK: '$agent' activado para ESTE proyecto → $PROJECT_AGENTS_DIR/$agent.md"
+    echo "    (scope proyecto: otros proyectos no pagan su contexto. Requiere reiniciar la sesión para cargar.)"
+}
+
+cmd_deactivate() {
+    local agent="${1:?agente requerido}"
+    if [[ -f "$PROJECT_AGENTS_DIR/$agent.md" ]]; then
+        rm "$PROJECT_AGENTS_DIR/$agent.md"
+        echo "OK: '$agent' desactivado del proyecto"
+    else
+        echo "'$agent' no estaba activado a nivel proyecto (nada que hacer)"
+    fi
+}
+
+# ─────────────────────────────────────────────────────────────
 # add/remove/promote: edita el manifest YAML
 # ─────────────────────────────────────────────────────────────
 cmd_modify() {
@@ -469,14 +538,17 @@ cmd_modify() {
         exit 1
     fi
     if ! agent_exists "$agent"; then
-        echo "WARN: agente '$agent' no existe en $AGENTS_DIR. Continuando de todos modos."
+        if agent_disabled "$agent" && [[ "$action" != "remove" ]]; then
+            # el manifest declara la intención; la activación la materializa
+            cmd_activate "$agent"
+        else
+            echo "WARN: agente '$agent' no existe en $AGENTS_DIR ni en $DISABLED_DIR. Continuando de todos modos."
+        fi
     fi
 
-    "${HELIX_PYTHON:-python3}" <<PYEOF
+    "${HELIX_PYTHON:-python3}" - "$action" "$agent" "$STACK_FILE" <<'PYEOF'
 import re, sys
-agent = "${agent}"
-action = "${action}"
-path = "${STACK_FILE}"
+action, agent, path = sys.argv[1:4]
 
 with open(path) as f:
     content = f.read()
@@ -734,6 +806,8 @@ case "$CMD" in
     add)                 cmd_modify "add" "${1:-}" ;;
     remove)              cmd_modify "remove" "${1:-}" ;;
     promote)             cmd_modify "promote" "${1:-}" ;;
+    activate)            cmd_activate "${1:-}" ;;
+    deactivate)          cmd_deactivate "${1:-}" ;;
     auto-promote-check)  cmd_auto_promote_check ;;
     suggest-agents)      cmd_suggest_agents ;;
     create-suggested)    cmd_create_suggested "${1:-}" ;;
@@ -747,9 +821,11 @@ Comandos:
   detect                  Detecta tier + stack base, imprime JSON
   init [mode]             Crea manifest (mode: technical|extended|custom, default: extended)
   show                    Imprime manifest actual
-  add <agent>             Agrega agente a stack.core
+  add <agent>             Agrega agente a stack.core (auto-activa si está deshabilitado)
   remove <agent>          Mueve agente a stack.excluded
-  promote <agent>         Mueve agente de extended a core
+  promote <agent>         Mueve agente de extended a core (auto-activa si está deshabilitado)
+  activate <agent>        Copia agente de agents-disabled/ al .claude/agents/ del PROYECTO
+  deactivate <agent>      Quita agente activado a nivel proyecto
   auto-promote-check      Lista agentes extended con ≥3 usos (candidatos a core)
   suggest-agents          Lista frameworks detectados sin agente especializado
   create-suggested <name> Prepara contexto para que Helix invoque skill agent-create

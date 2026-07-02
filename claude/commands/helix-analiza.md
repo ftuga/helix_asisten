@@ -41,10 +41,16 @@ No releer si ya están en contexto.
 
 ---
 
-## Paso 3 — Mapear agentes necesarios
+## Paso 3 — Mapear agentes necesarios (tier-aware, OBLIGATORIO)
 
-Basado en el stack detectado, mapear qué agentes de `~/.claude/memory/agents-index.md` aplican.
-Indicar: cuáles están activos, cuáles habría que habilitar.
+Ejecutar `bash ~/.claude/helpers/helix-stack.sh detect` (respeta `CLAUDE_CONFIG_DIR`/`PROJECT_ROOT`) y usar su JSON como fuente:
+
+1. `recommended.core` + `recommended.extended` → mapear contra `agents-index.md`.
+2. **`recommended.pending_activation` NO se ignora**: son los roles transversales del tier (QA, BA, security-engineer...) que están en `agents-disabled/`. En tier `medium`/`large`, presentar la lista al usuario y ofrecer activarlos: `bash ~/.claude/helpers/helix-stack.sh activate <agent>` (scope proyecto). Doctrina: desarrollos grandes SIEMPRE llevan seguridad + QA + BA en el stack (`topics/stack-catalogs.md` §Activación por tier).
+3. `recommended.missing_in_catalog` → sugerir `agent-create` si el dominio es real.
+4. Si el usuario acepta el roster → `helix-stack.sh init extended` persiste el manifest.
+
+Indicar: cuáles están activos, cuáles quedaron activados por proyecto, cuáles declinó el usuario.
 
 ---
 

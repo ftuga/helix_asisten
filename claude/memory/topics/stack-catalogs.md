@@ -16,8 +16,10 @@ Catálogos de agentes recomendados por *tier* del proyecto y por stack técnico 
 
 ### `large` (100+ archivos, 10K+ LOC, o tiene CI + IaC)
 **core:** medium + `database-architect`, `architect-reviewer`
-**extended (fuerte recomendación):** `qa-expert`, `business-analyst`, `devops-engineer`, `monitoring-specialist`, `performance-engineer`
-**rationale:** proyecto grande sin estos roles acumula deuda técnica + de proceso. Sin BA → requirements ambiguos. Sin QA → cobertura ad-hoc. Sin DevOps → infra como afterthought.
+**extended (fuerte recomendación):** `qa-expert`, `business-analyst`, `security-engineer`, `devops-engineer`, `monitoring-specialist`
+**rationale:** proyecto grande sin estos roles acumula deuda técnica + de proceso. Sin BA → requirements ambiguos. Sin QA → cobertura ad-hoc. Sin DevOps → infra como afterthought. `security-engineer` (DevSecOps/infra/pipelines) complementa a `security-auditor` (auditoría de código/endpoints) — son dominios distintos.
+**opcional con equipo Capa 3 activo:** `project-manager`, `scrum-master` — solo cuando hay coordinación multi-sesión real que gestionar.
+> 2026-07-01: `performance-engineer` removido del roster (no existe archivo de agente; si el dominio aparece, crearlo con `agent-create`).
 
 ## Por lenguaje/framework detectado
 
@@ -33,7 +35,7 @@ Catálogos de agentes recomendados por *tier* del proyecto y por stack técnico 
 | `django` | + `backend-architect` |
 | `flask` | + `backend-architect` |
 | `nestjs` | + `nestjs-expert` (skill) |
-| `postgres` | + `postgres-pro`, `sql-pro` |
+| `postgres` | + `sql-pro`, `database-architect` (postgres-pro no existe — removido 2026-04-27) |
 | `mysql` | + `sql-pro` |
 | `docker-compose` (tier ≥ medium) | + `devops-engineer` |
 | `kubernetes/k8s` | + `devops-engineer`, `azure-infra-engineer` (si Azure) |
@@ -60,4 +62,17 @@ Estos NO entran al manifest pero se invocan por evento, no por dominio:
 
 - Un agente puede aparecer en múltiples categorías (ej: `security-auditor` está en medium-extended y también en patrón "auth").
 - El usuario puede excluir cualquier agente del manifest con `helix-stack remove <agent>` aunque el catálogo lo recomiende.
-- Si un agente no existe en `~/.claude/agents/`, el catálogo lo ignora silenciosamente y registra warning.
+
+## Activación por tier (2026-07-01 — fin del "ignorar silencioso")
+
+Los roles transversales viven deshabilitados en `agents-disabled/` (economía de contexto: proyectos small/medium no pagan por QA/BA/security-engineer). El catálogo ya NO los descarta en silencio — tres estados:
+
+| Estado | Qué significa | Qué hace helix-stack |
+|---|---|---|
+| activo | archivo en `agents/` global o `.claude/agents/` del proyecto | entra al manifest normal |
+| **activable** | archivo en `agents-disabled/` | se conserva en la recomendación + WARN con comando `activate` |
+| no existe | sin archivo en ninguna parte | se descarta CON warning ("crear con agent-create") |
+
+- `helix-stack.sh activate <agent>` copia el agente al `.claude/agents/` del **proyecto** (scope local — otros proyectos no cargan su contexto). `deactivate` lo quita.
+- `add`/`promote` auto-activan si el agente está en `agents-disabled/`.
+- Regla dura: en tier `large`, si `pending_activation` no está vacío al cerrar `/helix-analiza`, Helix debe ofrecer la activación — no proceder como si los roles no existieran.
