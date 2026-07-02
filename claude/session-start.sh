@@ -9,7 +9,7 @@ fi
 set -euo pipefail
 
 DATE=$(date '+%Y-%m-%d %H:%M')
-GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
 GLOBAL_CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
 GLOBAL_MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
@@ -100,9 +100,23 @@ echo -e "${GREEN}🕐 Última evolución:${NC} $LAST"
 echo ""
 
 # ── Health-check silencioso — alerta solo si hay problemas ───
-HEALTH_RESULT=$(bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/health-check.sh" 2>&1 | tail -3)
+HEALTH_RESULT=$(bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/health-check.sh" 2>&1 | tail -3) || true
 if echo "$HEALTH_RESULT" | grep -q "❌"; then
   echo -e "${RED}⚠️  ALERTA: Ecosistema con problemas críticos — ejecutar: bash ~/.claude/health-check.sh${NC}"
+  echo ""
+fi
+
+# ── Drift agents-index ↔ disco (advisory — audit 2026-06-10 P0-2) ──
+AGENTS_DRIFT=$(bash "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/helix-agents-audit.sh" 2>/dev/null | "${HELIX_PYTHON:-python3}" -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+o=d.get('orphans',{})
+n=len(o.get('indexed_without_file',[]))+len(o.get('file_without_index_entry',[]))
+if n: print(n)
+" 2>/dev/null) || true
+if [[ -n "${AGENTS_DRIFT:-}" ]]; then
+  echo -e "${YELLOW}⚠️  agents-index desincronizado del disco (${AGENTS_DRIFT} orphans) — bash helpers/helix-agents-audit.sh${NC}"
   echo ""
 fi
 

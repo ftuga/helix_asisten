@@ -413,10 +413,10 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 <!-- METRICS_START -->
 ```json
 {
-  "total_sesiones": 63,
-  "ultima_actualizacion": "2026-04-18",
-  "total_aprendizajes": 99,
-  "total_skills_creadas": 1
+  "total_sesiones": 0,
+  "ultima_actualizacion": null,
+  "total_aprendizajes": 0,
+  "total_skills_creadas": 0
 }
 ```
 <!-- METRICS_END -->

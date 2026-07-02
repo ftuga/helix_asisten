@@ -149,10 +149,14 @@ if m:
 else:
     chk(False, "", "Bloque de métricas no encontrado")
 
-# Tamaño
-lines = content.count('\n')
-chk(lines <= 350, f"Tamaño: {lines} líneas (dentro de rango)",
-    f"Tamaño: {lines} líneas — ejecutar compress.sh", is_warn=True)
+# Tamaño en TOKENS (2026-07-01: líneas era mal proxy — prune -26% tokens = 3% líneas)
+try:
+    import tiktoken
+    tokens = len(tiktoken.get_encoding("cl100k_base").encode(content, disallowed_special=()))
+except Exception:
+    tokens = int(len(content.encode()) / 3.4)
+chk(tokens <= 13500, f"Tamaño: ~{tokens} tokens (dentro de rango)",
+    f"Tamaño: ~{tokens} tokens — supera 13500, archivar/comprimir", is_warn=True)
 
 # Sin secciones estáticas de proyecto
 has_static = "## Project Overview" in content or "## Stack" in content

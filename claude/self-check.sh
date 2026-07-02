@@ -273,16 +273,27 @@ TODAY_LEARNS="${TODAY_LEARNS//[[:space:]]/}"; TODAY_LEARNS="${TODAY_LEARNS:-0}"
 SKILL_COUNT=$(find "$GLOBAL_SKILLS_DIR" -name "SKILL.md" 2>/dev/null | wc -l | tr -d '[:space:]')
 check "${SKILL_COUNT:-0} skill(s) disponibles"
 
-LINES=$(wc -l < "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md" | tr -d '[:space:]')
-# Threshold post-D5 (2026-06-11): doctrina creció legítimamente con régimen mixto HELIX-LANG +
-# protocolo overrides ejecutivos + npm supply-chain rules + idioma taxonomía capas.
-# fail >550, warn >450, ok ≤450. Trigger archival pass cuando cualquier nuevo bloque suba >550.
-if [[ "$LINES" -gt 550 ]]; then
-  fail "CLAUDE.md en $LINES líneas — revisar secciones archivables"
-elif [[ "$LINES" -gt 450 ]]; then
-  warn "CLAUDE.md en $LINES líneas — considerar archivar evoluciones antiguas"
+# Métrica en TOKENS, no líneas (backlog sprint 4: el prune de -26% tokens solo movió 3% líneas).
+# tiktoken cl100k si está disponible; fallback bytes/3.4 (ratio medido 2026-07-01: 44240B=12926tok).
+# Baseline 2026-07-01: ~12.9k tokens. warn >13500, fail >16500 → archival pass.
+CMD_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
+TOKENS=$("${HELIX_PYTHON:-python3}" - "$CMD_FILE" 2>/dev/null <<'PYEOF'
+import sys
+text = open(sys.argv[1], errors="replace").read()
+try:
+    import tiktoken
+    print(len(tiktoken.get_encoding("cl100k_base").encode(text, disallowed_special=())))
+except Exception:
+    print(int(len(text.encode()) / 3.4))
+PYEOF
+)
+TOKENS="${TOKENS:-0}"
+if [[ "$TOKENS" -gt 16500 ]]; then
+  fail "CLAUDE.md en ~$TOKENS tokens — revisar secciones archivables"
+elif [[ "$TOKENS" -gt 13500 ]]; then
+  warn "CLAUDE.md en ~$TOKENS tokens — considerar archivar evoluciones antiguas"
 else
-  check "CLAUDE.md en $LINES líneas"
+  check "CLAUDE.md en ~$TOKENS tokens"
 fi
 
 # ════════════════════════════════════════════════════════════

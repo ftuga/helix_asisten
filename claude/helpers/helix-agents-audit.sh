@@ -13,8 +13,9 @@ INDEX_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/agents-index.md"
 import json, os, re
 from pathlib import Path
 
-agents_dir = Path(os.path.expanduser("~/.claude/agents"))
-index_file = Path(os.path.expanduser("~/.claude/memory/agents-index.md"))
+CONFIG = os.environ.get("CLAUDE_CONFIG_DIR", os.path.expanduser("~/.claude"))
+agents_dir = Path(CONFIG) / "agents"
+index_file = Path(CONFIG) / "memory" / "agents-index.md"
 
 # Lado A: archivos en filesystem (excluyendo INDEX, README, etc. que no son agentes)
 EXCLUDE_NAMES = {"INDEX", "README", "CHANGELOG", "TODO"}
@@ -23,13 +24,17 @@ if agents_dir.is_dir():
     for f in agents_dir.glob("*.md"):
         if f.stem in EXCLUDE_NAMES:
             continue
+        # council-* nunca se rutean (solo helix-council.sh los orquesta);
+        # el indice los lista como linea, no como tabla routable
+        if f.stem.startswith("council-"):
+            continue
         fs_agents.add(f.stem)
 
 # Lado B: entries en agents-index.md
 # Format: | `agent-name` | trigger description |
 indexed_agents = set()
 indexed_with_context = {}  # agent → context file path
-context_dir = Path(os.path.expanduser("~/.claude/memory/agents"))
+context_dir = Path(CONFIG) / "memory" / "agents"
 fs_contexts = set()
 if context_dir.is_dir():
     for f in context_dir.glob("*.md"):

@@ -1,6 +1,6 @@
 ---
 name: app-creative-genius
-description: Product visionary and UX innovator for this CV evaluation API. Proposes bold improvements to features, UX flows, business model, and differentiation. Use when you want fresh ideas to make the product más valioso, más vendible, o más memorable.
+description: Product visionary and UX innovator for the current project. Proposes bold improvements to features, UX flows, business model, and differentiation. Use when you want fresh ideas to make the product más valioso, más vendible, o más memorable.
 tools: Read, Glob, Grep, WebSearch
 model: opus
 ---
