@@ -6,6 +6,8 @@
 # Usage:
 #   helix-team.sh init
 #   helix-team.sh join <role>
+#   helix-team.sh leave <role>            # remove own presence (closing terminal)
+#   helix-team.sh prune                   # drop presence files whose pid is dead
 #   helix-team.sh heartbeat <role>
 #   helix-team.sh send <from> <to> <type> <msg> [handoff]
 #   helix-team.sh recv <role>            # unread messages, advances cursor
@@ -481,6 +483,8 @@ cmd_init() {
 cmd_join() {
   local role="$1"; valid_role "$role" || die "unknown role '$role' (valid: $ROLES_KNOWN)"
   require_team
+  cmd_prune >/dev/null 2>&1 || true  # ghosts de sesiones cerradas no sobreviven a un join
+
   # Walk up the process tree to the claude session pid — $PPID is the
   # ephemeral Bash-tool shell and would always read as a dead pid.
   local pid="$PPID" p="$PPID" comm
@@ -501,6 +505,31 @@ with open(tmp, "w") as f: json.dump(data, f, indent=2)
 import os; os.replace(tmp, path)
 PY
   echo "joined as $role (pid $pid, $tty)"
+}
+
+cmd_leave() {
+  local role="$1"; valid_role "$role" || die "unknown role '$role'"
+  require_team
+  if [ -f "$TEAM_DIR/presence/$role.json" ]; then
+    rm -f "$TEAM_DIR/presence/$role.json"
+    echo "left: $role"
+  else
+    echo "leave: $role was not joined"
+  fi
+}
+
+cmd_prune() {
+  require_team
+  local pf pid n=0
+  for pf in "$TEAM_DIR"/presence/*.json; do
+    [ -f "$pf" ] || continue
+    pid=$(python3 -c 'import json,sys; print(int(json.load(open(sys.argv[1])).get("pid",0)))' "$pf" 2>/dev/null) || pid=0
+    if [ "$pid" -le 1 ] || [ ! -d "/proc/$pid" ]; then
+      rm -f "$pf"; n=$((n+1))
+      echo "pruned: $(basename "$pf" .json) (pid $pid dead)"
+    fi
+  done
+  [ "$n" -eq 0 ] && echo "prune: all presences alive" || true
 }
 
 cmd_heartbeat() {
@@ -819,6 +848,8 @@ cmd="${1:-}"; shift || true
 case "$cmd" in
   init)      cmd_init "$@" ;;
   join)      cmd_join "${1:?role required}" ;;
+  leave)     cmd_leave "${1:?role required}" ;;
+  prune)     cmd_prune ;;
   heartbeat) cmd_heartbeat "${1:?role required}" ;;
   send)      cmd_send "${1:?from}" "${2:?to}" "${3:?type}" "${4:?msg}" "${5:-}" ;;
   recv)      cmd_recv "${1:?role required}" ;;
@@ -836,5 +867,5 @@ case "$cmd" in
   reconcile)    cmd_reconcile ;;
   journal)      cmd_journal "${1:-}" ;;
   journal-init) cmd_journal_init ;;
-  *) sed -n '2,26p' "$0"; exit 1 ;;
+  *) sed -n '2,28p' "$0"; exit 1 ;;
 esac
