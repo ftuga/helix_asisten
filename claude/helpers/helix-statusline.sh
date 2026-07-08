@@ -436,6 +436,77 @@ else
 fi
 
 # ─────────────────────────────────────────────────────────────
+# Team Capa 3 (TASK-002): rol propio + unread + ALIVE/STALE de peers.
+# Solo si existe ${HELIX_DIR}/team — cero costo si no (un solo test -d).
+# Mismo derive que helix-team.sh: TEAM_DIR=$CONFIG_DIR/team.
+# Solo sesiones con PID vivo (terminal abierta): ● heartbeat <900s, ○ sin
+# heartbeat reciente. PID muerto = presencia fantasma → se omite (helix-team.sh
+# prune la limpia). La línea team solo aparece si hay al menos una sesión viva.
+# Rol propio: el presence cuyo pid es ancestro de este proceso (la
+# statusline corre como hijo de la sesión claude que hizo join).
+# ─────────────────────────────────────────────────────────────
+TEAM_DIR="${HELIX_DIR}/team"
+TEAM_ACTIVE=0
+TEAM_ROLE=""
+TEAM_UNREAD=0
+TEAM_PEERS=""
+if [[ -d "${TEAM_DIR}/presence" ]]; then
+    if [[ -n "${EPOCHSECONDS:-}" ]]; then _tnow=$EPOCHSECONDS; else printf -v _tnow '%(%s)T' -1; fi
+
+    # Cadena de ancestros pid: /proc/<pid>/stat campo ppid (tras el último ')')
+    _anc=" "
+    _p=$$
+    while (( _p > 1 )); do
+        _anc+="${_p} "
+        [[ -r "/proc/${_p}/stat" ]] || break
+        _stat=$(<"/proc/${_p}/stat")
+        _rest="${_stat##*) }"
+        read -r _ _p _ <<< "$_rest" || break
+        [[ "$_p" =~ ^[0-9]+$ ]] || break
+    done
+
+    shopt -s nullglob
+    for _pf in "${TEAM_DIR}/presence/"*.json; do
+        _pj=$(<"$_pf")
+        [[ "$_pj" =~ \"role\"[[:space:]]*:[[:space:]]*\"([a-z]+)\" ]] || continue
+        _prole="${BASH_REMATCH[1]}"
+        _ppid=0
+        [[ "$_pj" =~ \"pid\"[[:space:]]*:[[:space:]]*([0-9]+) ]] && _ppid="${BASH_REMATCH[1]}"
+        if [[ "$_anc" == *" ${_ppid} "* ]]; then
+            TEAM_ROLE="$_prole"
+            TEAM_ACTIVE=1
+            continue
+        fi
+        # Terminal cerrada (pid muerto) = no es una sesión en paralelo: no mostrar.
+        [[ -d "/proc/${_ppid}" ]] || continue
+        TEAM_ACTIVE=1
+        _pm=$(stat -c %Y "$_pf" 2>/dev/null) || _pm=0
+        if (( _tnow - _pm < 900 )); then
+            TEAM_PEERS+="  ${C_HELIX_OFFWHITE}${_prole}${C_RESET} ${C_HELIX_CYAN}●${C_RESET}"
+        else
+            TEAM_PEERS+="  ${C_HELIX_OFFWHITE}${_prole}${C_RESET} ${C_BR_YELLOW}○${C_RESET}"
+        fi
+    done
+    shopt -u nullglob
+    unset _pf _pj _prole _ppid _pm _anc _stat _rest _p _tnow
+
+    # Unread del rol propio: líneas del inbox − cursor (pura bash, sin wc)
+    if [[ -n "$TEAM_ROLE" ]]; then
+        _inbox="${TEAM_DIR}/mailbox/${TEAM_ROLE}/inbox.jsonl"
+        _curf="${TEAM_DIR}/mailbox/${TEAM_ROLE}/cursor"
+        _total=0
+        if [[ -f "$_inbox" ]]; then
+            while IFS= read -r _l || [[ -n "$_l" ]]; do _total=$((_total + 1)); done < "$_inbox"
+        fi
+        _cur=0
+        [[ -f "$_curf" ]] && IFS= read -r _cur < "$_curf"
+        [[ "$_cur" =~ ^[0-9]+$ ]] || _cur=0
+        TEAM_UNREAD=$(( _total > _cur ? _total - _cur : 0 ))
+        unset _inbox _curf _total _cur _l
+    fi
+fi
+
+# ─────────────────────────────────────────────────────────────
 # Sanitize integer values (eliminar whitespace que rompe %d en printf)
 # ─────────────────────────────────────────────────────────────
 # Pura bash — sin tr fork ni subshell. Ahorra ~1.9s sobre 9 invocaciones (medido).
@@ -454,6 +525,7 @@ sanitize_int "$N_BACKLOG";       N_BACKLOG="$REPLY"
 sanitize_int "$N_EVOLUTIONS";    N_EVOLUTIONS="$REPLY"
 sanitize_int "$SESSION_NUM";     SESSION_NUM="$REPLY"
 sanitize_int "$GIT_DIRTY";       GIT_DIRTY="$REPLY"
+sanitize_int "$TEAM_UNREAD";     TEAM_UNREAD="$REPLY"
 
 # ─────────────────────────────────────────────────────────────
 # Build dirty indicator
@@ -561,6 +633,19 @@ if [[ "$N_AGENTS_ACTIVE" -gt 0 ]]; then
         "${C_HELIX_OFFWHITE}" "$N_AGENTS_ACTIVE" "${C_RESET}" \
         "${C_HELIX_SLATE}" "${C_RESET}" \
         "${C_HELIX_OFFWHITE}" "$AGENTS_DISPLAY" "${C_RESET}"
+fi
+
+# L5c: 👥 team — Capa 3 multi-sesión (solo si ~/.helix/team existe)
+if [[ "$TEAM_ACTIVE" == "1" ]]; then
+    TEAM_SELF="${TEAM_ROLE:-—}"
+    UNREAD_COLOR="${C_HELIX_SLATE}"
+    (( TEAM_UNREAD > 0 )) && UNREAD_COLOR="${C_BR_YELLOW}"
+    printf '  %s👥 team%s       %s%s%s  ✉ %s%d%s %s·%s%s\n' \
+        "${C_HELIX_CYAN}" "${C_RESET}" \
+        "${C_HELIX_OFFWHITE}" "$TEAM_SELF" "${C_RESET}" \
+        "$UNREAD_COLOR" "$TEAM_UNREAD" "${C_RESET}" \
+        "${C_HELIX_SLATE}" "${C_RESET}" \
+        "$TEAM_PEERS"
 fi
 
 # L6: blank
