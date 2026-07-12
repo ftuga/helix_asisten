@@ -24,7 +24,7 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 
 | Requirement | Type | Notes |
 |-------------|------|-------|
-| [Claude Code CLI](https://docs.anthropic.com/claude-code) | Required | `npm install -g @anthropic-ai/claude-code` |
+| [Claude Code CLI](https://docs.anthropic.com/claude-code) | Required | `curl -fsSL https://claude.ai/install.sh \| bash` (native build, self-updating — avoid `sudo npm install -g`, see [Troubleshooting](#troubleshooting)) |
 | Node.js ≥ 18 **native Linux** | Required | MCPs fail if Node points to a Windows path in WSL — install via NodeSource, not Windows |
 | Python ≥ 3.9 + pip3 | Required | `sudo apt-get install -y python3 python3-pip` |
 | git, curl, rsync | Required | `sudo apt-get install -y git curl rsync` |
@@ -50,6 +50,8 @@ This repo is my complete configuration, versioned and portable. Clone it, run `i
 git clone git@github.com:ftuga/helix_asisten.git ~/helix_asisten
 bash ~/helix_asisten/install_on_wsl.sh
 ```
+
+> **The repo can live anywhere.** If you clone it to a different path (e.g. `~/documentos/helix_asisten`), the installer creates a symlink `~/helix_asisten → <your clone>` so every internal reference keeps working with a single copy. A partial leftover at `~/helix_asisten` from an older install is backed up automatically; a second *git clone* at that path is never touched — the installer warns you to unify them first.
 
 **Windows (PowerShell, requires [Git for Windows](https://git-scm.com/download/win)):**
 
@@ -747,6 +749,28 @@ bash ~/.claude/helpers/skill-tracker.sh prune --dry-run
 ```
 
 Logs to `memory/skill-usage.jsonl`. The retrospectiva uses this data to flag overhead.
+
+---
+
+## Troubleshooting
+
+### `Auto-update failed: no write permission to npm prefix`
+
+Claude Code was installed with `npm install -g` under a root-owned prefix (typically `/usr`), so its auto-updater cannot write there. Migrate to the native build, which installs to `~/.local/bin` and self-updates without sudo:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+# verify the new binary wins in PATH:
+which claude          # → ~/.local/bin/claude
+# optional cleanup of the old npm copy:
+sudo npm rm -g @anthropic-ai/claude-code
+```
+
+`install_on_wsl.sh` detects this condition and prints the same instructions as a warning.
+
+### Two copies of the repo (`~/helix_asisten` + your clone)
+
+Older installers copied `scripts/helix.sh` into a hardcoded `~/helix_asisten/`, so cloning the repo elsewhere left two copies. Since v3.15 the installer replaces that copy with a symlink `~/helix_asisten → <your clone>`. Re-run `install_on_wsl.sh` from your clone to fix an existing machine — the leftover directory is backed up as `~/helix_asisten.bak-<timestamp>`.
 
 ---
 

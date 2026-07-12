@@ -173,12 +173,32 @@ if [[ ! -x "$STATUSLINE_PATH" ]]; then
 fi
 
 # ── 6c. Launcher helix + alias ──────────────────────────────
+# El repo puede vivir en cualquier ruta: ~/helix_asisten es un symlink al repo
+# real (una sola copia). Si existe como directorio de una instalación previa
+# (copia parcial, no-git), se respalda antes de crear el symlink.
 echo "→ Instalando launcher helix..."
-mkdir -p "$HOME/helix_asisten/scripts"
-if [[ ! "$REPO_DIR/scripts/helix.sh" -ef "$HOME/helix_asisten/scripts/helix.sh" ]]; then
-    cp "$REPO_DIR/scripts/helix.sh" "$HOME/helix_asisten/scripts/"
+CANON="$HOME/helix_asisten"
+if [[ ! "$CANON" -ef "$REPO_DIR" ]]; then
+  if [[ -L "$CANON" ]]; then
+    rm "$CANON"
+  elif [[ -d "$CANON" ]]; then
+    if [[ -d "$CANON/.git" ]]; then
+      echo "⚠️  $CANON es otro clon del repo (git). No lo toco para no perder cambios."
+      echo "   Unificar manualmente y re-ejecutar, o instalar desde ese clon."
+      INSTALL_WARNINGS+=("Dos clones del repo detectados: $CANON y $REPO_DIR. Unificar en uno y re-ejecutar el install para dejar $CANON como symlink.")
+      CANON=""
+    else
+      BAK="$CANON.bak-$(date +%Y%m%d%H%M%S)"
+      mv "$CANON" "$BAK"
+      echo "  → $CANON (copia parcial de instalación previa) respaldado en $BAK"
+    fi
+  fi
+  if [[ -n "$CANON" ]]; then
+    ln -s "$REPO_DIR" "$CANON"
+    echo "  → symlink $CANON -> $REPO_DIR"
+  fi
 fi
-chmod +x "$HOME/helix_asisten/scripts/helix.sh"
+chmod +x "$REPO_DIR/scripts/helix.sh"
 
 ALIAS_LINE='alias helix="bash $HOME/helix_asisten/scripts/helix.sh"'
 for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
@@ -387,6 +407,17 @@ echo "  ollama pull llama3.2:3b"
 echo "  ollama create helix-coder -f $REPO_DIR/ollama/helix-coder.Modelfile"
 echo "  ollama create helix-scout -f $REPO_DIR/ollama/helix-scout.Modelfile"
 echo ""
+# ── 8b. Auto-update de Claude Code — detectar npm prefix sin permisos ──
+if command -v claude &>/dev/null; then
+  CLAUDE_REAL="$(readlink -f "$(command -v claude)" 2>/dev/null || command -v claude)"
+  if [[ "$CLAUDE_REAL" == */node_modules/* ]]; then
+    NPM_ROOT="${CLAUDE_REAL%%/node_modules/*}/node_modules"
+    if [[ ! -w "$NPM_ROOT" ]]; then
+      INSTALL_WARNINGS+=("Claude Code instalado vía npm en prefix sin permisos de escritura ($NPM_ROOT) — el auto-update fallará ('no write permission to npm prefix').\n  Migrar al build nativo (auto-actualizable, sin sudo):\n    curl -fsSL https://claude.ai/install.sh | bash\n  Verificar que ~/.local/bin esté primero en PATH, y opcionalmente limpiar la copia npm:\n    sudo npm rm -g @anthropic-ai/claude-code")
+    fi
+  fi
+fi
+
 # ── 9. HELIX-COMPRESS — generar slices frescos ──────────────
 echo "→ Generando slices HELIX-DISTILL..."
 if bash "$CLAUDE_DIR/helpers/helix-distill.sh" run &>/dev/null; then
