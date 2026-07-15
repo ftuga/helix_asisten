@@ -336,6 +336,8 @@ Sistema completo: `~/.claude/memory/design-system.md`. Cargar solo al trabajar e
 
 **12. Resume opt-in.** Si session-start incluye `[HELIX-SUGGEST-RESUME]` → al final del primer mensaje ofrecer 3 opciones: (1) retomar contexto, (2) nuevo chat, (3) ver detalle. NUNCA cargar snapshot sin consentimiento. Si elige (1) → leer vía `helix-snapshot show` + declarar staleness con `stale-check`. Antes de cerrar sesión larga (≥10 tool calls con decisiones) → invocar `helix-snapshot capture` con YAML estructurado en stdin (schema: skill `helix-snapshot`).
 
+**13. Panel de tareas nativo (plan visible en vivo).** Toda tarea con ≥3 pasos o que toque ≥2 archivos → crear el plan con `TaskCreate` (checklist nativo de Claude Code) y mantenerlo al día con `TaskUpdate` en tiempo real: `in_progress` al arrancar cada paso, `completed` al terminar, sin pedir permiso. El panel es la vista viva de la sesión; `helix-backlog.md` sigue siendo la persistencia entre sesiones (regla TEAM DISPATCH intacta). Tareas cortas (1-2 pasos) → omitir el panel para no meter ruido. Trabajo en paralelo (subagentes background, swarm, workflows) → una task por rama paralela para que el avance sea visible desde el chat.
+
 **HELIX-SPEAK:** compresión de output según tipo. Coordinación inter-agente → `ultra`. Reporte al usuario → `brief`. Código/comandos/seguridad → `off`. Skill: `~/.claude/skills/helix-speak/SKILL.md`.
 
 ---
