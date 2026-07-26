@@ -149,14 +149,20 @@ if m:
 else:
     chk(False, "", "Bloque de métricas no encontrado")
 
-# Tamaño en TOKENS (2026-07-01: líneas era mal proxy — prune -26% tokens = 3% líneas)
+# Tamaño en TOKENS — alineado con self-check.sh (2026-07-01, backlog sprint 4:
+# líneas era mal proxy — prune de -26% tokens solo movió 3% líneas).
+# Baseline ~12.9k tokens. ok ≤13500, warn >13500, fail >16500.
 try:
     import tiktoken
     tokens = len(tiktoken.get_encoding("cl100k_base").encode(content, disallowed_special=()))
 except Exception:
-    tokens = int(len(content.encode()) / 3.4)
-chk(tokens <= 13500, f"Tamaño: ~{tokens} tokens (dentro de rango)",
-    f"Tamaño: ~{tokens} tokens — supera 13500, archivar/comprimir", is_warn=True)
+    tokens = int(len(content.encode()) / 3.4)  # ratio medido 2026-07-01
+if tokens > 16500:
+    chk(False, "", f"Tamaño: ~{tokens} tokens — supera 16500, archivar evoluciones a evolution-history.md")
+elif tokens > 13500:
+    chk(False, "", f"Tamaño: ~{tokens} tokens — supera 13500, considerar archivar", is_warn=True)
+else:
+    chk(True, f"Tamaño: ~{tokens} tokens (≤13500)", "")
 
 # Sin secciones estáticas de proyecto
 has_static = "## Project Overview" in content or "## Stack" in content
@@ -187,7 +193,10 @@ fi
 section "PESO DE CONTEXTO (proxy de tokens)"
 # ════════════════════════════════════════════════════════════
 
-"${HELIX_PYTHON:-python3}" - "$GLOBAL_MD" "$MEMORY_DIR" << 'PYEOF'
+# CTX_RC captura el veredicto del heredoc: corre en subshell y sus advertencias
+# NO llegaban a los contadores (el health-check cerraba "perfecto estado" con warns).
+CTX_RC=0
+"${HELIX_PYTHON:-python3}" - "$GLOBAL_MD" "$MEMORY_DIR" << 'PYEOF' || CTX_RC=$?
 import sys, os
 from pathlib import Path
 
@@ -206,37 +215,74 @@ def approx_tokens(path):
         return len(text) // 4
     except: return 0
 
-sizes = {
-    "CLAUDE.md global (siempre cargado)": global_md,
-    "evolution-log.txt":   memory_dir / "evolution-log.txt",
-    "sessions.md":         memory_dir / "sessions.md",
+# CONTEXTO ACTIVO = lo único que entra al contexto cada sesión y se gatea
+# contra el threshold. CLAUDE.md lo inyecta el harness como memoria global;
+# el hook SessionStart (session-start.sh) emite ~1.1k tokens a stdout que
+# también entran. NO ejecutamos session-start aquí (appendea logs → efecto
+# secundario por cada health-check), así que su aporte va como estimado fijo.
+SESSION_START_APPROX = 1100  # ~tokens de stdout del hook SessionStart
+
+claude_tokens = approx_tokens(global_md)
+active_tokens = claude_tokens + SESSION_START_APPROX
+
+print("  Contexto ACTIVO (inyectado cada sesión):")
+print(f"    • CLAUDE.md (harness):            ~{claude_tokens:,} tokens ({kb(global_md):.1f} KB)")
+print(f"    • session-start hook (stdout est.): ~{SESSION_START_APPROX:,} tokens")
+print(f"    = activo total:                   ~{active_tokens:,} tokens")
+
+# STORAGE en disco: append-only, NO se inyecta al contexto. Informativo, sin
+# gate — su tamaño no afecta el costo por sesión (corrige la conflación que
+# sumaba estos logs como 'contexto activo' y disparaba un CRÍTICO falso).
+storage = {
+    "evolution-log.txt": memory_dir / "evolution-log.txt",
+    "session-log.txt":   memory_dir / "session-log.txt",
 }
+print("  Storage en disco (NO inyectado — informativo):")
+for label, path in storage.items():
+    print(f"    • {label}: ~{approx_tokens(path):,} tokens ({kb(path):.1f} KB)")
 
-total_tokens = 0
-for label, path in sizes.items():
-    t = approx_tokens(path)
-    total_tokens += t
-    status = "✅" if t < 2000 else ("⚠️ " if t < 5000 else "❌")
-    print(f"  {status} {label}: ~{t:,} tokens ({kb(path):.1f} KB)")
-
-# Topics (carga bajo demanda)
+# Topics: carga bajo demanda, tampoco gateado.
 topic_tokens = 0
 if topics_dir.exists():
     for f in topics_dir.glob("*.md"):
         topic_tokens += approx_tokens(f)
+print(f"    • topics/ (bajo demanda): ~{topic_tokens:,} tokens")
 
-print(f"  📦 topics/ (bajo demanda): ~{topic_tokens:,} tokens")
-print(f"\n  Total contexto activo:    ~{total_tokens:,} tokens")
-print(f"  Total memoria completa:   ~{total_tokens + topic_tokens:,} tokens")
-
-threshold = 8000
-if total_tokens < threshold:
-    print(f"  \033[0;32m✅ Contexto activo saludable (< {threshold:,} tokens)\033[0m")
-elif total_tokens < threshold * 2:
-    print(f"  \033[1;33m⚠️  Contexto elevado — considerar compresión\033[0m")
+# Gate SOLO sobre el contexto activo. Threshold = CLAUDE.md sano (~8k) + hook
+# (~1k) + margen. Por encima sugiere archivar CLAUDE.md, no comprimir logs.
+threshold = 12000
+print()
+if active_tokens < threshold:
+    print(f"  \033[0;32m✅ Contexto activo saludable (~{active_tokens:,} < {threshold:,} tokens)\033[0m")
+elif active_tokens < threshold * 1.5:
+    print(f"  \033[1;33m⚠️  Contexto activo elevado (~{active_tokens:,}) — archivar evoluciones de CLAUDE.md\033[0m")
 else:
-    print(f"  \033[0;31m❌ Contexto crítico — comprimir urgente\033[0m")
+    print(f"  \033[0;31m❌ Contexto activo crítico (~{active_tokens:,}) — archivar CLAUDE.md urgente\033[0m")
+    sys.exit(2)
+sys.exit(1 if active_tokens >= threshold else 0)
 PYEOF
+case "$CTX_RC" in
+  1) warn "contexto activo por encima del threshold — archivar secciones históricas de CLAUDE.md" ;;
+  2) fail "contexto activo crítico — archivar CLAUDE.md urgente" ;;
+esac
+
+# ════════════════════════════════════════════════════════════
+section "CABLEADO (capability declarada vs conectada)"
+# ════════════════════════════════════════════════════════════
+WIRING="$CLAUDE_HOME/helpers/helix-wiring-audit.sh"
+if [[ ! -f "$WIRING" ]]; then
+  fail "helix-wiring-audit.sh no encontrado — el guard anti-recurrencia no está instalado"
+else
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    st="${line%%|*}"; msg="${line#*|}"
+    case "$st" in
+      OK)   ok   "$msg" ;;
+      WARN) warn "$msg" ;;
+      FAIL) fail "$msg" ;;
+    esac
+  done < <(bash "$WIRING" 2>/dev/null || true)
+fi
 
 # ════════════════════════════════════════════════════════════
 # RESULTADO FINAL

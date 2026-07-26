@@ -270,7 +270,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 shadow = Path("${shadow_log}")
-feedback = Path.home() / ".claude/memory/routing-feedback.jsonl"
+feedback = Path("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-feedback.jsonl")
 
 shadow_picks = []
 with shadow.open() as f:

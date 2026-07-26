@@ -54,7 +54,7 @@ except:
     pass
 
 # Ejecutar session-end.sh
-session_end = Path.home() / ".claude/session-end.sh"
+session_end = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(Path.home() / ".claude"))) / "session-end.sh"
 if session_end.exists():
     try:
         result = subprocess.run(

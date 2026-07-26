@@ -28,10 +28,11 @@ LAST_N = int(os.environ.get("HELIX_LAST_N", 200))
 PROJ   = os.environ.get("HELIX_PROJECT", "")
 HOME   = Path.home()
 
-# Logs de conversaciones en projects/
-sessions_dir = HOME / ".claude/projects"
+# Logs de conversaciones en projects/ — del árbol de config ACTIVO, no del histórico
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+sessions_dir = CONFIG_DIR / "projects"
 if not sessions_dir.exists():
-    print("No hay logs en ~/.claude/projects/"); raise SystemExit(0)
+    print(f"No hay logs en {sessions_dir}/"); raise SystemExit(0)
 
 # Filtra por proyecto si corresponde
 if PROJ:

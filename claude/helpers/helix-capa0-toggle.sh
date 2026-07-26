@@ -10,7 +10,7 @@
 #   helix-capa0-toggle.sh on                  → reactiva (vuelve a comportamiento HW)
 #   helix-capa0-toggle.sh status              → muestra estado actual
 #
-# El archivo override es ~/.claude/capa0-disabled.
+# El archivo override es $CLAUDE_CONFIG_DIR/capa0-disabled.
 # session-end.sh lo limpia automáticamente si tiene mode:session.
 #
 # Default Helix: Capa 0 ACTIVADA (según HW). Este toggle solo desactiva.

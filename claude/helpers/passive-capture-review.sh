@@ -39,7 +39,7 @@ case "$CMD" in
     fi
     "${HELIX_PYTHON:-python3}" - "$PENDING" <<'PYEOF'
 import json, sys, os
-HOME = os.path.expanduser('~/.claude/')
+HOME = os.environ.get('CLAUDE_CONFIG_DIR', os.path.expanduser('~/.claude')).rstrip('/') + '/'
 with open(sys.argv[1], 'r', encoding='utf-8') as f:
     lines = [l.rstrip() for l in f if l.strip()]
 print(f"{len(lines)} pending captures:\n")
@@ -48,7 +48,7 @@ for i, line in enumerate(lines, 1):
         e = json.loads(line)
     except Exception:
         continue
-    short_file = e['file'].replace(HOME, '~/.claude/')
+    short_file = e['file'].replace(HOME, '~/' + os.path.basename(HOME.rstrip('/')) + '/')
     hits = ','.join(e.get('matchers_hit', []))
     print(f"[{i}] {e.get('ts','?')[:19]} {e.get('tool','?')}")
     print(f"    file: {short_file}")

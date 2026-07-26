@@ -330,35 +330,35 @@ Escribir `{PROJECT_ROOT}/.claude/memory/helix-analysis-full.md` con todos los de
 
 ---
 
-## Paso 7 — Inicializar bitácora y backlog
+## Paso 7 — Inicializar bitácora, risk-map y backlog
 
-### Bitácora
+### Bitácora + Risk Map (obligatorio, vía helper)
 
-Si `helix-bitacora.md` NO existe → crearlo:
+**Ejecutar SIEMPRE** — es idempotente, nunca sobreescribe:
 
-```markdown
-# Helix Bitácora — {nombre del proyecto}
-> Iniciada: {fecha}
-> Propósito: Registro continuo. Helix actualiza automáticamente vía hook PostToolUse.
-
-## 📝 Cambios Realizados
-| Fecha | Archivo(s) | Cambio | Sesión |
-|-------|-----------|--------|--------|
-
-## 💡 Recomendaciones
-| Fecha | Recomendación | Estado |
-|-------|--------------|--------|
-
-## 🐛 Errores Cometidos
-| Fecha | Error | Solución | Aprendizaje |
-|-------|-------|----------|-------------|
-
-## 🧠 Decisiones de Diseño Validadas
-| Fecha | Decisión | Por qué |
-|-------|---------|---------|
+```bash
+bash ~/.helix/helpers/helix-artifacts-init.sh {PROJECT_ROOT}
 ```
 
-Si ya existe → NO sobreescribir. Informar que existe.
+Crea `helix-bitacora.md` (con la tabla exacta que el hook `PostToolUse` necesita
+para insertar filas) y `helix-risk-map.md` (vacío pero estructurado).
+
+**Por qué es un helper y no una plantilla en este doc** — auditoría 2026-07-26:
+la plantilla vivía sólo acá como instrucción, y el resultado real fue **1 bitácora
+en 8 proyectos** y **0 risk-maps**, mientras dos reglas de la doctrina (#3 y el
+checklist pre-cierre) citaban el risk-map como si existiera. Un productor tiene
+que ser código ejecutable y greppable, no un párrafo que se puede saltar.
+
+El hook de bitácora tenía **dos compuertas mudas**: salía si el archivo no
+existía, y no insertaba nada si faltaba el header exacto de la tabla. La segunda
+ahora auto-repara; la primera la resuelve este helper.
+
+Tras ejecutarlo, informar al usuario qué se creó y aclarar que el risk-map
+arranca vacío — **vacío significa "sin mapear", nunca "sin riesgo"**.
+
+Si durante el análisis se detectaron zonas críticas (rutas sin auth, acoplamientos
+frágiles, migraciones destructivas), **poblar el risk-map con ellas ahora**,
+siguiendo el formato comentado en el archivo.
 
 ### Backlog
 

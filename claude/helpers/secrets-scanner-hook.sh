@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 [[ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf" ]] && source "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helix-python.conf"
-# secrets-scanner-hook.sh — PreToolUse(Write|Edit|MultiEdit|Bash):
+# secrets-scanner-hook.sh — PreToolUse(Write|Edit|MultiEdit|Bash|Agent):
 # Detecta secretos antes de escribir a disco. Exit 2 bloquea.
 # Regex: AWS, GCP, GitHub tokens, JWT largos, SSH privados, .env values comunes.
 set -uo pipefail
@@ -32,6 +32,12 @@ elif tool_name in ("Edit",):
 elif tool_name in ("MultiEdit",):
     for e in tool_input.get("edits", []) or []:
         candidates.append(("new_string", e.get("new_string", "")))
+elif tool_name in ("Agent", "Task"):
+    # Prompts a subagentes: el brief sale del contexto de Helix y puede arrastrar
+    # credenciales leídas antes. Regresión detectada 2026-07-26 — hasta esa fecha
+    # NADA escaneaba el prompt de un subagente.
+    candidates.append(("agent_prompt", tool_input.get("prompt", "")))
+    candidates.append(("agent_description", tool_input.get("description", "")))
 elif tool_name == "Bash":
     # Heredocs / echo > file / tee /append
     cmd = tool_input.get("command", "") or ""
@@ -51,8 +57,10 @@ def is_safe_target(path: str) -> bool:
     path_l = path.lower()
     for marker in [".env.example", ".example", "/test/", "/tests/", "_test.", ".test.",
                    "/fixtures/", "readme.md", "/docs/", ".gitignore",
-                   # Helix internals (mismos hooks registran patrones)
+                   # Helix internals (mismos hooks registran patrones).
+                   # Ambos árboles: CLAUDE_CONFIG_DIR puede ser ~/.claude o ~/.helix
                    "/.claude/helpers/", "/.claude/skills/",
+                   "/.helix/helpers/", "/.helix/skills/",
                    "/memory/injection-alerts.jsonl", "/memory/reflexions.jsonl"]:
         if marker in path_l: return True
     return False
@@ -107,7 +115,7 @@ tags = sorted({h[0] for h in hits})
 print(
     f"🔐 SECRET BLOCKED: {len(hits)} match(es) en {tool_name}\n"
     f"   Tipos: {', '.join(tags)}\n"
-    f"   File: {fp or '(bash cmd)'}\n"
+    f"   Origen: {fp or ('prompt del subagente ' + str(tool_input.get('subagent_type','?')) if tool_name in ('Agent','Task') else '(bash cmd)')}\n"
     f"   → Mover a variable de entorno o secret manager.\n"
     f"   → Si es falso positivo, usar .env.example o archivo de fixtures.",
     file=sys.stderr

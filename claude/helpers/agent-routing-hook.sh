@@ -81,8 +81,11 @@ entry = {
 with open(sys.argv[1], "a") as f:
     f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
+# Directorio de config activo — NUNCA hardcodear ~/.claude (rompe el árbol vivo tras migrar)
+CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(Path.home() / ".claude")))
+
 # También registrar en skill-usage.jsonl para análisis de uso
-usage_log = Path.home() / ".claude/memory/skill-usage.jsonl"
+usage_log = CONFIG_DIR / "memory/skill-usage.jsonl"
 usage_entry = {
     "ts":      entry["ts"],
     "date":    entry["ts"][:10],
@@ -94,7 +97,7 @@ with open(usage_log, "a") as f:
     f.write(json.dumps(usage_entry, ensure_ascii=False) + "\n")
 
 # Auto-score de calidad: success=3, partial=2, failed=1
-quality_log = Path.home() / ".claude/memory/skill-quality.jsonl"
+quality_log = CONFIG_DIR / "memory/skill-quality.jsonl"
 score_map = {"success": 3, "partial": 2, "failed": 1}
 score = score_map.get(resultado, 2)
 quality_entry = {

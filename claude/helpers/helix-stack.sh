@@ -644,7 +644,7 @@ if not extended:
 
 # Leer routing-feedback.jsonl últimos 30d, filtrar por proyecto
 project_name = os.path.basename("${PROJECT}")
-feedback = Path.home() / ".claude/memory/routing-feedback.jsonl"
+feedback = Path("${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory/routing-feedback.jsonl")
 if not feedback.exists():
     print(json.dumps({"status": "no_feedback", "message": "sin routing-feedback.jsonl"}))
     exit(0)

@@ -81,8 +81,16 @@ if header in content:
         header + '\n' + sep + '\n' + row,
         1
     )
-    with open(file, 'w') as f:
-        f.write(content)
+else:
+    # Self-heal: si la bitácora existe pero sin la tabla, el hook NO-OPeaba en
+    # silencio (segunda compuerta muda, hallada 2026-07-26). Ahora crea la
+    # sección en vez de descartar la entrada.
+    if not content.endswith('\n'):
+        content += '\n'
+    content += '\n## 📝 Cambios Realizados\n' + header + '\n' + sep + '\n' + row + '\n'
+
+with open(file, 'w') as f:
+    f.write(content)
 " 2>/dev/null || true
 
 exit 0
