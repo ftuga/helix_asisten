@@ -1,5 +1,5 @@
 # Routing Heuristics — Helix ERL
-> Generado: 2026-07-26 15:59 | Entradas analizadas: 457
+> Generado: 2026-07-26 16:01 | Entradas analizadas: 457
 > Umbral mínimo: 2 muestras
 
 ## Reglas por Dominio
@@ -89,7 +89,7 @@
 *Actualizar con: `bash ~/.claude/helpers/helix-erl.sh`*
 
 ## Reglas ExpeL (Contrastivas)
-> Generado: 2026-07-26 15:59 | Basado en 457 trayectorias
+> Generado: 2026-07-26 16:01 | Basado en 457 trayectorias
 
 ### Dominancia observada
 - [devops] `council-synthesizer` (29x, 14%) supera a `council-skeptic` (21x) — usar `council-synthesizer` como primera opción
