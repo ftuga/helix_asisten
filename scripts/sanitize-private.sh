@@ -67,7 +67,7 @@ with open(patterns_file, encoding="utf-8") as f:
         line = line.rstrip("\n")
         if not line.strip() or line.lstrip().startswith("#"):
             continue
-        fields = line.split("|")
+        fields = line.split("::")
         pat = fields[0]
         action = fields[2].strip() if len(fields) > 2 else "drop"
         # El formato del archivo es ERE con clases POSIX; se traduce a Python.
@@ -121,9 +121,24 @@ def sanitize(target):
             continue
         new_line = line
         for rx, raw, act in pats:
-            if (act == "redact" or code_file) and rx.search(new_line):
-                new_line = rx.sub(PLACEHOLDER, new_line)
-                redacted.append(raw)
+            if not ((act == "redact" or code_file) and rx.search(new_line)):
+                continue
+            # Los patrones traen grupos de frontera (^|[^a-zA-Z0-9])…([^…]|$)
+            # porque \b no sirve: el guión bajo es carácter de palabra y
+            # \bzeussalud\b NO matchea ‹his-cliente›_DOC.md. Hay que RECONSTRUIR
+            # esos vecinos, si no la redacción se come el separador.
+            def _repl(m):
+                if m.re.groups >= 2:
+                    return f"{m.group(1)}{PLACEHOLDER}{m.group(2)}"
+                return PLACEHOLDER
+            # bucle: al consumir el separador, dos ocurrencias contiguas
+            # se pierden en una sola pasada
+            for _ in range(5):
+                nxt = rx.sub(_repl, new_line)
+                if nxt == new_line:
+                    break
+                new_line = nxt
+            redacted.append(raw)
         kept.append(new_line)
     text = "\n".join(kept)
 

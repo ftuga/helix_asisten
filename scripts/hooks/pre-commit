@@ -35,10 +35,10 @@ if [[ -z "$STAGED_FILES" ]]; then
 fi
 
 for pattern_entry in "${FORBIDDEN_PATTERNS[@]}"; do
-  PATTERN="${pattern_entry%%|*}"
+  PATTERN="${pattern_entry%%::*}"
   # Campo 2 = descripción, campo 3 (opcional) = acción del sanitizador.
   # Con ${x##*|} la descripción salía como "redact" en las líneas de 3 campos.
-  DESC="$(printf '%s' "$pattern_entry" | cut -d'|' -f2)"
+  DESC="$(printf '%s' "$pattern_entry" | awk -F'::' '{print $2}')"
 
   # -iE: los patrones usan \b y ERE; sin -i "‹cliente-aseguradora›" en mayúsculas se escapaba
   MATCHES=$(echo "$STAGED_FILES" | xargs grep -liE -- "$PATTERN" 2>/dev/null || true)

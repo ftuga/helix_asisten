@@ -174,3 +174,34 @@ El **historial git** conserva las ocurrencias ya publicadas hasta un rewrite con
 `filter-repo` + force-push (precedente: 2026-07-08, `af06265`→`ee4c33c`). Los
 objetos viejos pueden seguir cacheados en GitHub por SHA hasta el GC. Eso no se
 hace sin OK explícito.
+
+### Rewrite del historial — ejecutado con OK explícito del creator
+
+Segunda vez en el año (precedente 2026-07-08). **El alcance real sólo se ve
+escaneando todas las refs, no HEAD**: en HEAD quedaban 4 archivos; en el
+historial había 217 blobs con la entidad institucional, 155 con una credencial
+de test y 45 con el nombre del cliente EPS.
+
+Procedimiento que funcionó:
+
+1. Respaldo doble — `git bundle create --all` + mirror clone — y anotar los SHAs
+   previos de cada ref para poder volver.
+2. Inventario por término sobre `git rev-list --all`.
+3. `filter-repo` con **`--replace-text` Y `--replace-message`**: el primero no
+   toca los mensajes de commit, y 4 cuerpos nombraban clientes. Más
+   `--path … --invert-paths` para el archivo cuyo propósito *es* contexto de
+   cliente.
+4. Verificar sobre el repo reescrito: 0 ocurrencias, 136 commits preservados,
+   `fsck` limpio.
+5. **Comparar el remoto contra el respaldo ANTES de forzar**, para confirmar que
+   nadie más empujó mientras tanto.
+6. `push --force` a **todas** las refs (`main`, `develop` y el tag): dejar una
+   sola con el historial viejo mantiene el dato alcanzable y anula el ejercicio.
+7. Verificación final desde un **clone fresco del remoto**, no del repo local.
+
+Dos fricciones de la herramienta: `filter-repo` pide confirmación interactiva si
+ya corrió antes (`.git/filter-repo/already_ran`) y **elimina el remote `origin`**
+al terminar — hay que volver a agregarlo.
+
+Caveat que no depende de nosotros: GitHub puede conservar los objetos viejos
+accesibles por SHA hasta su GC, y forks o PRs abiertos los retienen.

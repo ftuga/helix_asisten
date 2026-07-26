@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-07-26 15:20<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-07-26 15:34<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -257,6 +257,7 @@ Propuesta arquitectónica diferida con gates explícitos. Detalle: `~/.helix/mem
 - [2026-07-15] helix-nav navegador interno con cuarentena: convierte deteccion post-hoc de contenido web (hooks L1/L2 alertan DESPUES de entrar al contexto) en prevencion estructural — fetch fuera de contexto, IP fijada anti DNS-rebinding, SSRF-guard bloquea si CUALQUIER IP resuelta es privada, strip zero-width+tag-block+NFKC, redact inyeccion pre-contexto, destilacion Capa 0 como sandbox semantico, allowlist curada nunca auto-poblada. Review adversarial independiente cerro 8 findings que el primer pase no vio (SSRF any-private, DNS-rebind TOCTOU, DDG entity-decode-after-sanitize, allowlist self-poisoning)
 - [2026-07-26] Regresion silenciosa por reemplazo de capability: NADA escaneaba el prompt de un subagente en busca de secretos (el writer que lo hacia en abril desaparecio y dejo un .jsonl huerfano; secrets-scanner cubria solo Write|Edit|MultiEdit|Bash). Un .jsonl huerfano es la huella de un control que se cayo. Detalle: `topics/auditoria-cableado-20260726.md`
 - [2026-07-26] Reincidencia del leak de cliente al repo publico por TRES fallas que parecian una: el pre-commit guard no cubria claude/CLAUDE.md, private-patterns.txt tenia solo placeholders sin ningun cliente real, y el guard vivia solo en .git/hooks (no versionado -> clone fresco sin proteccion). En codigo se redacta, nunca se descarta la linea (rompe heredocs). La sanitizacion corre DESPUES de todas las copias o los rsync la sobreescriben. Detalle: `topics/auditoria-cableado-20260726.md`
+- [2026-07-26] Rewrite de historial publico: el alcance del leak solo se ve escaneando TODAS las refs (HEAD tenia 4 archivos; el historial 217+155+45 blobs). filter-repo --replace-text NO toca mensajes de commit: hace falta tambien --replace-message. Forzar push a TODAS las refs (main, develop, tags): dejar una con historial viejo mantiene el dato alcanzable. Detalle: `topics/auditoria-cableado-20260726.md`
 <!-- SECURITY_END -->
 
 ---
@@ -480,7 +481,8 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 60 | 2026-07-26 | arquitectura | Doctrina citando artefactos inexistentes (risk-map sin productor; bitacora con 2 compuertas mudas -> 1 en 8 proyectos). Una plantilla dentro de un doc de instrucciones NO es un productor. Detalle: `topics/auditoria-cableado-20260726.md` | doctrina-sin-productor |
 | 61 | 2026-07-26 | seguridad | Prompts a subagentes sin escaneo de secretos hasta hoy. Detalle: `topics/auditoria-cableado-20260726.md` | prompt-subagente-sin-escaneo |
 | 62 | 2026-07-26 | seguridad | Leak de cliente al repo publico: 3 fallas independientes (guard sin cobertura de CLAUDE.md, patrones placeholder, guard no versionado). Detalle: `topics/auditoria-cableado-20260726.md` | leak-cliente-reincidencia |
-| 63 | 2026-07-26 | testing | Un checker se verifica INDEPENDIENTEMENTE: exit 0 puede ser 'limpio' o 'no vio nada'. Detalle: `topics/auditoria-cableado-20260726.md` | verificacion-independiente |<!-- EVOLUTION_LOG_END -->
+| 63 | 2026-07-26 | testing | Un checker se verifica INDEPENDIENTEMENTE: exit 0 puede ser 'limpio' o 'no vio nada'. Detalle: `topics/auditoria-cableado-20260726.md` | verificacion-independiente || 64 | 2026-07-26 | seguridad | Procedimiento de rewrite de historial publico: escanear todas las refs, --replace-text + --replace-message, force-push a todas las refs, verificar desde clone fresco. Detalle: `topics/auditoria-cableado-20260726.md` | rewrite-historial |
+<!-- EVOLUTION_LOG_END -->
 
 ---
 
