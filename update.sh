@@ -32,6 +32,14 @@ fi
 
 echo "🔄 Sincronizando $CLAUDE_DIR → $REPO_DIR..."
 
+# El privacy guard vivía sólo en .git/hooks/ (no versionado): un clone fresco
+# —incluido el derivado institucional— quedaba SIN guard. Ahora está versionado
+# en scripts/hooks/ y se activa por core.hooksPath.
+if [[ "$(git -C "$REPO_DIR" config core.hooksPath 2>/dev/null)" != "scripts/hooks" ]]; then
+  git -C "$REPO_DIR" config core.hooksPath scripts/hooks
+  echo "   ⬡ privacy guard activado (core.hooksPath → scripts/hooks)"
+fi
+
 # Scripts y config
 for f in CLAUDE.md settings.json evolve.sh session-start.sh session-end.sh \
           self-check.sh compress.sh compress_logic.py health-check.sh; do
@@ -59,21 +67,9 @@ echo "→ Sanitizando contexto de proyecto..."
 bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/agents"
 bash "$REPO_DIR/scripts/sanitize-memory-agents.sh" "$REPO_DIR/claude/memory/topics"
 
-# Skills (sync completo + sanitize inline)
+
+# Skills (sync completo — la sanitización va en el bloque unificado de abajo)
 rsync -a --delete "$CLAUDE_DIR/skills/" "$REPO_DIR/claude/skills/"
-echo "→ Sanitizando skills..."
-PATTERNS_FILE="$REPO_DIR/scripts/private-patterns.txt"
-if [[ -f "$PATTERNS_FILE" ]]; then
-  while IFS= read -r line; do
-    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
-    PATTERN="${line%%|*}"
-    # Reemplazar patrón en todos los .md de skills (literal, no regex)
-    (grep -rl "$PATTERN" "$REPO_DIR/claude/skills/" 2>/dev/null || true) | while read -r f; do
-      sed -i "s/$PATTERN//g" "$f"
-      echo "  ✓ sanitized: $(basename $f) — '$PATTERN'"
-    done
-  done < "$PATTERNS_FILE"
-fi
 
 # Helpers globales (sync completo)
 rsync -a --delete "$CLAUDE_DIR/helpers/" "$REPO_DIR/claude/helpers/"
@@ -93,6 +89,53 @@ fi
 [[ -f "$TEMPLATE_DIR/init-project.sh" ]] && cp "$TEMPLATE_DIR/init-project.sh" "$REPO_DIR/template/"
 rsync -a "$TEMPLATE_DIR/.claude/memory/" "$REPO_DIR/template/.claude/memory/" 2>/dev/null || true
 rsync -a "$TEMPLATE_DIR/.claude/skills/" "$REPO_DIR/template/.claude/skills/" 2>/dev/null || true
+
+# ── Exclusión a nivel ARCHIVO ────────────────────────────────────
+# Documentos cuyo propósito ES el contexto de cliente: sanearlos línea por línea
+# los dejaría en nada. No entran al repo público. sessions-history.md es el
+# archivo del bloque SESIONES — misma categoría, misma regla.
+echo "→ Excluyendo documentos inherentemente privados..."
+PRIVATE_FILES=(
+  "claude/memory/topics/sessions-history.md"
+  "claude/memory/topics/‹entidad›-helix-plan-REQ-001.md"
+  "claude/agents/zeus-‹proveedor-his›-expert.md"
+  "claude/memory/agents/zeus-‹proveedor-his›-expert.md"
+  "claude/memory/agents/zeus-‹proveedor-his›-expert.validation.md"
+)
+for pf in "${PRIVATE_FILES[@]}"; do
+  if [[ -f "$REPO_DIR/$pf" ]]; then
+    rm -f "$REPO_DIR/$pf"
+    echo "   ✂ excluido: $(basename "$pf")"
+  fi
+done
+# Patrones de contexto de proyecto que aparezcan a futuro
+find "$REPO_DIR/claude/memory" -name "contexto-proyecto-*.md" -delete 2>/dev/null || true
+
+# ══════════════════════════════════════════════════════════════════
+# SANITIZACIÓN POR PATRÓN — corre DESPUÉS de todas las copias
+#
+# Orden crítico: los `rsync` de helpers y skills son posteriores a las copias
+# individuales; si se saneara antes, el rsync sobreescribiría lo saneado y el
+# leak volvería en cada sync. Este bloque va al final a propósito.
+#
+# CLAUDE.md es el archivo que filtró datos de cliente el 2026-07-01 vía el bloque
+# SESIONES. La doctrina lo exigía vacío desde entonces, pero nada lo aplicaba: se
+# copiaba verbatim. sanitize-memory-agents sólo borra secciones con marker, así
+# que las FILAS de tabla con nombres de cliente sobrevivían.
+#
+# En .md se descarta la línea; en código (.sh/.py) sólo se redacta, para no
+# romper heredocs ni dejar sintaxis inválida.
+# ══════════════════════════════════════════════════════════════════
+echo "→ Sanitizando por patrón (CLAUDE.md, memory, agents, helpers, skills)..."
+mapfile -t SANITIZE_TARGETS < <(
+  printf '%s\n' "$REPO_DIR/claude/CLAUDE.md"
+  find "$REPO_DIR/claude/memory"  -maxdepth 2 -name "*.md" 2>/dev/null
+  find "$REPO_DIR/claude/agents"  -maxdepth 2 -name "*.md" 2>/dev/null
+  find "$REPO_DIR/claude/commands" -maxdepth 1 -name "*.md" 2>/dev/null
+  find "$REPO_DIR/claude/skills"  -name "*.md" 2>/dev/null
+  find "$REPO_DIR/claude/helpers" -maxdepth 1 \( -name "*.sh" -o -name "*.py" \) 2>/dev/null
+)
+bash "$REPO_DIR/scripts/sanitize-private.sh" "${SANITIZE_TARGETS[@]}"
 
 echo "✅ Sincronización completa."
 

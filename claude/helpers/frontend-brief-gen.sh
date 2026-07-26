@@ -432,15 +432,15 @@ Este brief captura el sistema visual de **${PROJECT_NAME}** para transplantarlo 
 - El patron **CTA de cierre**: grid 2 columnas (1.2fr .8fr), colapsa a 1 col en <820px.
 
 **Que adaptar (identidad-especifica de ${PROJECT_NAME}):**
-- La **paleta** (\`--ss-green\`, \`--ss-purple\` y variantes): son colores institucionales de ‹entidad›. En otra app, mapear los patrones a los tokens propios del nuevo proyecto. Nunca usar \`--ss-*\` directamente fuera de este proyecto referencia.
+- La **paleta** (\`--ss-green\`, \`--ss-purple\` y variantes): son colores institucionales de ‹privado›. En otra app, mapear los patrones a los tokens propios del nuevo proyecto. Nunca usar \`--ss-*\` directamente fuera de este proyecto referencia.
 - El **tono editorial**: "calido, humanista, nunca corporativo" es la voz de una fundacion de salud. Otra app puede requerir tono diferente.
-- Las **fuentes** (Manrope + Fraunces): son elecciones de ‹entidad›. Sustituir segun identidad de la app destino.
-- Las reglas de **copy** (§3 del CLAUDE.md): los principios son transferibles (cero filler, CTA duales), el registro especifico es de ‹entidad›.
+- Las **fuentes** (Manrope + Fraunces): son elecciones de ‹privado›. Sustituir segun identidad de la app destino.
+- Las reglas de **copy** (§3 del CLAUDE.md): los principios son transferibles (cero filler, CTA duales), el registro especifico es de ‹privado›.
 
 **Proceso recomendado al invocar al agente para otra app:**
 1. Pasar este brief como contexto.
 2. Especificar explicitamente que transplantar y que adaptar para la nueva identidad.
-3. Si la nueva app tiene su propio sistema de tokens, indicarlos — el agente mapeara los patrones, no copiara los hex de ‹entidad›.
+3. Si la nueva app tiene su propio sistema de tokens, indicarlos — el agente mapeara los patrones, no copiara los hex de ‹privado›.
 
 **Staleness:** el hash \`${CONTENT_HASH}\` cubre system.css + CLAUDE.md + components/motion + ${MOTION_LIB_DESC}.
 Para verificar si el brief esta actualizado, re-ejecutar y comparar el hash impreso en stdout.

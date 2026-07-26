@@ -1,8 +1,53 @@
 # Patrones que nunca deben llegar al repo público
 # Formato: patrón|descripción
-# Leído por: pre-commit hook, update.sh (sanitize de skills)
-CLIENTE_PRIVADO|Nombre de cliente/proyecto privado
-‹repo-privado›|Ruta de proyecto privado
-modulo_privado\.py|Archivo de proyecto privado
-‹repo-privado›|Nombre interno de proyecto privado
+# Leído por: .git/hooks/pre-commit, update.sh (sanitize de skills),
+#            scripts/sanitize-claude-md.sh
+#
+# Formato extendido: patrón|descripción[|acción]
+#   acción = drop   (default) -> se descarta la línea entera
+#   acción = redact          -> se reemplaza el término por un placeholder y se
+#                               conserva la línea (para aprendizajes técnicos que
+#                               sólo mencionan de paso el nombre de un repo privado)
+#
+# El matcher corre `grep -liE` (case-insensitive, ERE). Usar `\b` para acotar:
+# sin boundary, "‹cliente-aseguradora›" matchea "clausura" y "asegurar".
+#
+# NO agregar sistemas públicos (MIPRES, minsalud, SUIN, ADRES, PAI, SISPRO):
+# son normativa/infraestructura nacional, no contexto de cliente. Bloquearlos
+# sólo produce ruido y entrena a saltarse el guard.
+#
+# Historia: el leak del 2026-07-01 (campaña ‹cliente-aseguradora› en el bloque SESIONES) pasó
+# porque esta lista tenía únicamente los placeholders de ejemplo del diseño
+# original, y porque el pre-commit no cubría claude/CLAUDE.md. Ambas cosas
+# corregidas el 2026-07-26.
+
+# ── Clientes / entidades contratantes ────────────────────────────
+\bmutualser\b|Cliente EPS — nombre de entidad
+\bsura\b|Cliente aseguradora — nombre de entidad
+\bgsk\b|Cliente farmacéutica — nombre de entidad
+\bshingrix\b|Producto de cliente farmacéutico
+\bgati\b|Proveedor en contrato de interventoría
+\bsersocial\b|Entidad institucional — contexto de proyecto
+\bser-social\b|Entidad institucional — variante con guion
+
+# ── Sistemas propietarios de cliente ─────────────────────────────
+\bzeussalud\b|HIS propietario de cliente
+\bzeus_salud\b|HIS propietario de cliente — variante
+\bsiesa\b|Proveedor del HIS de cliente
+
+# ── Rutas y repos de proyecto privado ────────────────────────────
+\bcosteo_repo_mutual\b|Repo de proyecto privado|redact
+\bregistro_retiros\b|Ruta de proyecto privado|redact
+\bmodulo_privado\.py\b|Archivo de proyecto privado|redact
+\bevaluador_api\b|Nombre interno de proyecto privado|redact
+\bplaneacion_estrategica\b|Repo de proyecto privado|redact
+\bhelix_‹proveedor-his›\b|Repo de proyecto privado|redact
+
+# ── Contratos y credenciales ─────────────────────────────────────
+# Sin patrón genérico NNN/AAAA: matchearía citas legales legítimas
+# (Res 740/2024, Decreto 1652/2022). Se ancla a la palabra contrato.
+contrato[[:space:]]+[0-9]{3}|Número de contrato
+\btest1234\b|Credencial de test filtrada
+
+# ── Secciones sin markers ────────────────────────────────────────
 ## Contexto del proyecto actual|Sección de contexto sin markers

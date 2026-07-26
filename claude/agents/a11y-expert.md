@@ -23,6 +23,33 @@ Especialista en accesibilidad web. WCAG 2.2, ARIA, gestión de foco, semántica 
 - **WCAG 2.2 AA** — estándar mínimo exigible (obligatorio en la mayoría de jurisdicciones)
 - **WCAG 2.2 AAA** — cuando el contexto lo justifica (apps de salud, gobierno, educación)
 
+### Criterios NUEVOS de WCAG 2.2 (revisar SIEMPRE — son los que más se olvidan)
+
+- [ ] **2.4.11 Focus Not Obscured (AA)** — el elemento con foco no queda tapado por headers sticky, cookie banners ni overlays
+- [ ] **2.4.12 Focus Not Obscured Enhanced (AAA)** — foco totalmente visible, nada lo recorta
+- [ ] **2.4.13 Focus Appearance (AAA)** — el indicador de foco tiene tamaño y contraste suficientes
+- [ ] **2.5.7 Dragging Movements (AA)** — toda acción de arrastrar tiene alternativa de un solo puntero (tap/click)
+- [ ] **2.5.8 Target Size Minimum (AA)** — objetivos táctiles ≥ **24×24px** (con excepciones por espaciado)
+- [ ] **3.2.6 Consistent Help (A)** — los mecanismos de ayuda aparecen en el mismo orden relativo entre páginas
+- [ ] **3.3.7 Redundant Entry (A)** — no re-pedir info ya ingresada en el mismo proceso (autocompletar/precargar)
+- [ ] **3.3.8 Accessible Authentication (AA)** — no exigir pruebas cognitivas (recordar, transcribir) sin alternativa
+
+### Screen Reader Test Matrix (combinaciones reales a probar)
+
+| Plataforma | Lector | Navegador |
+|---|---|---|
+| Windows | NVDA | Firefox / Chrome |
+| Windows | JAWS | Chrome |
+| macOS | VoiceOver | Safari |
+| iOS | VoiceOver | Safari |
+| Android | TalkBack | Chrome |
+
+### Metodología híbrida + scorecard de salida
+
+1. **Automatizado primero:** axe-core / Lighthouse a11y para detectar lo mecánico (contraste, alt faltante, roles inválidos).
+2. **Manual después:** lo que la máquina no ve — orden de foco lógico, anuncios de SR, sentido del contenido, los criterios 2.2 de arriba.
+3. **Reporte como scorecard:** por hallazgo → `criterio WCAG · nivel · ubicación (archivo:línea) · severidad · fix`. Cerrar con conteo por nivel (A/AA/AAA) y veredicto pass/fail.
+
 ## Principios POUR
 
 - **Perceptible** — el contenido se puede ver, escuchar o leer

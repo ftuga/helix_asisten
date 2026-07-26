@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# ============================================================
+# pre-commit hook — Helix privacy guard
+# Bloquea commits que contengan contexto de proyecto privado
+# Patrones fuente: scripts/private-patterns.txt
+# ============================================================
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+PATTERNS_FILE="$REPO_DIR/scripts/private-patterns.txt"
+
+FAIL=0
+
+# Cargar patrones desde archivo central (ignorar comentarios y líneas vacías)
+declare -a FORBIDDEN_PATTERNS=()
+if [[ -f "$PATTERNS_FILE" ]]; then
+  while IFS= read -r line; do
+    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+    FORBIDDEN_PATTERNS+=("$line")
+  done < "$PATTERNS_FILE"
+fi
+
+# Archivos staged que aplican para este check.
+#
+# CAUSA RAÍZ del leak del 2026-07-01: este filtro cubría sólo
+# memory/agents|topics|active-rules y skills/. `claude/CLAUDE.md` — el archivo
+# que efectivamente filtró datos de cliente vía el bloque SESIONES — nunca se
+# revisó. Ahora se cubre TODO claude/ salvo binarios y caché.
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null | \
+  grep -E "^claude/" | \
+  grep -vE "\.(pyc|png|jpg|jpeg|gif|ico|pdf|zip|woff2?)$|__pycache__/|/nav-cache/" || true)
+
+if [[ -z "$STAGED_FILES" ]]; then
+  exit 0
+fi
+
+for pattern_entry in "${FORBIDDEN_PATTERNS[@]}"; do
+  PATTERN="${pattern_entry%%|*}"
+  # Campo 2 = descripción, campo 3 (opcional) = acción del sanitizador.
+  # Con ${x##*|} la descripción salía como "redact" en las líneas de 3 campos.
+  DESC="$(printf '%s' "$pattern_entry" | cut -d'|' -f2)"
+
+  # -iE: los patrones usan \b y ERE; sin -i "‹cliente-aseguradora›" en mayúsculas se escapaba
+  MATCHES=$(echo "$STAGED_FILES" | xargs grep -liE -- "$PATTERN" 2>/dev/null || true)
+  if [[ -n "$MATCHES" ]]; then
+    FAIL=1
+    echo ""
+    echo "🔴 PRIVACY GUARD — patrón detectado: '$PATTERN'"
+    echo "   Motivo: $DESC"
+    echo "   Archivos:"
+    echo "$MATCHES" | while read -r f; do
+      echo "     - $f"
+      grep -niE -- "$PATTERN" "$f" | head -3 | cut -c1-140 | sed 's/^/       /'
+    done
+  fi
+done
+
+if [[ "$FAIL" -eq 1 ]]; then
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║  Commit bloqueado — contexto de proyecto privado detectado  ║"
+  echo "║                                                              ║"
+  echo "║  Opciones:                                                   ║"
+  echo "║  1. Wrap con markers:  <!-- PROJECT-CONTEXT:START/END -->    ║"
+  echo "║  2. bash update.sh  (sanitiza automáticamente)              ║"
+  echo "║  3. Agregar patrón a scripts/private-patterns.txt si nuevo  ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+  exit 1
+fi
+
+exit 0

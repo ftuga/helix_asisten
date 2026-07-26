@@ -30,6 +30,36 @@ warn() { echo -e "${YELLOW}[EVOLVE]${NC} $1"; }
 info() { echo -e "${BLUE}[EVOLVE]${NC} $1"; }
 err()  { echo -e "${RED}[EVOLVE ERROR]${NC} $1"; }
 
+# ── Evolve guard (factored — M-2 / sprint-4 TASK-022) ────────
+# Rejects prompt-injection / executable-instruction patterns in any text that
+# evolve.sh persists to CLAUDE.md or skills. Previously this check lived inline
+# in `learn` only; the sprint-4 audit (finding M-2) showed `skill` and `risk`
+# bypassed it. Now all three call this. Returns 1 (and explains on stderr) on a
+# hit, 0 otherwise. Pass every persisted free-text field as a separate arg.
+evolve_guard() {
+  local joined="" t
+  for t in "$@"; do joined+="$t"$'\n'; done
+  GUARD_TEXT="$joined" "${HELIX_PYTHON:-python3}" - <<'PYGUARD'
+import os, re, sys
+text = os.environ.get("GUARD_TEXT", "")
+BAD = [
+    (r"(?i)\bcurl\s+\S+\s*\|\s*(bash|sh|zsh|python)", "pipe-to-shell"),
+    (r"(?i)\bwget\s+\S+\s*-O-?\s*\|\s*(bash|sh)", "wget-pipe"),
+    (r"(?i)\b(rm|dd|mkfs|shutdown|reboot)\s+-", "destructive"),
+    (r"(?i)\beval\s*\(\s*(atob|base64)", "eval-obfuscated"),
+    (r"(?i)ignore\s+(all\s+)?previous\s+instructions", "jailbreak"),
+    (r"(?i)you\s+are\s+now\s+(a|an)\s+\w+\s+(assistant|ai)", "role-reset"),
+    (r"[\u200b-\u200f\u202a-\u202e\u2060-\u206f]", "zero-width"),
+    (r"(?<![A-Za-z0-9+/=])[A-Za-z0-9+/]{200,}={0,2}(?![A-Za-z0-9+/=])", "long-b64"),
+]
+hits = sorted({tag for pat, tag in BAD if re.search(pat, text)})
+if hits:
+    print(f"🛡️  EVOLVE GUARD: rechazado — patrones peligrosos: {hits}", file=sys.stderr)
+    print(f"   Texto: {text[:140]}", file=sys.stderr)
+    sys.exit(1)
+PYGUARD
+}
+
 # ── Rutas globales (siempre disponibles) ─────────────────────
 GLOBAL_CLAUDE_MD="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/CLAUDE.md"
 GLOBAL_MEMORY_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/memory"
@@ -162,31 +192,9 @@ cmd_learn() {
     exit 1
   fi
 
-  # ── Evolve guard — rechazar aprendizajes con instrucciones ejecutables ──
+  # ── Evolve guard (factored to evolve_guard — M-2 / TASK-022) ──
   # Protege contra prompt injection que usa evolve.sh como vector persistente
-  if GUARD_TEXT="$aprendizaje" "${HELIX_PYTHON:-python3}" - <<'PYGUARD'
-import os, re, sys
-text = os.environ.get("GUARD_TEXT", "")
-BAD = [
-    (r"(?i)\bcurl\s+\S+\s*\|\s*(bash|sh|zsh|python)", "pipe-to-shell"),
-    (r"(?i)\bwget\s+\S+\s*-O-?\s*\|\s*(bash|sh)", "wget-pipe"),
-    (r"(?i)\b(rm|dd|mkfs|shutdown|reboot)\s+-", "destructive"),
-    (r"(?i)\beval\s*\(\s*(atob|base64)", "eval-obfuscated"),
-    (r"(?i)ignore\s+(all\s+)?previous\s+instructions", "jailbreak"),
-    (r"(?i)you\s+are\s+now\s+(a|an)\s+\w+\s+(assistant|ai)", "role-reset"),
-    (r"[\u200b-\u200f\u202a-\u202e\u2060-\u206f]", "zero-width"),
-    (r"(?<![A-Za-z0-9+/=])[A-Za-z0-9+/]{200,}={0,2}(?![A-Za-z0-9+/=])", "long-b64"),
-]
-hits = []
-for pat, tag in BAD:
-    if re.search(pat, text):
-        hits.append(tag)
-if hits:
-    print(f"🛡️  EVOLVE GUARD: rechazado — patrones peligrosos: {sorted(set(hits))}", file=sys.stderr)
-    print(f"   Texto: {text[:140]}", file=sys.stderr)
-    sys.exit(1)
-PYGUARD
-  then :; else
+  if ! evolve_guard "$aprendizaje"; then
     err "Aprendizaje rechazado por evolve-guard (ver mensaje arriba)"
     exit 1
   fi
@@ -283,6 +291,12 @@ cmd_skill() {
     exit 1
   fi
 
+  # Evolve guard también en skill (M-2 / TASK-022: antes solo learn lo aplicaba)
+  if ! evolve_guard "$nombre" "$descripcion" "$contenido"; then
+    err "Skill rechazada por evolve-guard (ver mensaje arriba)"
+    exit 1
+  fi
+
   # Skills van al proyecto si existe, si no al global
   local skills_dir="${PROJECT_SKILLS_DIR:-$GLOBAL_SKILLS_DIR}"
   local skill_file="$skills_dir/${nombre}.md"
@@ -370,6 +384,12 @@ cmd_risk() {
 
   if [[ -z "$archivo" ]] || [[ -z "$zona" ]] || [[ -z "$descripcion" ]]; then
     err "Uso: bash .claude/evolve.sh risk <archivo> <zona> <ALTO|MEDIO|BAJO> <descripción>"
+    exit 1
+  fi
+
+  # Evolve guard también en risk (M-2 / TASK-022: antes solo learn lo aplicaba)
+  if ! evolve_guard "$archivo" "$zona" "$descripcion"; then
+    err "Riesgo rechazado por evolve-guard (ver mensaje arriba)"
     exit 1
   fi
 

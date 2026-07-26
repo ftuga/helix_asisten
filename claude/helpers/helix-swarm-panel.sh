@@ -30,16 +30,20 @@ printf "${CYAN}${BOLD} ⬡  HELIX${NC}  ${DIM}${DATE} · ${DAY}${NC}\n"
 divider
 
 # ── Sección: costo ────────────────────────────────────────────
+# SECURITY (ACE fix, sprint 4): exact per-session path only — the old
+# `ls -t /tmp/helix-cost-*` fallback let any planted /tmp file be picked (ACE sink).
 COST_FILE=""
 if [[ -n "${CLAUDE_SESSION_ID:-}" ]]; then
   COST_FILE="/tmp/helix-cost-${CLAUDE_SESSION_ID}"
-elif ls /tmp/helix-cost-* 2>/dev/null | head -1 | grep -q helix; then
-  COST_FILE=$(ls -t /tmp/helix-cost-* 2>/dev/null | head -1)
 fi
 
 if [[ -n "$COST_FILE" && -f "$COST_FILE" ]]; then
   CALLS=$(tr -d '[:space:]' < "$COST_FILE" 2>/dev/null || echo "0")
-  COST=$("${HELIX_PYTHON:-python3}" -c "n=int('$CALLS') if '$CALLS'.isdigit() else 0; print(f'\${n*0.014:.2f}')" 2>/dev/null || echo "?")
+  # SECURITY: CALLS passed as argv (DATA), never interpolated into the -c source.
+  COST=$("${HELIX_PYTHON:-python3}" -c 'import sys
+c = sys.argv[1] if len(sys.argv) > 1 else "0"
+n = int(c) if c.isdigit() else 0
+print(f"${n*0.014:.2f}")' "$CALLS" 2>/dev/null || echo "?")
   printf " ${GREEN}💰 ~\$${COST}${NC}"
 else
   printf " ${DIM}💰 sin sesión${NC}"

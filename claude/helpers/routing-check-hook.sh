@@ -30,6 +30,13 @@ META_AGENTS = {"code-reviewer", "architect-reviewer", "error-detective", "securi
 if agent.startswith("council-") or agent in META_AGENTS:
     sys.exit(0)
 
+# Bypass agentes locales del proyecto (.claude/agents/<agent>.md en el cwd):
+# son expertos de dominio creados para ese proyecto — el catálogo global de keywords no los conoce
+from pathlib import Path as _PathLocal
+_cwd_local = data.get("cwd") or os.getcwd()
+if (_PathLocal(_cwd_local) / ".claude" / "agents" / f"{agent}.md").is_file():
+    sys.exit(0)
+
 prompt = (tool_input.get("prompt") or "") + " " + (tool_input.get("description") or "")
 prompt = prompt.lower()[:1000]
 

@@ -1,15 +1,16 @@
 # Routing Heuristics — Helix ERL
-> Generado: 2026-06-11 09:10 | Entradas analizadas: 235
+> Generado: 2026-07-24 01:42 | Entradas analizadas: 448
 > Umbral mínimo: 2 muestras
 
 ## Reglas por Dominio
 
 - dominio 'testing' → `general-purpose` (3/4 usos, 75%, q=3.0 | alternativas: linguista-computacional-tokens(1)) ⚠️ DRIFT — agente fuera de catálogo
-- dominio 'frontend' → `frontend-developer` (24/40 usos, 60%, q=3.0 | alternativas: ui-ux-designer(3), ui-designer(1))
-- dominio 'research' → `council-researcher` (9/16 usos, 56%, q=3.0 | alternativas: general-purpose(4), Explore(1))
-- dominio 'backend' → `python-pro` (6/14 usos, 42% | alternativas: backend-developer(1))
-- dominio 'devops' → `council-synthesizer` (29/148 usos, 19%, q=3.0 | alternativas: council-skeptic(21), council-innovator(21)) ⚠️ DRIFT — agente fuera de catálogo
-- dominio 'general' → `frontend-developer` (6/32 usos, 18%, q=3.0 | alternativas: python-pro(6), general-purpose(4))
+- dominio 'bug' → `n8n-workflow-expert` (2/3 usos, 66% | alternativas: frontend-developer(1)) ⚠️ DRIFT — agente fuera de catálogo
+- dominio 'frontend' → `frontend-developer` (29/57 usos, 50%, q=3.0 | alternativas: ui-ux-designer(3), ui-designer(1))
+- dominio 'security' → `security-auditor` (3/7 usos, 42% | alternativas: api-security-audit(1))
+- dominio 'research' → `general-purpose` (10/24 usos, 41%, q=3.0 | alternativas: council-researcher(9), Explore(1))
+- dominio 'backend' → `python-pro` (6/20 usos, 30% | alternativas: backend-developer(1))
+- dominio 'general' → `general-purpose` (13/76 usos, 17%, q=3.0 | alternativas: frontend-developer(9), n8n-workflow-expert(9))
 
 ## Flujos Frecuentes (Pares)
 
@@ -23,18 +24,20 @@
 
 - proyecto `proceso_comite_compras` usa `frontend-developer` como agente dominante (18x)
 - proyecto `proyecto` usa `council-synthesizer` como agente dominante (6x)
+- proyecto `‹privado›` usa `general-purpose` como agente dominante (8x)
+- proyecto `cohortes_riesgo` usa `general-purpose` como agente dominante (12x)
+- proyecto `proyecto_01` usa `general-purpose` como agente dominante (30x)
 
 ## Routing Drift (agentes fuera de catálogo)
 
-- dominio 'devops' desviado: `council-synthesizer` usado 29x — catálogo: ['deployment-engineer', 'devops-engineer']
-- dominio 'backend' desviado: `test-engineer` usado 2x — catálogo: ['backend-architect', 'backend-developer', 'python-pro']
-- dominio 'frontend' desviado: `code-reviewer` usado 4x — catálogo: ['frontend-developer', 'nextjs-architecture-expert', 'typescript-pro', 'ui-designer', 'ui-ux-designer']
+- dominio 'backend' desviado: `general-purpose` usado 3x — catálogo: ['backend-architect', 'backend-developer', 'python-pro']
+- dominio 'frontend' desviado: `code-reviewer` usado 6x — catálogo: ['frontend-developer', 'nextjs-architecture-expert', 'typescript-pro', 'ui-designer', 'ui-ux-designer']
 - dominio 'testing' desviado: `general-purpose` usado 3x — catálogo: ['qa-expert', 'test-automator', 'test-engineer']
+- dominio 'bug' desviado: `n8n-workflow-expert` usado 2x — catálogo: ['error-detective']
 
 ## Gaps Detectados
 
-- **Nunca usados** (19): airflow-dag-expert, api-architect, backend-architect, brand-identity-expert, database-architect, deployment-engineer, devops-engineer, ent-tesis, helix-agent-manager, investment-expert
-- **Usados 1 vez**: api-security-audit, app-creative-genius, claude-code-guide, data-analyst, error-detective, security-auditor, typescript-pro, ui-designer
+- **Nunca usados** (24): airflow-dag-expert, api-architect, backend-architect, brand-identity-expert, code-reviewer-frontend, design-bridge, ent-tesis, helix-agent-manager, helix-council, investment-expert
 
 ## Calidad por Agente (skill-quality.jsonl)
 
@@ -60,39 +63,36 @@
 *Actualizar con: `bash ~/.claude/helpers/helix-erl.sh`*
 
 ## Reglas ExpeL (Contrastivas)
-> Generado: 2026-06-11 09:10 | Basado en 235 trayectorias
+> Generado: 2026-07-24 01:42 | Basado en 448 trayectorias
 
 ### Dominancia observada
-- [devops] `council-synthesizer` (29x, 19%) supera a `council-skeptic` (21x) — usar `council-synthesizer` como primera opción
-- [backend] `python-pro` (6x, 40%) supera a `test-engineer` (2x) — usar `python-pro` como primera opción
-- [frontend] `frontend-developer` (24x, 58%) supera a `ui-ux-designer` (4x) — usar `frontend-developer` como primera opción
-- [general] `frontend-developer` (7x, 21%) supera a `python-pro` (6x) — usar `frontend-developer` como primera opción
-- [architecture] `frontend-developer` (3x, 60%) supera a `architect-reviewer` (1x) — usar `frontend-developer` como primera opción
-- [research] `council-researcher` (9x, 60%) supera a `general-purpose` (4x) — usar `council-researcher` como primera opción
-- [analysis] `frontend-developer` (4x, 80%) supera a `data-analyst` (1x) — usar `frontend-developer` como primera opción
+- [devops] `council-synthesizer` (29x, 14%) supera a `council-skeptic` (21x) — usar `council-synthesizer` como primera opción
+- [backend] `python-pro` (6x, 31%) supera a `test-engineer` (2x) — usar `python-pro` como primera opción
+- [security] `security-auditor` (3x, 37%) supera a `api-security-audit` (1x) — usar `security-auditor` como primera opción
+- [frontend] `frontend-developer` (29x, 47%) supera a `code-reviewer` (6x) — usar `frontend-developer` como primera opción
+- [general] `general-purpose` (106x, 61%) supera a `frontend-developer` (10x) — usar `general-purpose` como primera opción
+- [architecture] `frontend-developer` (3x, 30%) supera a `deployment-engineer` (2x) — usar `frontend-developer` como primera opción
+- [research] `general-purpose` (10x, 40%) supera a `council-researcher` (9x) — usar `general-purpose` como primera opción
+- [analysis] `frontend-developer` (4x, 66%) supera a `data-analyst` (1x) — usar `frontend-developer` como primera opción
 - [testing] `general-purpose` (3x, 75%) supera a `linguista-computacional-tokens` (1x) — usar `general-purpose` como primera opción
-- [database] `frontend-developer` (2x, 66%) supera a `python-pro` (1x) — usar `frontend-developer` como primera opción
+- [database] `frontend-developer` (2x, 50%) supera a `python-pro` (1x) — usar `frontend-developer` como primera opción
 
 ### Routing incorrecto detectado
 - [devops] se usa `council-synthesizer` (29x) pero `devops-engineer` existe en catálogo y nunca se ha invocado — posible routing incorrecto
 - [architecture] `frontend-developer` (3x) se usa 3x más que `architect-reviewer` (1x) — considerar routing más preciso
-- [research] se usa `council-researcher` (9x) pero `backend-architect` existe en catálogo y nunca se ha invocado — posible routing incorrecto
+- [research] se usa `general-purpose` (10x) pero `backend-architect` existe en catálogo y nunca se ha invocado — posible routing incorrecto
 - [analysis] `frontend-developer` (4x) se usa 4x más que `data-analyst` (1x) — considerar routing más preciso
-- [testing] se usa `general-purpose` (3x) pero `test-engineer` existe en catálogo y nunca se ha invocado — posible routing incorrecto
 - [database] se usa `frontend-developer` (2x) pero `database-architect` existe en catálogo y nunca se ha invocado — posible routing incorrecto
 
 ### Agentes fuera de catálogo
+- `general-purpose` usado 123x pero no está en catálogo activo — considerar añadir a agents-index.md
 - `council-synthesizer` usado 33x pero no está en catálogo activo — considerar añadir a agents-index.md
+- `n8n-workflow-expert` usado 24x pero no está en catálogo activo — considerar añadir a agents-index.md
 - `council-skeptic` usado 23x pero no está en catálogo activo — considerar añadir a agents-index.md
 - `council-innovator` usado 23x pero no está en catálogo activo — considerar añadir a agents-index.md
-- `council-conservative` usado 22x pero no está en catálogo activo — considerar añadir a agents-index.md
-- `council-arbiter` usado 16x pero no está en catálogo activo — considerar añadir a agents-index.md
 
 ### Evolución temporal
-- [backend] routing evolucionó: `security-auditor` → `python-pro` — `python-pro` es la estrategia aprendida más reciente
-- [security] routing evolucionó: `security-auditor` → `council-researcher` — `council-researcher` es la estrategia aprendida más reciente
-- [general] routing evolucionó: `frontend-developer` → `council-synthesizer` — `council-synthesizer` es la estrategia aprendida más reciente
-- [architecture] routing evolucionó: `architect-reviewer` → `frontend-developer` — `frontend-developer` es la estrategia aprendida más reciente
-- [research] routing evolucionó: `general-purpose` → `council-researcher` — `council-researcher` es la estrategia aprendida más reciente
-- [analysis] routing evolucionó: `data-analyst` → `frontend-developer` — `frontend-developer` es la estrategia aprendida más reciente
+- [architecture] routing evolucionó: `frontend-developer` → `deployment-engineer` — `deployment-engineer` es la estrategia aprendida más reciente
+- [research] routing evolucionó: `council-researcher` → `general-purpose` — `general-purpose` es la estrategia aprendida más reciente
+- [database] routing evolucionó: `python-pro` → `frontend-developer` — `frontend-developer` es la estrategia aprendida más reciente
 

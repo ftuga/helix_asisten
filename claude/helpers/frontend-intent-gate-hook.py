@@ -21,8 +21,13 @@ import sys
 from pathlib import Path
 
 UI_EXTENSIONS = {".tsx", ".jsx", ".css", ".scss", ".sass", ".vue", ".svelte", ".html", ".astro"}
-BRIEFS_DIR = Path(os.environ.get("HOME", "")) / ".helix/memory/frontend-briefs"
-SESSION_ENV_BASE = Path(os.environ.get("HOME", "")) / ".claude/session-env"
+# SECURITY/correctness (M-1): both paths resolve from CLAUDE_CONFIG_DIR so session
+# flags land in the SAME live tree as the briefs. Line 25 used to hardcode the legacy
+# ~/.claude tree while briefs used ~/.helix — the gate's flags went to a dead tree.
+# Fallback is ~/.helix (the live tree BRIEFS_DIR already trusted), not ~/.claude.
+_CONFIG_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR") or (Path(os.environ.get("HOME", "")) / ".helix"))
+BRIEFS_DIR = _CONFIG_DIR / "memory/frontend-briefs"
+SESSION_ENV_BASE = _CONFIG_DIR / "session-env"
 
 
 def main() -> int:

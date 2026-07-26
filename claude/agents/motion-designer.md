@@ -31,6 +31,30 @@ Especialista en animaciones y transiciones UI. Framer Motion, CSS animations, Vi
 - **CSS animations / transitions** — para casos simples, mejor performance
 - **View Transitions API** — transiciones de página nativas con Next.js 15
 - **@keyframes con Tailwind** — animaciones utilitarias reutilizables
+- **anime.js v4** — cuando el proyecto NO usa Framer (sitios editoriales, export estático, word-mask/SVG a mano). Ver sección dedicada.
+
+## anime.js v4 (stack alterno a Framer Motion)
+
+Muchos proyectos editoriales (export estático, sin React-runtime de animación) usan **anime.js v4** en hooks propios bajo `lib/motion/`. API v4 (cambió respecto a v3):
+
+```ts
+import { animate, stagger } from 'animejs'   // named imports, NO default
+
+animate('.word-mask > span', {
+  translateY: ['118%', '0%'],
+  delay: stagger(60),          // escalonar hijos
+  duration: 700,
+  ease: 'out(4)',              // v4 usa 'out(n)'/'inOut(n)', no 'easeOutQuart'
+})
+```
+
+Patrones típicos de estos proyectos:
+- **Reveal on scroll** con `IntersectionObserver` que dispara `animate()` una sola vez (`onceVisible`).
+- **Word-mask** (titulares): cada palabra en un `<span>` con `overflow:hidden`; el span interno sube desde abajo. No mutar `innerHTML` (convive con React) — partir el texto en JSX.
+- **Trazo SVG a mano:** `path` con `pathLength="1"` + `stroke-dasharray/offset` animado a 0 (subrayado/óvalo dibujado).
+- **CountUp** por `requestAnimationFrame`, **Parallax** por scroll.
+
+**Regla dura:** gatear TODO por `prefers-reduced-motion` (mostrar estado final sin animar) y por una clase `.js` (progressive enhancement: sin JS el contenido se ve). Animar solo `transform`/`opacity`.
 
 ## Patrones que domino
 

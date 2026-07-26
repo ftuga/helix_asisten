@@ -22,15 +22,55 @@ CMD = os.environ["HOOK_CMD"]
 MANIFEST = Path(os.environ["HOOK_MANIFEST"])
 HOME = Path.home()
 
+# Resolve the LIVE config root from CLAUDE_CONFIG_DIR (TASK-008 / guardian HIGH
+# finding): the manifest path was migrated to CLAUDE_CONFIG_DIR in evolutions
+# 94/97 but this TARGETS block kept watching the legacy ~/.claude tree, leaving
+# the live ~/.helix CLAUDE.md, settings and 50+ helpers (incl. helix-team.sh)
+# with NO integrity monitoring. Fall back to ~/.claude when the env var is unset.
+CONFIG = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(HOME / ".claude")))
+
 # Archivos críticos a vigilar
 TARGETS = [
-    HOME / ".claude/settings.json",
-    HOME / ".claude/CLAUDE.md",
+    CONFIG / "settings.json",
+    CONFIG / "CLAUDE.md",
 ]
-# Todos los hooks del directorio helpers
-HELPERS_DIR = HOME / ".claude/helpers"
-for p in sorted(HELPERS_DIR.glob("*.sh")):
-    TARGETS.append(p)
+# Todos los hooks/helpers del directorio helpers (.sh y .py — MEDIUM-2:
+# los .py ejecutables, incl. helix-judge/route-cost-audit/multidomain, no se
+# vigilaban; un tamper de un .py pasaba sin detección).
+HELPERS_DIR = CONFIG / "helpers"
+for ext in ("*.sh", "*.py"):
+    for p in sorted(HELPERS_DIR.glob(ext)):
+        TARGETS.append(p)
+
+# Scripts de ciclo de vida en la raíz de CONFIG (no viven en helpers/, así que
+# el glob de arriba no los cubría) — MEDIUM-2.
+for name in ("evolve.sh", "session-start.sh", "session-end.sh",
+             "self-check.sh", "health-check.sh"):
+    p = CONFIG / name
+    if p.exists():
+        TARGETS.append(p)
+
+# Scripts de deliberación del council — MEDIUM-2.
+COUNCIL_SCRIPTS = CONFIG / "council" / "scripts"
+if COUNCIL_SCRIPTS.is_dir():
+    for p in sorted(COUNCIL_SCRIPTS.glob("*.sh")):
+        TARGETS.append(p)
+
+# Capa 3 team — stable lead-authored artifacts only. board/tasks/*.json are
+# EXCLUDED by design: they mutate legitimately on every claim/done/block, so
+# hashing them would make verify fire constantly. Board tampering (F-02) is
+# covered by the TASK-LEAD doctrine cross-check; a board journal is deferred
+# to sprint 3. Protocol, role briefs and sprint plans are the static surface.
+TEAM_DIR = CONFIG / "team"
+if TEAM_DIR.is_dir():
+    proto = TEAM_DIR / "protocol.md"
+    if proto.exists():
+        TARGETS.append(proto)
+    for sub in ("roles", "plans"):
+        d = TEAM_DIR / sub
+        if d.is_dir():
+            for p in sorted(d.glob("*.md")):
+                TARGETS.append(p)
 
 def hash_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -42,11 +82,19 @@ def hash_file(path: Path) -> str:
     except Exception:
         return ""
 
+def manifest_key(p: Path) -> str:
+    # Keep keys relative to HOME (stable across runs). Fall back to the
+    # absolute path if a target lives outside HOME (non-standard config dir).
+    try:
+        return str(p.relative_to(HOME))
+    except ValueError:
+        return str(p)
+
 def snapshot() -> dict:
     return {
         "ts": datetime.now().isoformat(timespec="seconds"),
         "files": {
-            str(p.relative_to(HOME)): {
+            manifest_key(p): {
                 "sha256": hash_file(p),
                 "size": p.stat().st_size if p.exists() else 0,
                 "mtime": int(p.stat().st_mtime) if p.exists() else 0,

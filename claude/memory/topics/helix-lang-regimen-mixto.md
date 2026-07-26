@@ -58,11 +58,9 @@ Régimen vigente: desagregado por forma.
 | Estado/delta headers | ≥50% | Warning |
 | Prosa analítica | sin threshold | (opt-in por diseño) |
 
-### Implementación pending
+### Implementación — CERRADA (corrección de path 2026-07-01)
 
-`helix-lang-detect.sh` (helper que mide adoption) **NO EXISTE actualmente en `~/.helix/helpers/`** (pre-flight check 2026-06-10). Synthesizer R3 lo asumió existente. **Deuda explícita**: implementar antes de poder medir `adoption_by_form`.
-
-Owner: creator. Deadline: T+7d (2026-06-17). Verification: `test -f ~/.helix/helpers/helix-lang-detect.sh && grep -q 'adoption_by_form' ~/.helix/helpers/helix-lang-detect.sh`.
+`helix-lang-detect.sh` existe con `adoption_by_form` en **`~/.helix/council/scripts/helix-lang-detect.sh`** (no en `~/.helix/helpers/` como decía la verificación original — drift de path, no de capability). Verification real: `test -f ~/.helix/council/scripts/helix-lang-detect.sh && grep -q 'adoption_by_form' ~/.helix/council/scripts/helix-lang-detect.sh`.
 
 ## Bench retrospectivo T+30d (2026-07-10)
 
@@ -76,7 +74,7 @@ Tokenizer: `tiktoken cl100k_base`.
 
 **Si NO baja ≥15%**: escalar a re-council. El régimen mixto puede no ser suficiente y B_new puede requerir refinamiento adicional (e.g., propuesta State Journal del innovator).
 
-Archivo de bench esperado: `~/.helix/memory/audit/helix-lang-30d-comparison-20260710.yaml`.
+**EJECUTADO 2026-07-01 → PASS provisional (+52% era84→mixto, +48% pre84→mixto).** Resultado completo con caveats en `~/.helix/memory/audit/helix-lang-30d-comparison-20260710.yaml`. Caveats principales: n=1 en cohorte mixta, confounder Opción B, **S:hash adoption 0% (<70% threshold)**. No requiere re-council; sí requiere re-correr el bench en el próximo council real (que el creator debe presenciar de todos modos por la verificación pendiente de Opción B) y diagnosticar por qué S:hash no se adopta.
 
 ## Reversibility (kill switches)
 

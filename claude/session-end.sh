@@ -150,23 +150,26 @@ fi
 # ── Costo estimado de sesión ──────────────────────────────────
 SESSION_ID="${CLAUDE_SESSION_ID:-}"
 COST_FILE=""
+# SECURITY (ACE fix, sprint 4): only the exact per-session path is trusted. The old
+# `ls -t /tmp/helix-cost-*` fallback let any attacker-planted /tmp file be picked,
+# turning this into an ACE sink (/tmp is world-writable). Fallback dropped: with no
+# SESSION_ID, the cost estimate is simply skipped.
 if [[ -n "$SESSION_ID" ]]; then
   COST_FILE="/tmp/helix-cost-${SESSION_ID}"
-elif ls /tmp/helix-cost-* 2>/dev/null | head -1 | grep -q "helix-cost"; then
-  # Fallback: tomar el más reciente
-  COST_FILE=$(ls -t /tmp/helix-cost-* 2>/dev/null | head -1)
 fi
 
 if [[ -n "$COST_FILE" && -f "$COST_FILE" ]]; then
   TOOL_CALLS=$(tr -d '[:space:]' < "$COST_FILE" 2>/dev/null || echo "0")
-  "${HELIX_PYTHON:-python3}" -c "
-n = int('$TOOL_CALLS') if '$TOOL_CALLS'.isdigit() else 0
-# Estimación Sonnet 4.6: ~\$3/M input + ~\$15/M output
-# Por tool call promedio: ~2000 tokens input + ~500 output
-# = 0.006 + 0.0075 = ~\$0.014 por call (muy aproximado)
+  # SECURITY: pass TOOL_CALLS as argv (DATA), never interpolate into the -c source.
+  # The .isdigit() guard then actually protects, since tc is a value not code.
+  "${HELIX_PYTHON:-python3}" -c '
+import sys
+tc = sys.argv[1] if len(sys.argv) > 1 else "0"
+n = int(tc) if tc.isdigit() else 0
+# Estimacion Sonnet 4.6: ~$3/M input + ~$15/M output, ~$0.014 por call (aproximado)
 cost = n * 0.014
-print(f'   💰 Tool calls: {n} · Costo estimado: ~\${cost:.2f} USD (±50%)')
-" 2>/dev/null || echo "   💰 Tool calls: $TOOL_CALLS"
+print(f"   \U0001F4B0 Tool calls: {n} · Costo estimado: ~${cost:.2f} USD (±50%)")
+' "$TOOL_CALLS" 2>/dev/null || echo "   💰 Tool calls: $TOOL_CALLS"
   rm -f "$COST_FILE" 2>/dev/null || true
 fi
 echo ""

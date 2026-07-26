@@ -209,7 +209,9 @@ if [[ -n "${TEAM_FILE:-}" && -f "$TEAM_FILE" ]]; then
 
   BITACORA="$PROJECT_ROOT/.claude/memory/helix-bitacora.md"
   if [[ -f "$BITACORA" ]]; then
-    BITACORA_AGE=$("${HELIX_PYTHON:-python3}" -c "import os,time; print('ok' if (time.time()-os.path.getmtime('$BITACORA'))/3600 < 2 else 'stale')" 2>/dev/null || echo "unknown")
+    # SECURITY (ACE fix, sprint 4): pass BITACORA as argv (DATA), never interpolate
+    # into the -c source — $PROJECT_ROOT could carry an attacker-controlled name.
+    BITACORA_AGE=$("${HELIX_PYTHON:-python3}" -c 'import os,sys,time; print("ok" if (time.time()-os.path.getmtime(sys.argv[1]))/3600 < 2 else "stale")' "$BITACORA" 2>/dev/null || echo "unknown")
     [[ "$BITACORA_AGE" == "ok" ]] && check "DoD: bitácora actualizada" || warn "DoD: bitácora no actualizada en las últimas 2h"
   fi
 

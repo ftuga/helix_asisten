@@ -120,6 +120,24 @@ if [[ -n "${AGENTS_DRIFT:-}" ]]; then
   echo ""
 fi
 
+# ── L4 integrity verify (advisory — H-2 / TASK-022) ──────────
+# Surface tamper/drift in core files (settings, CLAUDE.md, helpers .sh/.py,
+# lifecycle & council scripts) every session — previously integrity-check.sh
+# ran ONLY when invoked by hand (audit finding H-2: dead defense). ADVISORY
+# ONLY: never blocks session-start (set -e safe via '|| true'); exports
+# CLAUDE_CONFIG_DIR so manifest keys match the live tree. Re-baseline after a
+# legitimate evolution with: integrity-check.sh update.
+INTEGRITY_SH="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/integrity-check.sh"
+if [[ -f "$INTEGRITY_SH" ]]; then
+  INTEG_OUT=$(CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" bash "$INTEGRITY_SH" verify 2>/dev/null) || true
+  if echo "$INTEG_OUT" | grep -q "cambios detectados"; then
+    echo -e "${YELLOW}⬡  Integridad core: cambios detectados — revisar si son legítimos:${NC}"
+    echo "$INTEG_OUT" | grep -E '^[[:space:]]+[~+-] ' | head -8
+    echo -e "${YELLOW}   Si son tuyos: bash \"\$CLAUDE_CONFIG_DIR/helpers/integrity-check.sh\" update${NC}"
+    echo ""
+  fi
+fi
+
 # ── Registrar inicio de sesión ────────────────────────────────
 echo "$DATE — SESIÓN INICIADA${PROJECT_ROOT:+ [$PROJECT_ROOT]}" >> "$GLOBAL_MEMORY_DIR/session-log.txt"
 
