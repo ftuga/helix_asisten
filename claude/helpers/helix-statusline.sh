@@ -146,6 +146,7 @@ human_age() {
 # ─────────────────────────────────────────────────────────────
 INPUT="$(cat 2>/dev/null || true)"
 json_str "$INPUT" "display_name";              MODEL_NAME="${REPLY:-Claude}"
+json_str "$INPUT" "session_id";                SESSION_ID="${REPLY:-}"
 json_str "$INPUT" "current_dir";               CWD="${REPLY:-$PWD}"
 json_num "$INPUT" "context_window_used_pct";   CTX_PCT="${REPLY:-—}"
 json_num "$INPUT" "cache_efficiency_pct";      CACHE_PCT="${REPLY:-—}"
@@ -377,10 +378,15 @@ if [[ -f "$ROUTING_LOG" ]]; then
     CUTOFF_TS=$(date -d "60 minutes ago" +"%Y-%m-%d %H:%M" 2>/dev/null)
     if [[ -n "$CUTOFF_TS" ]]; then
         # awk single-pass: cuenta invocaciones por agente en ventana, retorna "N|top3|extra"
-        AGENTS_RESULT=$(awk -v cutoff="$CUTOFF_TS" '
+        AGENTS_RESULT=$(awk -v cutoff="$CUTOFF_TS" -v mysess="$SESSION_ID" '
             {
               match($0, /"ts":[[:space:]]*"([^"]+)"/, ts)
               match($0, /"agente":[[:space:]]*"([^"]+)"/, ag)
+              match($0, /"session":[[:space:]]*"([^"]*)"/, ss)
+              # Scoped a ESTA sesión: routing-feedback.jsonl es global y sin este
+              # filtro el panel mostraba los agentes de otras ventanas abiertas.
+              # Entradas sin "session" son previas al fix -> no son de esta sesión.
+              if (mysess != "" && ss[1] != mysess) next
               if (ts[1] >= cutoff && ag[1] != "") count[ag[1]]++
             }
             END {

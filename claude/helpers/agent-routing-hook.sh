@@ -70,8 +70,13 @@ while p != p.parent and p != home:
         break
     p = p.parent
 
+# session_id: sin esto el statusline no puede distinguir MI ventana de otra
+# corriendo en paralelo — mostraba los agentes de cualquier sesión de la última hora.
+session_id = data.get("session_id", "")
+
 entry = {
     "ts": datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "session": session_id,
     "agente": agent,
     "dominio": dominio,
     "tarea": prompt,
@@ -89,6 +94,7 @@ usage_log = CONFIG_DIR / "memory/skill-usage.jsonl"
 usage_entry = {
     "ts":      entry["ts"],
     "date":    entry["ts"][:10],
+    "session": session_id,
     "name":    agent,
     "tipo":    "agent",
     "proyecto": project,
