@@ -205,3 +205,28 @@ al terminar — hay que volver a agregarlo.
 
 Caveat que no depende de nosotros: GitHub puede conservar los objetos viejos
 accesibles por SHA hasta su GC, y forks o PRs abiertos los retienen.
+
+---
+
+## Cierre de sesión: `exit` no ejecutaba el protocolo
+
+`session-exit-hook.sh` detecta "exit" en su lista de triggers, pero vive en
+**`UserPromptSubmit`** — y Claude Code intercepta `exit` como comando de salida,
+así que **nunca llega como prompt** y el hook no dispara. Frases como
+"eso es todo helix" sí funcionaban, por ser prompts normales. El síntoma que
+reportó el creator ("con la frase sí, con exit no") describía exactamente eso.
+
+**Fix:** registrar el evento **`SessionEnd`**, que dispara pase lo que pase
+(`exit`, `/quit`, Ctrl+D, cierre de terminal). Era uno de los cinco eventos
+soportados por el binario y sin usar en Helix — junto con `PreCompact`,
+`SessionStart`, `SubagentStop` y `Notification`. `PreCompact` sigue libre y es
+la pieza central del plan L1 de contexto.
+
+Los dos caminos comparten un **marcador por `session_id`** en `cache/`: si el
+usuario escribe la frase y además sale, `session-end.sh` corre una sola vez.
+
+**Bonus encontrado al probarlo:** `session-end.sh` devolvía `rc=1` siempre. El
+script **terminaba** en `[[ -f "$ALERTA_FILE" ]]`; sin ese archivo el test da 1
+y ése se volvía el exit code de todo el script — cualquier caller lo leía como
+fallo. Regla: un script no debe terminar en un condicional, hay que cerrar con
+`exit 0` explícito.

@@ -271,3 +271,7 @@ PYEOF
     [[ -f "$ALERTA_FILE" ]] && rm "$ALERTA_FILE" && echo -e "${GREEN}✅ Alerta anterior resuelta — eliminada.${NC}"
   fi
 fi
+
+# El script terminaba en un [[ -f ... ]]: sin helix-alerta.md el test da 1 y ese
+# se volvia el exit code de TODO el script. Cualquier caller lo leia como fallo.
+exit 0

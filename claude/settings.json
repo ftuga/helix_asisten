@@ -218,6 +218,17 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/helpers/session-end-hook.sh\""
+          }
+        ]
+      }
     ]
   },
   "statusLine": {

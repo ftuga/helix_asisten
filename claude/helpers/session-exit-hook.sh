@@ -53,8 +53,17 @@ try:
 except:
     pass
 
+# Marcador de idempotencia compartido con session-end-hook.sh (evento SessionEnd):
+# si el usuario escribe "cerramos" y DESPUES sale, session-end.sh correría dos veces.
+import re as _re
+_cfg = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(Path.home() / ".claude")))
+_sid = _re.sub(r"[^A-Za-z0-9_.-]", "_", str(data.get("session_id", "")) or "unknown")
+_marker = _cfg / "cache" / f"session-ended-{_sid}"
+if _marker.exists():
+    sys.exit(0)
+
 # Ejecutar session-end.sh
-session_end = Path(os.environ.get("CLAUDE_CONFIG_DIR", str(Path.home() / ".claude"))) / "session-end.sh"
+session_end = _cfg / "session-end.sh"
 if session_end.exists():
     try:
         result = subprocess.run(
@@ -65,6 +74,8 @@ if session_end.exists():
         import re
         output = re.sub(r'\x1b\[[0-9;]*m', '', result.stdout).strip()
         print(output)
+        _marker.parent.mkdir(parents=True, exist_ok=True)
+        _marker.write_text("prompt-trigger\n")
     except Exception as e:
         print(f"[session-end error: {e}]")
 PYEOF
