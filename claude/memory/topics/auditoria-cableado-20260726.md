@@ -103,24 +103,74 @@ son previas al fix y no cuentan como de la sesión actual.
 
 ## Pendientes que esta sesión dejó abiertos
 
-- **Privacidad del sync (bloqueante para push):** hay dos capas y ninguna cubre
-  el caso que falló en julio.
-  1. `update.sh` sanitiza `memory/agents`, `memory/topics` y `skills` por
-     markers, pero **no toca `claude/CLAUDE.md`** — el archivo exacto que filtró
-     datos de cliente el 2026-07-01 vía el bloque SESIONES.
-  2. El **pre-commit guard sí bloquea** por patrones (verificado en vivo: bloqueó
-     este mismo commit), pero `scripts/private-patterns.txt` sólo contiene los
-     placeholders de ejemplo del diseño original — **ningún nombre de cliente
-     real de los que acumuló el año**. Por eso el leak de julio pasó: el patrón
-     que lo habría atajado nunca se agregó.
-
-  El commit de hoy excluyó a mano `CLAUDE.md`, `memory/` y 4 copias con contexto
-  de cliente. Acción pendiente: poblar la lista de patrones con los clientes
-  reales y extender la sanitización a `CLAUDE.md` (bloques SESIONES/METRICS y
-  filas de EVOLUCIONES que nombren clientes).
+- ~~Privacidad del sync~~ → **CERRADO**, ver §Privacidad abajo.
 - **L3/L4 de contexto:** clasificador de intención por request y progressive
   disclosure del `CLAUDE.md` (~13k tokens fijos, con `DECISIONES CEMENTADAS`,
   `SESIONES` y `EVOLUCIONES` como candidatos a archivo).
 - **L1/L2 + brief/evaluador:** a council. Ver §Brief en `CLAUDE.md`.
 - **580 capturas pasivas** sin revisar desde mayo: cortar con fecha declarada y
   calibrar el threshold con las próximas 20.
+
+---
+
+## Privacidad — reincidencia del leak de cliente (commit `c0a3c5b`)
+
+El sync volvió a copiar al `claude/CLAUDE.md` filas que nombran clientes, con
+número de contrato incluido. Además había fuga **ya commiteada** en 4 archivos
+(entre ellos una credencial de test). El `filter-repo` del 2026-07-08 limpió el
+dato de julio pero no esto.
+
+### Tres fallas independientes que se veían como una
+
+1. **El pre-commit guard no cubría `claude/CLAUDE.md`.** Su filtro de
+   `STAGED_FILES` sólo miraba `memory/agents`, `memory/topics`, `active-rules` y
+   `skills/`. El archivo que efectivamente filtró en julio **nunca se revisó**.
+2. **`private-patterns.txt` tenía sólo los placeholders del diseño original** —
+   ningún cliente real del año. Por eso el del incidente de julio pasó: el patrón que lo habría
+   atajado nunca se agregó. La lista se pobló con word-boundary y el matcher pasó
+   a `grep -liE`: sin `\b`, el nombre corto de una entidad matchea **dentro** de
+   palabras comunes (una de 4 letras cae dentro de "clausura" y "asegurar"), y el
+   guard se vuelve inusable por falsos positivos.
+   Se documenta **no** agregar sistemas públicos (MIPRES, minsalud, SUIN):
+   bloquearlos genera ruido y entrena a saltarse el guard.
+3. **El guard vivía sólo en `.git/hooks/`**, que no se versiona. Un clone fresco
+   —incluido el derivado institucional— quedaba **sin guard**. Ahora está en
+   `scripts/hooks/` y `update.sh` activa `core.hooksPath`.
+
+### Dos mecanismos, porque no todo se arregla igual
+
+- **Exclusión por archivo** para documentos cuyo propósito *es* el contexto de
+  cliente: sanearlos línea por línea los dejaría en nada. `sessions-history.md`
+  entra acá porque es el archivo del bloque SESIONES — misma categoría, misma
+  regla. También al `.gitignore`.
+- **Sanitización por patrón línea a línea** (`scripts/sanitize-private.sh`) para
+  los de valor mixto. El sanitizador anterior sólo borraba secciones con marker,
+  así que las **filas de tabla** con nombres de cliente sobrevivían en
+  `active-rules`, `evolution-history` y `sessions.md`.
+
+Dos acciones por patrón: `drop` descarta la línea (clientes) y `redact` reemplaza
+el identificador conservando la línea — un aprendizaje técnico que sólo menciona
+de paso un repo privado no debe perderse del repo público.
+
+**En archivos de código se fuerza `redact` y nunca `drop`:** descartar una línea
+puede romper un heredoc o dejar sintaxis inválida. Verificado con un caso real.
+
+### Dos lecciones de método
+
+- **Orden:** la sanitización corre DESPUÉS de todas las copias. En la primera
+  versión quedó antes de los `rsync` de helpers y skills, que la sobreescribían
+  — el leak habría vuelto **en cada sync**, silenciosamente.
+- **Verificación independiente del checker:** el pre-commit devolvía `exit 0` en
+  silencio, y eso podía significar "limpio" o "no vio ningún archivo". Hubo que
+  contar cuántos archivos matcheó su propio filtro (32) y después grepear el
+  contenido staged por los 11 términos **aparte del guard**. Resultado: 0
+  ocurrencias en todo lo que entra al repo; los únicos matches restantes viven en
+  `session-log.txt` y `evolution-log.txt`, ambos gitignored — y si alguien los
+  forzara, el guard ahora los ve.
+
+### Pendiente, decisión del creator
+
+El **historial git** conserva las ocurrencias ya publicadas hasta un rewrite con
+`filter-repo` + force-push (precedente: 2026-07-08, `af06265`→`ee4c33c`). Los
+objetos viejos pueden seguir cacheados en GitHub por SHA hasta el GC. Eso no se
+hace sin OK explícito.

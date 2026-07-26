@@ -1,7 +1,7 @@
 # CLAUDE.md — Helix · Agente Auto-Evolutivo (Global)
 > Reglas universales que aplican a TODOS los proyectos.
 > El CLAUDE.md de cada proyecto hereda estas reglas y agrega las específicas.
-> Última evolución: <!-- LAST_EVOLUTION -->2026-07-26 14:46<!-- /LAST_EVOLUTION -->
+> Última evolución: <!-- LAST_EVOLUTION -->2026-07-26 15:20<!-- /LAST_EVOLUTION -->
 
 ---
 
@@ -256,6 +256,7 @@ Propuesta arquitectónica diferida con gates explícitos. Detalle: `~/.helix/mem
 - [2026-06-29] Patron k8s sin secretos en git: deploy.sh genera desde .env los secrets que el cluster necesita -- imagePullSecret (docker-registry), conexiones pgAdmin (servers.json + pgpass), datasources Grafana (Secret con label grafana_datasource=1; el sidecar con RESOURCE=both lee Secrets ademas de ConfigMaps), TLS. Solo la REFERENCIA por nombre va a git; el valor nunca se commitea.
 - [2026-07-15] helix-nav navegador interno con cuarentena: convierte deteccion post-hoc de contenido web (hooks L1/L2 alertan DESPUES de entrar al contexto) en prevencion estructural — fetch fuera de contexto, IP fijada anti DNS-rebinding, SSRF-guard bloquea si CUALQUIER IP resuelta es privada, strip zero-width+tag-block+NFKC, redact inyeccion pre-contexto, destilacion Capa 0 como sandbox semantico, allowlist curada nunca auto-poblada. Review adversarial independiente cerro 8 findings que el primer pase no vio (SSRF any-private, DNS-rebind TOCTOU, DDG entity-decode-after-sanitize, allowlist self-poisoning)
 - [2026-07-26] Regresion silenciosa por reemplazo de capability: NADA escaneaba el prompt de un subagente en busca de secretos (el writer que lo hacia en abril desaparecio y dejo un .jsonl huerfano; secrets-scanner cubria solo Write|Edit|MultiEdit|Bash). Un .jsonl huerfano es la huella de un control que se cayo. Detalle: `topics/auditoria-cableado-20260726.md`
+- [2026-07-26] Reincidencia del leak de cliente al repo publico por TRES fallas que parecian una: el pre-commit guard no cubria claude/CLAUDE.md, private-patterns.txt tenia solo placeholders sin ningun cliente real, y el guard vivia solo en .git/hooks (no versionado -> clone fresco sin proteccion). En codigo se redacta, nunca se descarta la linea (rompe heredocs). La sanitizacion corre DESPUES de todas las copias o los rsync la sobreescriben. Detalle: `topics/auditoria-cableado-20260726.md`
 <!-- SECURITY_END -->
 
 ---
@@ -481,6 +482,8 @@ Descripción completa: `~/.claude/memory/agents/<nombre>.md` (on-demand).
 | 59 | 2026-07-26 | operatividad | Split-brain de telemetria: 6 sinks a ~/.claude hardcodeado vs lectores en $CLAUDE_CONFIG_DIR. Detalle: `topics/auditoria-cableado-20260726.md` | telemetria-arbol-huerfano |
 | 60 | 2026-07-26 | arquitectura | Doctrina citando artefactos inexistentes (risk-map sin productor; bitacora con 2 compuertas mudas -> 1 en 8 proyectos). Una plantilla dentro de un doc de instrucciones NO es un productor. Detalle: `topics/auditoria-cableado-20260726.md` | doctrina-sin-productor |
 | 61 | 2026-07-26 | seguridad | Prompts a subagentes sin escaneo de secretos hasta hoy. Detalle: `topics/auditoria-cableado-20260726.md` | prompt-subagente-sin-escaneo |
+| 62 | 2026-07-26 | seguridad | Leak de cliente al repo publico: 3 fallas independientes (guard sin cobertura de CLAUDE.md, patrones placeholder, guard no versionado). Detalle: `topics/auditoria-cableado-20260726.md` | leak-cliente-reincidencia |
+| 63 | 2026-07-26 | testing | Un checker se verifica INDEPENDIENTEMENTE: exit 0 puede ser 'limpio' o 'no vio nada'. Detalle: `topics/auditoria-cableado-20260726.md` | verificacion-independiente |
 <!-- EVOLUTION_LOG_END -->
 
 ---
