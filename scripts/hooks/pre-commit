@@ -13,11 +13,18 @@ FAIL=0
 
 # Cargar patrones desde archivo central (ignorar comentarios y líneas vacías)
 declare -a FORBIDDEN_PATTERNS=()
-if [[ -f "$PATTERNS_FILE" ]]; then
+# Capa pública (mecánica) + capa local (nombres reales, gitignored).
+# Una denylist que nombra a los clientes es, ella misma, divulgación del roster.
+for PF in "$PATTERNS_FILE" "${PATTERNS_FILE%.txt}.local.txt"; do
+  [[ -f "$PF" ]] || continue
   while IFS= read -r line; do
     [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
     FORBIDDEN_PATTERNS+=("$line")
-  done < "$PATTERNS_FILE"
+  done < "$PF"
+done
+if [[ ! -f "${PATTERNS_FILE%.txt}.local.txt" ]]; then
+  echo "⚠️  PRIVACY GUARD sin capa local: falta $(basename "${PATTERNS_FILE%.txt}.local.txt")." >&2
+  echo "   Los nombres de cliente NO se están chequeando. Ver private-patterns.txt." >&2
 fi
 
 # Archivos staged que aplican para este check.

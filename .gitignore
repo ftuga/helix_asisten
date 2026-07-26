@@ -65,11 +65,10 @@ labs/
 *.bak-2026*
 
 # ── Contexto de cliente: nunca al repo público (2026-07-26) ──
-# Documentos cuyo propósito ES el contexto de un cliente. update.sh los elimina
-# de la copia; esto evita que un `git add -A` los reingrese a mano.
+# update.sh los elimina de la copia. Los que NOMBRAN a un cliente en su propio
+# filename viven en .git/info/exclude (local, no versionado): listarlos acá
+# publicaría el roster. La lista real está en scripts/private-patterns.local.txt.
 claude/memory/topics/sessions-history.md
 claude/memory/topics/‹entidad›-helix-plan-REQ-001.md
 claude/memory/topics/contexto-proyecto-*.md
-claude/agents/zeus-‹proveedor-his›-expert.md
-claude/memory/agents/zeus-‹proveedor-his›-expert.md
-claude/memory/agents/zeus-‹proveedor-his›-expert.validation.md
+scripts/private-patterns.local.txt

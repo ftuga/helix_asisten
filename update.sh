@@ -92,22 +92,25 @@ rsync -a "$TEMPLATE_DIR/.claude/skills/" "$REPO_DIR/template/.claude/skills/" 2>
 
 # ── Exclusión a nivel ARCHIVO ────────────────────────────────────
 # Documentos cuyo propósito ES el contexto de cliente: sanearlos línea por línea
-# los dejaría en nada. No entran al repo público. sessions-history.md es el
-# archivo del bloque SESIONES — misma categoría, misma regla.
+# los dejaría en nada. No entran al repo público — el archivo del bloque SESIONES es el
+# caso típico: misma categoría, misma regla.
 echo "→ Excluyendo documentos inherentemente privados..."
-PRIVATE_FILES=(
-  "claude/memory/topics/sessions-history.md"
-  "claude/memory/topics/‹entidad›-helix-plan-REQ-001.md"
-  "claude/agents/zeus-‹proveedor-his›-expert.md"
-  "claude/memory/agents/zeus-‹proveedor-his›-expert.md"
-  "claude/memory/agents/zeus-‹proveedor-his›-expert.validation.md"
-)
-for pf in "${PRIVATE_FILES[@]}"; do
-  if [[ -f "$REPO_DIR/$pf" ]]; then
-    rm -f "$REPO_DIR/$pf"
-    echo "   ✂ excluido: $(basename "$pf")"
-  fi
-done
+# La lista vive en private-patterns.local.txt (acción `exclude`), NO acá: el
+# nombre de archivo delata al cliente, y este script sí se publica.
+PATTERNS_LOCAL="$REPO_DIR/scripts/private-patterns.local.txt"
+EXCLUDE_INFO="$REPO_DIR/.git/info/exclude"
+if [[ -f "$PATTERNS_LOCAL" ]]; then
+  while IFS= read -r line; do
+    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+    [[ "$line" != *"::exclude" ]] && continue
+    pf="${line%%::*}"
+    [[ -f "$REPO_DIR/$pf" ]] && rm -f "$REPO_DIR/$pf" && echo "   ✂ excluido: $(basename "$pf")"
+    # .git/info/exclude es local y no versionado: ahí sí puede ir el nombre
+    grep -qxF "$pf" "$EXCLUDE_INFO" 2>/dev/null || echo "$pf" >> "$EXCLUDE_INFO"
+  done < "$PATTERNS_LOCAL"
+else
+  echo "   ⚠️  sin private-patterns.local.txt — no hay lista de exclusión por archivo"
+fi
 # Patrones de contexto de proyecto que aparezcan a futuro
 find "$REPO_DIR/claude/memory" -name "contexto-proyecto-*.md" -delete 2>/dev/null || true
 

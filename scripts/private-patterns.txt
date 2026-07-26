@@ -1,60 +1,32 @@
-# Patrones que nunca deben llegar al repo público
-# Formato: patrón::descripción
-# Leído por: .git/hooks/pre-commit, update.sh (sanitize de skills),
-#            scripts/sanitize-claude-md.sh
+# Patrones que nunca deben llegar al repo público — CAPA PÚBLICA
+# Formato: patrón::descripción[::acción]
+# Leído por: scripts/hooks/pre-commit y scripts/sanitize-private.sh
 #
-# Formato extendido: patrón::descripción[::acción]
+# Este archivo contiene sólo la MECÁNICA y patrones genéricos.
+# Los nombres reales de clientes viven en `private-patterns.local.txt`,
+# que está gitignored: una denylist que nombra a los clientes ES, ella misma,
+# una divulgación del roster. Ambos archivos se concatenan al ejecutar.
+#
+# NO usar `\b` como frontera: el guión bajo ES carácter de palabra, así que
+# `\bnombre\b` NO matchea `NOMBRE_DOC.md` — justo donde más aparecen los
+# nombres, en identificadores y archivos. Costó una fuga real el 2026-07-26.
+# Forma correcta, válida en ERE y en Python re:
+#     (^|[^a-zA-Z0-9])término([^a-zA-Z0-9]|$)
+#
 # Separador `::` y NO `|`: los patrones de frontera contienen `|` en su
 # alternación, y con `|` de separador el parser los cortaba en `(^`.
-#   acción = drop   (default) -> se descarta la línea entera
-#   acción = redact          -> se reemplaza el término por un placeholder y se
-#                               conserva la línea (para aprendizajes técnicos que
-#                               sólo mencionan de paso el nombre de un repo privado)
 #
-# El matcher corre `grep -liE` (case-insensitive, ERE).
-#
-# NO usar `\b`: el guión bajo ES carácter de palabra, así que `\bzeussalud\b`
-# NO matchea `‹his-cliente›_DOC.md` — justo donde más aparecen los nombres, en
-# identificadores y nombres de archivo. Costó una fuga real el 2026-07-26.
-# Forma correcta, válida en ERE y en Python re:
-# sin boundary, un nombre corto matchea "clausura" y "asegurar".
+#   acción = drop   (default) -> descarta la línea entera
+#   acción = redact          -> reemplaza el término y conserva la línea
+#                               (en archivos de código se fuerza redact: borrar
+#                                una línea puede romper un heredoc)
 #
 # NO agregar sistemas públicos (MIPRES, minsalud, SUIN, ADRES, PAI, SISPRO):
-# son normativa/infraestructura nacional, no contexto de cliente. Bloquearlos
-# sólo produce ruido y entrena a saltarse el guard.
-#
-# Historia: el leak del 2026-07-01 (un nombre de cliente en el bloque SESIONES) pasó
-# porque esta lista tenía únicamente los placeholders de ejemplo del diseño
-# original, y porque el pre-commit no cubría claude/CLAUDE.md. Ambas cosas
-# corregidas el 2026-07-26.
+# son normativa nacional, no contexto de cliente. Bloquearlos genera ruido y
+# entrena a saltarse el guard.
 
-# ── Clientes / entidades contratantes ────────────────────────────
-(^|[^a-zA-Z0-9])‹cliente-eps›([^a-zA-Z0-9]|$)::Cliente EPS — nombre de entidad
-(^|[^a-zA-Z0-9])‹cliente-aseguradora›([^a-zA-Z0-9]|$)::Cliente aseguradora — nombre de entidad
-(^|[^a-zA-Z0-9])‹cliente-farma›([^a-zA-Z0-9]|$)::Cliente farmacéutica — nombre de entidad
-(^|[^a-zA-Z0-9])‹producto-cliente›([^a-zA-Z0-9]|$)::Producto de cliente farmacéutico
-(^|[^a-zA-Z0-9])‹proveedor›([^a-zA-Z0-9]|$)::Proveedor en contrato de interventoría
-(^|[^a-zA-Z0-9])‹entidad›([^a-zA-Z0-9]|$)::Entidad institucional — contexto de proyecto
-(^|[^a-zA-Z0-9])‹entidad›([^a-zA-Z0-9]|$)::Entidad institucional — variante con guion
-
-# ── Sistemas propietarios de cliente ─────────────────────────────
-(^|[^a-zA-Z0-9])‹his-cliente›([^a-zA-Z0-9]|$)::HIS propietario de cliente
-(^|[^a-zA-Z0-9])zeus_salud([^a-zA-Z0-9]|$)::HIS propietario de cliente — variante
-(^|[^a-zA-Z0-9])‹proveedor-his›([^a-zA-Z0-9]|$)::Proveedor del HIS de cliente
-
-# ── Rutas y repos de proyecto privado ────────────────────────────
-(^|[^a-zA-Z0-9])‹repo-privado›([^a-zA-Z0-9]|$)::Repo de proyecto privado::redact
 (^|[^a-zA-Z0-9])‹repo-privado›([^a-zA-Z0-9]|$)::Ruta de proyecto privado::redact
 (^|[^a-zA-Z0-9])modulo_privado\.py([^a-zA-Z0-9]|$)::Archivo de proyecto privado::redact
 (^|[^a-zA-Z0-9])‹repo-privado›([^a-zA-Z0-9]|$)::Nombre interno de proyecto privado::redact
-(^|[^a-zA-Z0-9])‹repo-privado›([^a-zA-Z0-9]|$)::Repo de proyecto privado::redact
-(^|[^a-zA-Z0-9])‹repo-privado›([^a-zA-Z0-9]|$)::Repo de proyecto privado::redact
-
-# ── Contratos y credenciales ─────────────────────────────────────
-# Sin patrón genérico NNN/AAAA: matchearía citas legales legítimas
-# (Res 740/2024, Decreto 1652/2022). Se ancla a la palabra contrato.
 contrato[[:space:]]+[0-9]{3}::Número de contrato
 (^|[^a-zA-Z0-9])test1234([^a-zA-Z0-9]|$)::Credencial de test filtrada
-
-# ── Secciones sin markers ────────────────────────────────────────
-## Contexto del proyecto actual|Sección de contexto sin markers

@@ -62,8 +62,17 @@ patterns_file = os.environ["PATTERNS_FILE"]
 
 # ── cargar patrones ──────────────────────────────────────────
 pats = []
-with open(patterns_file, encoding="utf-8") as f:
-    for line in f:
+# Capa pública (mecánica) + capa local (nombres reales, gitignored)
+sources = [patterns_file, patterns_file.replace(".txt", ".local.txt")]
+lines_all = []
+for src in sources:
+    if os.path.exists(src):
+        lines_all += open(src, encoding="utf-8").read().split("\n")
+if not os.path.exists(sources[1]):
+    print(f"  \u26a0\ufe0f  sin capa local ({os.path.basename(sources[1])}): "
+          "los nombres de cliente NO se están saneando", file=sys.stderr)
+if True:
+    for line in lines_all:
         line = line.rstrip("\n")
         if not line.strip() or line.lstrip().startswith("#"):
             continue
@@ -125,7 +134,7 @@ def sanitize(target):
                 continue
             # Los patrones traen grupos de frontera (^|[^a-zA-Z0-9])…([^…]|$)
             # porque \b no sirve: el guión bajo es carácter de palabra y
-            # \bzeussalud\b NO matchea ‹his-cliente›_DOC.md. Hay que RECONSTRUIR
+            # \bnombre\b NO matchea NOMBRE_DOC.md. Hay que RECONSTRUIR
             # esos vecinos, si no la redacción se come el separador.
             def _repl(m):
                 if m.re.groups >= 2:
